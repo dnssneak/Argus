@@ -13,10 +13,12 @@ class ReportGenerator:
     Generates structured reports from system info, recon, and scan data.
     """
 
-    def __init__(self, system_info=None, recon_data=None, scan_data=None):
+    def __init__(self, system_info=None, recon_data=None, scan_data=None, fingerprint_data=None, subdomain_data=None):
         self.system_info = system_info or {}
         self.recon_data = recon_data or {}
         self.scan_data = scan_data or {}
+        self.fingerprint_data = fingerprint_data or {}
+        self.subdomain_data = subdomain_data or {}
         self.timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self.report_dir = os.path.join(os.path.dirname(__file__), "reports")
         os.makedirs(self.report_dir, exist_ok=True)
@@ -226,8 +228,49 @@ class ReportGenerator:
             lines.append("  No network scan data available.")
         lines.append("")
 
+        # Website Fingerprinting Section
+        lines.append("[ 5. WEBSITE FINGERPRINTING ]")
+        lines.append("=" * width)
+        if self.fingerprint_data and not self.fingerprint_data.get("error"):
+            fp = self.fingerprint_data
+            fp_fields = [
+                ("Web Server", fp.get("web_server")),
+                ("Backend Tech", fp.get("backend")),
+                ("CMS", fp.get("cms")),
+                ("Frontend Framework", fp.get("frontend")),
+                ("CDN", fp.get("cdn")),
+                ("HTTP Protocol", fp.get("http_version")),
+            ]
+            for label, val in fp_fields:
+                lines.append(f"    {label:<28} : {val or 'N/A'}")
+        elif self.fingerprint_data and self.fingerprint_data.get("error"):
+            lines.append(f"    Error: {self.fingerprint_data.get('error')}")
+        else:
+            lines.append("    No website fingerprinting data available.")
+        lines.append("")
+
+        # Subdomain Finder Section
+        lines.append("[ 6. SUBDOMAIN FINDER ]")
+        lines.append("=" * width)
+        if self.subdomain_data and not self.subdomain_data.get("error"):
+            sub_list = self.subdomain_data.get("subdomains", [])
+            if sub_list:
+                lines.append(f"    Total Subdomains Found : {self.subdomain_data.get('total_found', 0)}")
+                lines.append("")
+                lines.append(f"    {'Subdomain':<38} {'Status':<10} {'IP Address'}")
+                lines.append("    " + "-" * (width - 6))
+                for s in sub_list:
+                    lines.append(f"    {s.get('subdomain'):<38} {s.get('status'):<10} {s.get('ip_address')}")
+            else:
+                lines.append("    No subdomains found.")
+        elif self.subdomain_data and self.subdomain_data.get("error"):
+            lines.append(f"    Error: {self.subdomain_data.get('error')}")
+        else:
+            lines.append("    No subdomain data available.")
+        lines.append("")
+
         # Summary Section
-        lines.append("[ 4. EXECUTIVE SUMMARY ]")
+        lines.append("[ 7. EXECUTIVE SUMMARY ]")
         lines.append("=" * width)
         if self.scan_data:
             lines.append(f"  Scan Status       : {self.scan_data.get('scan_status', 'N/A')}")
@@ -253,6 +296,8 @@ class ReportGenerator:
         system_section = self._build_system_html()
         recon_section = self._build_recon_html()
         scan_section = self._build_scan_html()
+        fingerprint_section = self._build_fingerprint_html()
+        subdomain_section = self._build_subdomain_html()
         summary_section = self._build_summary_html()
 
         html = f"""<!DOCTYPE html>
@@ -393,6 +438,8 @@ class ReportGenerator:
     {system_section}
     {recon_section}
     {scan_section}
+    {fingerprint_section}
+    {subdomain_section}
     {summary_section}
 
     <div class="footer">
@@ -600,4 +647,68 @@ class ReportGenerator:
                     <span class="value">{outcome}</span>
                 </div>
             </div>
+        </div>"""
+
+    def _build_fingerprint_html(self):
+        """Build Website Fingerprinting HTML section."""
+        if not self.fingerprint_data:
+            return '<div class="section"><h2>Website Fingerprinting</h2><p class="no-data">No website fingerprinting data available.</p></div>'
+
+        if self.fingerprint_data.get("error"):
+            return f'<div class="section"><h2>Website Fingerprinting</h2><p class="error">{self.fingerprint_data.get("error")}</p></div>'
+
+        fp = self.fingerprint_data
+        return f"""<div class="section">
+            <h2>Website Fingerprinting</h2>
+            <div class="info-row">
+                <span class="label">Web Server</span>
+                <span class="value">{fp.get('web_server', 'Unknown')}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Backend Technology</span>
+                <span class="value">{fp.get('backend', 'Unknown')}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Content Management System</span>
+                <span class="value">{fp.get('cms', 'None Detected')}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Frontend Framework</span>
+                <span class="value">{fp.get('frontend', 'None Detected')}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Content Delivery Network</span>
+                <span class="value">{fp.get('cdn', 'None Detected')}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">HTTP Protocol</span>
+                <span class="value">{fp.get('http_version', 'HTTP/1.1')}</span>
+            </div>
+        </div>"""
+
+    def _build_subdomain_html(self):
+        """Build Subdomain Finder HTML section."""
+        if not self.subdomain_data:
+            return '<div class="section"><h2>Subdomain Finder</h2><p class="no-data">No subdomain data available.</p></div>'
+
+        if self.subdomain_data.get("error"):
+            return f'<div class="section"><h2>Subdomain Finder</h2><p class="error">{self.subdomain_data.get("error")}</p></div>'
+
+        sub_list = self.subdomain_data.get("subdomains", [])
+        if sub_list:
+            rows = "".join([
+                f'<tr><td>{s.get("subdomain")}</td><td class="{"status-open" if s.get("status") == "Active" else "status-down"}">{s.get("status")}</td><td>{s.get("ip_address")}</td></tr>'
+                for s in sub_list
+            ])
+            table_html = f"""<table>
+                <tr><th>Subdomain</th><th>Status</th><th>IP Address</th></tr>
+                {rows}
+            </table>
+            <p style="margin-top: 10px;"><strong>Total Subdomains Found:</strong> {self.subdomain_data.get('total_found', 0)}</p>"""
+        else:
+            table_html = '<p class="no-data">No subdomains found.</p>'
+
+        return f"""<div class="section">
+            <h2>Subdomain Finder</h2>
+            {table_html}
         </div>"""

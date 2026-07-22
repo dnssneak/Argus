@@ -5,6 +5,7 @@ from recon import SystemInfo, TargetRecon
 from scanner import NetworkScanner
 from report import ReportGenerator
 from fingerprint import WebsiteFingerprinter
+from subdomain import SubdomainFinder
 
 app = Flask(__name__)
 
@@ -53,6 +54,21 @@ def fingerprint():
     return render_template("fingerprint.html")
 
 
+@app.route("/subdomain", methods=["GET", "POST"])
+def subdomain():
+    """Subdomain enumeration page."""
+    if request.method == "POST":
+        target = request.form.get("target", "").strip()
+        if not target:
+            return render_template("subdomain.html", error="Please enter a target domain.")
+
+        finder = SubdomainFinder(target)
+        subdomain_data = finder.collect()
+        return render_template("subdomain.html", subdomain=subdomain_data)
+
+    return render_template("subdomain.html")
+
+
 @app.route("/scan", methods=["GET", "POST"])
 def scan():
     """Dedicated scanning page."""
@@ -80,15 +96,21 @@ def report():
         system_info = SystemInfo().collect()
         recon_data = None
         scan_data = None
+        fingerprint_data = None
+        subdomain_data = None
 
         if target:
             recon_data = TargetRecon(target).collect()
             scan_data = NetworkScanner(target, "full").collect()
+            fingerprint_data = WebsiteFingerprinter(target).collect()
+            subdomain_data = SubdomainFinder(target).collect()
 
         generator = ReportGenerator(
             system_info=system_info,
             recon_data=recon_data,
-            scan_data=scan_data
+            scan_data=scan_data,
+            fingerprint_data=fingerprint_data,
+            subdomain_data=subdomain_data
         )
 
         if report_type == "txt":

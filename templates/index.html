@@ -48,7 +48,7 @@
 <!-- Stats Section -->
 <section class="stats-section">
     <div class="stats-grid">
-        <div class="stat-card" data-count="3">
+        <div class="stat-card" data-count="5">
             <div class="stat-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <rect x="2" y="3" width="20" height="14" rx="2"/>
@@ -56,7 +56,7 @@
                     <line x1="12" y1="17" x2="12" y2="21"/>
                 </svg>
             </div>
-            <div class="stat-number" data-target="3">0</div>
+            <div class="stat-number" data-target="5">0</div>
             <div class="stat-label">Active Modules</div>
         </div>
         <div class="stat-card">
@@ -86,7 +86,7 @@
     <div class="section-header">
         <span class="section-tag">Core Features</span>
         <h2 class="section-title">Reconnaissance Modules</h2>
-        <p class="section-desc">Three powerful modules designed for comprehensive target analysis</p>
+        <p class="section-desc">Five powerful modules designed for comprehensive target analysis</p>
     </div>
 
     <div class="modules-grid">
@@ -156,6 +156,54 @@
                 <span class="feature-tag">Service Detection</span>
             </div>
             <a href="/scan" class="module-btn">
+                <span>Access Module</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+            </a>
+        </div>
+
+        <!-- Module 5 -->
+        <div class="module-card" data-module="5">
+            <div class="module-glow"></div>
+            <div class="module-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="16 18 22 12 16 6" />
+                    <polyline points="8 6 2 12 8 18" />
+                </svg>
+            </div>
+            <h3>Website Fingerprinting</h3>
+            <p>Identify the technology stack powering target web apps — servers, languages, CMS, frameworks, and CDNs.</p>
+            <div class="module-features">
+                <span class="feature-tag">Server & Language</span>
+                <span class="feature-tag">CMS Detection</span>
+                <span class="feature-tag">CDN & ALPN</span>
+            </div>
+            <a href="/fingerprint" class="module-btn">
+                <span>Access Module</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+            </a>
+        </div>
+
+        <!-- Module 6 -->
+        <div class="module-card" data-module="6">
+            <div class="module-glow"></div>
+            <div class="module-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/>
+                    <line x1="4" y1="22" x2="4" y2="15"/>
+                </svg>
+            </div>
+            <h3>Subdomain Finder</h3>
+            <p>Enumerate target subdomains passively using Certificate Transparency logs and DNS resolution mapping.</p>
+            <div class="module-features">
+                <span class="feature-tag">Passive CT Logs</span>
+                <span class="feature-tag">DNS Resolution</span>
+                <span class="feature-tag">Active Checks</span>
+            </div>
+            <a href="/subdomain" class="module-btn">
                 <span>Access Module</span>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M5 12h14M12 5l7 7-7 7"/>
