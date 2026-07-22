@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Module 5: Website Fingerprinting
+Module 4: Website Fingerprinting
 Performs passive reconnaissance to identify technologies used by a target website.
 """
 

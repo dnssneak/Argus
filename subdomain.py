@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Module 6: Subdomain Finder
+Module 5: Subdomain Finder
 Enumerates subdomains passively using CT logs and a common wordlist lookup, resolving IPs.
 """
 

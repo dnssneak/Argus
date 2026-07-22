@@ -1,5 +1,5 @@
 // ============================================
-// SENTINELRECON - INTERACTIONS & ANIMATIONS
+// ARGUS - INTERACTIONS & ANIMATIONS
 // ============================================
 
 document.addEventListener('DOMContentLoaded', function() {

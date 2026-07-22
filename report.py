@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Module 4: Report Generation
+Module 6: Report Generation
 Compiles scan results into downloadable TXT and HTML reports.
 """
 
@@ -56,7 +56,7 @@ class ReportGenerator:
 
         # Header Block
         lines.append("+" + "-" * (width - 2) + "+")
-        lines.append("|" + "SENTINELRECON SECURITY ASSESSMENT".center(width - 2) + "|")
+        lines.append("|" + "ARGUS SECURITY ASSESSMENT".center(width - 2) + "|")
         lines.append("|" + f"Generated: {self.timestamp}".center(width - 2) + "|")
         lines.append("+" + "-" * (width - 2) + "+")
         lines.append("")
@@ -229,7 +229,7 @@ class ReportGenerator:
         lines.append("")
 
         # Website Fingerprinting Section
-        lines.append("[ 5. WEBSITE FINGERPRINTING ]")
+        lines.append("[ 4. WEBSITE FINGERPRINTING ]")
         lines.append("=" * width)
         if self.fingerprint_data and not self.fingerprint_data.get("error"):
             fp = self.fingerprint_data
@@ -250,7 +250,7 @@ class ReportGenerator:
         lines.append("")
 
         # Subdomain Finder Section
-        lines.append("[ 6. SUBDOMAIN FINDER ]")
+        lines.append("[ 5. SUBDOMAIN FINDER ]")
         lines.append("=" * width)
         if self.subdomain_data and not self.subdomain_data.get("error"):
             sub_list = self.subdomain_data.get("subdomains", [])
@@ -270,7 +270,7 @@ class ReportGenerator:
         lines.append("")
 
         # Summary Section
-        lines.append("[ 7. EXECUTIVE SUMMARY ]")
+        lines.append("[ 6. EXECUTIVE SUMMARY ]")
         lines.append("=" * width)
         if self.scan_data:
             lines.append(f"  Scan Status       : {self.scan_data.get('scan_status', 'N/A')}")
@@ -304,38 +304,39 @@ class ReportGenerator:
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>SentinelRecon Report - {target}</title>
+    <title>Argus Report - {target}</title>
     <style>
         body {{
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #0f172a;
-            color: #e2e8f0;
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #0a0a0f;
+            color: #f1f0f5;
             line-height: 1.6;
             padding: 20px;
             max-width: 900px;
             margin: 0 auto;
         }}
         h1 {{
-            color: #22d3ee;
+            color: #a855f7;
             text-align: center;
-            border-bottom: 2px solid #334155;
+            border-bottom: 2px solid #2d2d44;
             padding-bottom: 15px;
         }}
         h2 {{
-            color: #38bdf8;
+            color: #8b5cf6;
             margin-top: 30px;
             padding-bottom: 8px;
-            border-bottom: 1px solid #334155;
+            border-bottom: 1px solid #2d2d44;
         }}
         h3 {{
-            color: #67e8f9;
+            color: #d946ef;
             margin-top: 20px;
         }}
         .meta {{
-            background-color: #1e293b;
+            background-color: #1a1a2e;
             padding: 15px;
             border-radius: 8px;
             margin-bottom: 20px;
+            border: 1px solid #2d2d44;
         }}
         .meta-item {{
             display: flex;
@@ -343,35 +344,38 @@ class ReportGenerator:
             padding: 5px 0;
         }}
         .meta-label {{
-            color: #94a3b8;
+            color: #a8a5b8;
         }}
         .meta-value {{
-            color: #f1f5f9;
-            font-family: 'Courier New', monospace;
+            color: #f1f0f5;
+            font-family: 'JetBrains Mono', 'Courier New', monospace;
         }}
         .section {{
-            background-color: #1e293b;
+            background-color: #12121a;
             padding: 20px;
             border-radius: 8px;
             margin-bottom: 20px;
-            border-left: 4px solid #22d3ee;
+            border-left: 4px solid #a855f7;
+            border-top: 1px solid #2d2d44;
+            border-right: 1px solid #2d2d44;
+            border-bottom: 1px solid #2d2d44;
         }}
         .info-row {{
             display: flex;
             justify-content: space-between;
             padding: 8px 0;
-            border-bottom: 1px solid #334155;
+            border-bottom: 1px solid #2d2d44;
         }}
         .info-row:last-child {{
             border-bottom: none;
         }}
         .label {{
-            color: #94a3b8;
+            color: #a8a5b8;
             font-weight: 500;
         }}
         .value {{
-            color: #f1f5f9;
-            font-family: 'Courier New', monospace;
+            color: #f1f0f5;
+            font-family: 'JetBrains Mono', 'Courier New', monospace;
         }}
         .status-open {{
             color: #4ade80;
@@ -381,7 +385,7 @@ class ReportGenerator:
             color: #f87171;
         }}
         .no-data {{
-            color: #94a3b8;
+            color: #6b6680;
             font-style: italic;
         }}
         .error {{
@@ -395,34 +399,37 @@ class ReportGenerator:
         th, td {{
             text-align: left;
             padding: 10px;
-            border-bottom: 1px solid #334155;
+            border-bottom: 1px solid #2d2d44;
         }}
         th {{
-            color: #94a3b8;
+            color: #a8a5b8;
             text-transform: uppercase;
             font-size: 0.85rem;
-            background-color: #0f172a;
+            background-color: #0a0a0f;
         }}
         td {{
-            color: #e2e8f0;
+            color: #f1f0f5;
         }}
         .summary-box {{
-            background-color: #0f172a;
+            background-color: #0a0a0f;
             padding: 15px;
             border-radius: 8px;
             border-left: 4px solid #4ade80;
+            border-top: 1px solid #2d2d44;
+            border-right: 1px solid #2d2d44;
+            border-bottom: 1px solid #2d2d44;
         }}
         .footer {{
             text-align: center;
             margin-top: 40px;
             padding-top: 20px;
-            border-top: 2px solid #334155;
-            color: #94a3b8;
+            border-top: 2px solid #2d2d44;
+            color: #6b6680;
         }}
     </style>
 </head>
 <body>
-    <h1>SentinelRecon Report</h1>
+    <h1>Argus Report</h1>
 
     <div class="meta">
         <div class="meta-item">
@@ -443,7 +450,7 @@ class ReportGenerator:
     {summary_section}
 
     <div class="footer">
-        <p>Generated by SentinelRecon</p>
+        <p>Generated by Argus</p>
     </div>
 </body>
 </html>"""

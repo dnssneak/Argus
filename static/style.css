@@ -1,5 +1,5 @@
 /* ============================================
-   SENTINELRECON - PURPLE & BLACK THEME
+   ARGUS - PURPLE & BLACK THEME
    ============================================ */
 
 /* CSS Variables */
@@ -1089,8 +1089,9 @@ body.no-transition .navbar {
 }
 
 .modules-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
     gap: 2rem;
 }
 
@@ -1102,6 +1103,8 @@ body.no-transition .navbar {
     position: relative;
     overflow: hidden;
     transition: var(--transition);
+    width: calc(33.333% - 1.35rem);
+    min-width: 300px;
 }
 
 .module-glow {
@@ -1747,9 +1750,17 @@ body.no-transition .navbar {
     }
 
     .stats-grid,
-    .modules-grid,
     .action-grid {
         grid-template-columns: 1fr;
+    }
+
+    .modules-grid {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .module-card {
+        width: 100%;
     }
 
     .nav-links {

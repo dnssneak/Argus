@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}SentinelRecon{% endblock %}</title>
+    <title>{% block title %}Argus{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link
@@ -16,10 +16,10 @@
     <script>
         // Check if user has already seen the opening transition in this session
         (function () {
-            if (sessionStorage.getItem('sentinel_session_seen')) {
+            if (sessionStorage.getItem('argus_session_seen')) {
                 document.body.classList.add('no-transition');
             } else {
-                sessionStorage.setItem('sentinel_session_seen', 'true');
+                sessionStorage.setItem('argus_session_seen', 'true');
             }
         })();
     </script>
@@ -44,7 +44,7 @@
         </div>
 
         <!-- Glitch text -->
-        <div class="glitch-loader" data-text="SENTINELRECON">SENTINELRECON</div>
+        <div class="glitch-loader" data-text="ARGUS">ARGUS</div>
 
         <!-- Animated bar -->
         <div class="loader-bar-container">
@@ -72,7 +72,7 @@
                     <path d="M2 12l10 5 10-5" />
                 </svg>
             </div>
-            <span>SentinelRecon</span>
+            <span>Argus</span>
         </div>
         <div class="nav-links">
             <a href="/" class="nav-link {% if request.path == '/' %}active{% endif %}">Home</a>
@@ -97,7 +97,7 @@
 
     <!-- Footer -->
     <footer class="footer">
-        <p>SentinelRecon v1.0 | Educational Cybersecurity Tool</p>
+        <p>Argus v1.0 | Educational Cybersecurity Tool</p>
     </footer>
 
     <script src="{{ url_for('static', filename='script.js') }}"></script>

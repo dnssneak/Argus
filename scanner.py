@@ -18,7 +18,7 @@ class NetworkScanner:
     # Predefined scan commands. Target is inserted at %s.
     SCAN_COMMANDS = {
         "ping": ["nmap", "-sn", "%s"],
-        "full": ["nmap", "-sV", "-p", "21,22,23,25,53,80,110,143,443", "--open", "%s"],
+        "full": ["nmap", "-sV", "-p", "21,22,23,25,53,80,110,135,139,143,443,445,993,995,1433,3306,3389,5432,8080,8443", "--open", "%s"],
     }
 
     def __init__(self, target, scan_type):
