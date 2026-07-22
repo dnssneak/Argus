@@ -102,6 +102,29 @@
         {% endif %}
     </div>
 
+    <!-- IP Geolocation -->
+    <div class="card result-card">
+        <div class="card-header"><h3>IP Geolocation</h3></div>
+        {% if not recon.ip_geolocation.applicable %}
+            <p class="no-data">{{ recon.ip_geolocation.message }}</p>
+        {% elif recon.ip_geolocation.error %}
+            <p class="error">{{ recon.ip_geolocation.error }}</p>
+        {% else %}
+            <div class="info-grid">
+                <div class="info-item"><span class="label">Target IP</span><span class="value">{{ recon.ip_geolocation.ip_address }}</span></div>
+                <div class="info-item"><span class="label">Country</span><span class="value">{{ recon.ip_geolocation.country }}</span></div>
+                <div class="info-item"><span class="label">Region/State</span><span class="value">{{ recon.ip_geolocation.region }}</span></div>
+                <div class="info-item"><span class="label">City</span><span class="value">{{ recon.ip_geolocation.city }}</span></div>
+                <div class="info-item"><span class="label">ISP</span><span class="value">{{ recon.ip_geolocation.isp }}</span></div>
+                <div class="info-item"><span class="label">Organization</span><span class="value">{{ recon.ip_geolocation.org }}</span></div>
+                <div class="info-item"><span class="label">Time Zone</span><span class="value">{{ recon.ip_geolocation.timezone }}</span></div>
+                {% if recon.ip_geolocation.latitude and recon.ip_geolocation.longitude %}
+                <div class="info-item"><span class="label">Coordinates</span><span class="value">{{ recon.ip_geolocation.latitude }}, {{ recon.ip_geolocation.longitude }}</span></div>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+
     <!-- HTTP Headers -->
     <div class="card result-card">
         <div class="card-header"><h3>HTTP Headers</h3></div>

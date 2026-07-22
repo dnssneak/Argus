@@ -1292,6 +1292,14 @@ body.no-transition .navbar {
     margin: 0;
 }
 
+.card h4 {
+    color: var(--text-primary);
+    font-size: 1.1rem;
+    margin-top: 1.75rem;
+    margin-bottom: 0.75rem;
+    font-weight: 600;
+}
+
 .card-icon {
     width: 32px;
     height: 32px;

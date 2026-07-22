@@ -117,7 +117,49 @@ class TargetRecon:
             "dns": self._get_dns(),
             "reverse_dns": self._get_reverse_dns(),
             "http_headers": self._get_http_headers(),
+            "ip_geolocation": self._get_ip_geolocation(),
         }
+
+    def _get_ip_geolocation(self):
+        resolved_ip = None
+        if self.is_ip:
+            resolved_ip = self.target
+        else:
+            try:
+                resolved_ip = socket.gethostbyname(self.domain)
+            except Exception:
+                return {
+                    "applicable": True,
+                    "error": f"Failed to resolve domain name '{self.domain}' to an IP address."
+                }
+
+        try:
+            r = requests.get(f"http://ip-api.com/json/{resolved_ip}", timeout=10)
+            r.raise_for_status()
+            data = r.json()
+            if data.get("status") == "success":
+                return {
+                    "applicable": True,
+                    "ip_address": resolved_ip,
+                    "country": data.get("country", "Not Available"),
+                    "region": data.get("regionName", "Not Available"),
+                    "city": data.get("city", "Not Available"),
+                    "isp": data.get("isp", "Not Available"),
+                    "org": data.get("org", "Not Available"),
+                    "timezone": data.get("timezone", "Not Available"),
+                    "latitude": data.get("lat"),
+                    "longitude": data.get("lon"),
+                }
+            else:
+                return {
+                    "applicable": True,
+                    "error": f"GeoIP API error: {data.get('message', 'Unknown failure')}"
+                }
+        except Exception as e:
+            return {
+                "applicable": True,
+                "error": f"Failed to retrieve geolocation data: {str(e)}"
+            }
 
     def _get_whois(self):
         if self.is_ip:

@@ -142,6 +142,27 @@ class ReportGenerator:
                 lines.append(f"    Error: {reverse.get('error', 'Lookup failed')}")
             lines.append("")
 
+            # IP Geolocation
+            geo = self.recon_data.get("ip_geolocation", {})
+            lines.append("  IP Geolocation:")
+            if geo.get("applicable") and not geo.get("error"):
+                geo_fields = [
+                    ("Target IP", geo.get('ip_address')),
+                    ("Country", geo.get('country')),
+                    ("Region", geo.get('region')),
+                    ("City", geo.get('city')),
+                    ("ISP", geo.get('isp')),
+                    ("Organization", geo.get('org')),
+                    ("Time Zone", geo.get('timezone')),
+                ]
+                for label, val in geo_fields:
+                    lines.append(f"    {label:<12} : {val or 'N/A'}")
+            elif not geo.get("applicable"):
+                lines.append(f"    {geo.get('message', 'N/A')}")
+            else:
+                lines.append(f"    Error: {geo.get('error', 'Lookup failed')}")
+            lines.append("")
+
             # HTTP Headers
             headers = self.recon_data.get("http_headers", {})
             lines.append("  HTTP Headers:")
@@ -465,6 +486,23 @@ class ReportGenerator:
         else:
             reverse_html = f'<p class="no-data">{reverse.get("error", "Lookup failed")}</p>'
 
+        # IP Geolocation
+        geo = self.recon_data.get("ip_geolocation", {})
+        if geo.get("applicable") and not geo.get("error"):
+            geo_html = f"""<div class="info-row"><span class="label">Target IP</span><span class="value">{geo.get('ip_address', 'N/A')}</span></div>
+            <div class="info-row"><span class="label">Country</span><span class="value">{geo.get('country', 'N/A')}</span></div>
+            <div class="info-row"><span class="label">Region/State</span><span class="value">{geo.get('region', 'N/A')}</span></div>
+            <div class="info-row"><span class="label">City</span><span class="value">{geo.get('city', 'N/A')}</span></div>
+            <div class="info-row"><span class="label">ISP</span><span class="value">{geo.get('isp', 'N/A')}</span></div>
+            <div class="info-row"><span class="label">Organization</span><span class="value">{geo.get('org', 'N/A')}</span></div>
+            <div class="info-row"><span class="label">Time Zone</span><span class="value">{geo.get('timezone', 'N/A')}</span></div>"""
+            if geo.get("latitude") and geo.get("longitude"):
+                geo_html += f'<div class="info-row"><span class="label">Coordinates</span><span class="value">{geo.get("latitude")}, {geo.get("longitude")}</span></div>'
+        elif not geo.get("applicable"):
+            geo_html = f'<p class="no-data">{geo.get("message", "N/A")}</p>'
+        else:
+            geo_html = f'<p class="error">{geo.get("error", "Lookup failed")}</p>'
+
         # HTTP Headers
         headers = self.recon_data.get("http_headers", {})
         if not headers.get("error"):
@@ -486,6 +524,7 @@ class ReportGenerator:
             <h3>WHOIS</h3>{whois_html}
             <h3>DNS Records</h3>{dns_html}
             <h3>Reverse DNS</h3>{reverse_html}
+            <h3>IP Geolocation</h3>{geo_html}
             <h3>HTTP Headers</h3>{headers_html}
         </div>"""
 
