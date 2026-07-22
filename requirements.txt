@@ -1,0 +1,8 @@
+# Requirements
+
+flask
+python-whois
+dnspython
+requests
+psutil
+python-nmap

@@ -1,0 +1,69 @@
+==================================================
+               SentinelRecon Report
+==================================================
+
+Scan Date : 2026-07-22 00:55:54
+Target    : google.com
+
+--------------------------------------------------
+System Information
+--------------------------------------------------
+Operating System  : Windows 11
+Hostname          : DESKTOP-B6860O9
+Current User      : Yahya Tamimy
+Local IP Address  : 192.168.100.169
+Public IP Address : 154.192.234.185
+Network Interfaces:
+  - Ethernet : 169.254.124.10
+  - Ethernet 2 : 192.168.56.1
+  - Local Area Connection* 1 : 169.254.46.206
+  - Local Area Connection* 2 : 169.254.37.106
+  - VMware Network Adapter VMnet1 : 192.168.22.1
+  - VMware Network Adapter VMnet8 : 192.168.79.1
+  - Wi-Fi : 192.168.100.169
+  - Bluetooth Network Connection : 169.254.9.185
+  - Loopback Pseudo-Interface 1 : 127.0.0.1
+
+--------------------------------------------------
+Information Gathering
+--------------------------------------------------
+WHOIS Information:
+  Registrar       : MarkMonitor, Inc.
+  Creation Date   : 1997-09-15
+  Expiration Date : 2028-09-14
+  Updated Date    : 2019-09-09
+  Status          : ['clientDeleteProhibited https://icann.org/epp#clientDeleteProhibited', 'clientTransferProhibited https://icann.org/epp#clientTransferProhibited', 'clientUpdateProhibited https://icann.org/epp#clientUpdateProhibited', 'serverDeleteProhibited https://icann.org/epp#serverDeleteProhibited', 'serverTransferProhibited https://icann.org/epp#serverTransferProhibited', 'serverUpdateProhibited https://icann.org/epp#serverUpdateProhibited', 'clientUpdateProhibited (https://www.icann.org/epp#clientUpdateProhibited)', 'clientTransferProhibited (https://www.icann.org/epp#clientTransferProhibited)', 'clientDeleteProhibited (https://www.icann.org/epp#clientDeleteProhibited)', 'serverUpdateProhibited (https://www.icann.org/epp#serverUpdateProhibited)', 'serverTransferProhibited (https://www.icann.org/epp#serverTransferProhibited)', 'serverDeleteProhibited (https://www.icann.org/epp#serverDeleteProhibited)']
+DNS Records:
+  A : 142.250.202.78
+  MX : smtp.google.com.
+  NS : ns4.google.com., ns1.google.com., ns2.google.com., ns3.google.com.
+  TXT : onetrust-domain-verification=0d477fe608074e6f9c12bca7826035cc, onetrust-domain-verification=6d685f1d41a94696ad7ef771f68993e0, google-site-verification=TV9-DBe4R80X4v0M4U_bd_J9cpOJM0nikft0jAgjmsQ, work-accounts-domain-verification=Tcj6JjIMZOw2KsSEw2Nt2rLae89tN6, docusign=05958488-4752-4ef2-95eb-aa7ba8a3bd0e, apple-domain-verification=30afIBcvSuDV2PLX, google-site-verification=wD8N7i1JTNTkezJ49swvWW48f8_9xveREV4oB-0Hf5o, cisco-ci-domain-verification=47c38bc8c4b74b7233e9053220c1bbe76bcc1cd33c7acf7acd36cd6a5332004b, v=spf1 include:_spf.google.com ~all, MS=E4A68B9AB2BB9670BCE15412F62916164C0B20BB, docusign=1b0a6754-49b1-4db5-8540-d2c12664b289, Z29vZ2xl, facebook-domain-verification=22rm551cu4k0ab0bxsw536tlds4h95, google-site-verification=4ibFUgB-wXLQ_S7vsXVomSTVamuOXBiVAzpR5IZ87D0, globalsign-smime-dv=CDYX+XFHUw2wml6/Gb8+59BsH31KzUr6c1l2BPvqKX8=
+Reverse DNS: Reverse DNS only applicable for IP addresses
+HTTP Headers:
+  Status Code : 200 OK
+  Server      : gws
+  Content-Type: text/html; charset=ISO-8859-1
+
+--------------------------------------------------
+Network Scan
+--------------------------------------------------
+Host Status : Up
+Scan Status : Completed
+Open Ports:
+  80/TCP - Open
+  443/TCP - Open
+Services:
+  80/TCP - http (gws)
+  443/TCP - ssl/https (gws)
+Total Open Ports: 2
+
+--------------------------------------------------
+Summary
+--------------------------------------------------
+Scan Completion Status : Completed
+Total Open Ports       : 2
+Overall Outcome        : Scan completed successfully
+
+==================================================
+                  End of Report
+==================================================

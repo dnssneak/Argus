@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}SentinelRecon{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <script>
+        // Check if user has already seen the opening transition in this session
+        (function () {
+            if (sessionStorage.getItem('sentinel_session_seen')) {
+                document.body.classList.add('no-transition');
+            } else {
+                sessionStorage.setItem('sentinel_session_seen', 'true');
+            }
+        })();
+    </script>
+
+    <!-- Opening Transition -->
+    <div class="page-overlay">
+        <!-- Corner brackets -->
+        <div class="corner-bracket tl"></div>
+        <div class="corner-bracket tr"></div>
+        <div class="corner-bracket bl"></div>
+        <div class="corner-bracket br"></div>
+
+        <!-- Scanline effect -->
+        <div class="scanlines"></div>
+
+        <!-- Animated rings -->
+        <div class="loader-ring">
+            <div class="hex-ring"></div>
+            <div class="hex-ring"></div>
+            <div class="hex-ring"></div>
+            <div class="hex-ring"></div>
+        </div>
+
+        <!-- Glitch text -->
+        <div class="glitch-loader" data-text="SENTINELRECON">SENTINELRECON</div>
+
+        <!-- Animated bar -->
+        <div class="loader-bar-container">
+            <div class="loader-bar-track"></div>
+        </div>
+
+        <!-- Percentage -->
+        <div class="loader-percent">100</div>
+
+        <!-- Status -->
+        <div class="loader-status">ESTABLISHING <span>//</span> SECURE UPLINK</div>
+    </div>
+
+    <!-- Animated Background -->
+    <div class="bg-grid"></div>
+    <div class="bg-glow"></div>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-brand">
+            <div class="logo">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                    <path d="M2 17l10 5 10-5" />
+                    <path d="M2 12l10 5 10-5" />
+                </svg>
+            </div>
+            <span>SentinelRecon</span>
+        </div>
+        <div class="nav-links">
+            <a href="/" class="nav-link {% if request.path == '/' %}active{% endif %}">Home</a>
+            <a href="/dashboard" class="nav-link {% if request.path == '/dashboard' %}active{% endif %}">Dashboard</a>
+            <a href="/recon" class="nav-link {% if request.path == '/recon' %}active{% endif %}">Recon</a>
+            <a href="/scan" class="nav-link {% if request.path == '/scan' %}active{% endif %}">Scan</a>
+            <a href="/report" class="nav-link {% if request.path == '/report' %}active{% endif %}">Report</a>
+        </div>
+        <div class="nav-toggle" onclick="toggleMenu()">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>SentinelRecon v1.0 | Educational Cybersecurity Tool</p>
+    </footer>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+
+</html>

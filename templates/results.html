@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}SentinelRecon - Results{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <h1 class="page-title">Results</h1>
+</section>
+
+{% if recon %}
+<!-- Recon results displayed on recon page -->
+{% endif %}
+
+{% if scan %}
+<!-- Scan results displayed on scan page -->
+{% endif %}
+
+<section class="card">
+    <p class="no-data">Navigate to <a href="/recon">Recon</a>, <a href="/scan">Scan</a>, or <a href="/report">Report</a> to see results.</p>
+</section>
+{% endblock %}

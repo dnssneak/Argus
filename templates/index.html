@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+
+{% block title %}SentinelRecon - Home{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero">
+    <div class="hero-content">
+        <div class="hero-badge">
+            <span class="pulse-dot"></span>
+            <span>v1.0 Active</span>
+        </div>
+        <h1 class="hero-title">
+            <span class="glitch" data-text="SentinelRecon">SentinelRecon</span>
+        </h1>
+        <p class="hero-subtitle">Advanced Reconnaissance & Network Scanning Platform</p>
+        <p class="hero-desc">Automated information gathering and network scanning for cybersecurity education. Built for students, enthusiasts, and professionals.</p>
+        <div class="hero-actions">
+            <a href="/dashboard" class="btn btn-primary">
+                <span>Launch Dashboard</span>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+            </a>
+            <a href="#modules" class="btn btn-secondary">Explore Modules</a>
+        </div>
+    </div>
+    <div class="hero-visual">
+        <div class="terminal-window">
+            <div class="terminal-header">
+                <div class="terminal-dots">
+                    <span></span><span></span><span></span>
+                </div>
+                <span class="terminal-title">sentinel@recon:~</span>
+            </div>
+            <div class="terminal-body">
+                <div class="terminal-line"><span class="prompt">$</span> <span class="cmd">nmap -sV target.com</span></div>
+                <div class="terminal-line output">Starting Nmap 7.95...</div>
+                <div class="terminal-line output">PORT   STATE SERVICE</div>
+                <div class="terminal-line output">22/tcp open  ssh</div>
+                <div class="terminal-line output">80/tcp open  http</div>
+                <div class="terminal-line"><span class="prompt">$</span> <span class="cursor">_</span></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Stats Section -->
+<section class="stats-section">
+    <div class="stats-grid">
+        <div class="stat-card" data-count="3">
+            <div class="stat-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="2" y="3" width="20" height="14" rx="2"/>
+                    <line x1="8" y1="21" x2="16" y2="21"/>
+                    <line x1="12" y1="17" x2="12" y2="21"/>
+                </svg>
+            </div>
+            <div class="stat-number" data-target="3">0</div>
+            <div class="stat-label">Active Modules</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
+            </div>
+            <div class="stat-number" data-target="100">0</div>
+            <div class="stat-label">% Secure</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
+                </svg>
+            </div>
+            <div class="stat-number" data-target="2">0</div>
+            <div class="stat-label">Sec Response</div>
+        </div>
+    </div>
+</section>
+
+<!-- Modules Section -->
+<section class="modules-section" id="modules">
+    <div class="section-header">
+        <span class="section-tag">Core Features</span>
+        <h2 class="section-title">Reconnaissance Modules</h2>
+        <p class="section-desc">Three powerful modules designed for comprehensive target analysis</p>
+    </div>
+
+    <div class="modules-grid">
+        <!-- Module 1 -->
+        <div class="module-card" data-module="1">
+            <div class="module-glow"></div>
+            <div class="module-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="2" y="3" width="20" height="14" rx="2"/>
+                    <line x1="8" y1="21" x2="16" y2="21"/>
+                    <line x1="12" y1="17" x2="12" y2="21"/>
+                </svg>
+            </div>
+            <h3>System Information</h3>
+            <p>Discover your local machine's identity — OS, hostname, network interfaces, and IP addresses.</p>
+            <div class="module-features">
+                <span class="feature-tag">OS Detection</span>
+                <span class="feature-tag">Network Interfaces</span>
+                <span class="feature-tag">IP Addresses</span>
+            </div>
+            <a href="/dashboard" class="module-btn">
+                <span>Access Module</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+            </a>
+        </div>
+
+        <!-- Module 2 -->
+        <div class="module-card" data-module="2">
+            <div class="module-glow"></div>
+            <div class="module-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="2" y1="12" x2="22" y2="12"/>
+                    <path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/>
+                </svg>
+            </div>
+            <h3>Information Gathering</h3>
+            <p>Collect publicly available data — WHOIS, DNS records, reverse DNS, and HTTP headers.</p>
+            <div class="module-features">
+                <span class="feature-tag">WHOIS Lookup</span>
+                <span class="feature-tag">DNS Records</span>
+                <span class="feature-tag">HTTP Headers</span>
+            </div>
+            <a href="/recon" class="module-btn">
+                <span>Access Module</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+            </a>
+        </div>
+
+        <!-- Module 3 -->
+        <div class="module-card" data-module="3">
+            <div class="module-glow"></div>
+            <div class="module-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
+                </svg>
+            </div>
+            <h3>Network Scanning</h3>
+            <p>Active reconnaissance with Nmap — ping scans, port discovery, and service detection.</p>
+            <div class="module-features">
+                <span class="feature-tag">Ping Scan</span>
+                <span class="feature-tag">Port Discovery</span>
+                <span class="feature-tag">Service Detection</span>
+            </div>
+            <a href="/scan" class="module-btn">
+                <span>Access Module</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="cta-section">
+    <div class="cta-content">
+        <h2>Ready to Generate Reports?</h2>
+        <p>Compile all findings into professional HTML or TXT reports with one click.</p>
+        <a href="/report" class="btn btn-primary btn-large">
+            <span>Generate Report</span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+        </a>
+    </div>
+</section>
+{% endblock %}

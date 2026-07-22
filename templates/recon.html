@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}SentinelRecon - Reconnaissance{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <span class="page-tag">Module 2</span>
+    <h1 class="page-title">Information Gathering</h1>
+    <p class="page-desc">Collect publicly available data about your target</p>
+</section>
+
+<!-- Input Form -->
+<section class="card">
+    <div class="card-header">
+        <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="2" y1="12" x2="22" y2="12"/>
+                <path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/>
+            </svg>
+        </div>
+        <h2>Target Input</h2>
+    </div>
+    <form action="/recon" method="POST" class="target-form">
+        <input type="text" name="target" placeholder="Enter domain or IP (e.g., google.com or 8.8.8.8)" required>
+        <button type="submit" class="btn btn-primary">
+            <span>Start Recon</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+        </button>
+    </form>
+    {% if error %}
+    <p class="error">{{ error }}</p>
+    {% endif %}
+</section>
+
+<!-- Results -->
+{% if recon %}
+<section class="results-container">
+    <div class="results-header">
+        <h2>Results for <span class="target-highlight">{{ recon.target }}</span></h2>
+    </div>
+
+    <!-- WHOIS -->
+    <div class="card result-card">
+        <div class="card-header">
+            <h3>WHOIS Information</h3>
+        </div>
+        {% if not recon.whois.applicable %}
+            <p class="no-data">{{ recon.whois.message }}</p>
+        {% elif recon.whois.error %}
+            <p class="error">{{ recon.whois.error }}</p>
+        {% else %}
+            <div class="info-grid">
+                <div class="info-item"><span class="label">Registrar</span><span class="value">{{ recon.whois.registrar }}</span></div>
+                <div class="info-item"><span class="label">Creation Date</span><span class="value">{{ recon.whois.creation_date }}</span></div>
+                <div class="info-item"><span class="label">Expiration Date</span><span class="value">{{ recon.whois.expiration_date }}</span></div>
+                <div class="info-item"><span class="label">Updated Date</span><span class="value">{{ recon.whois.updated_date }}</span></div>
+                <div class="info-item"><span class="label">Status</span><span class="value">{{ recon.whois.status }}</span></div>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- DNS -->
+    <div class="card result-card">
+        <div class="card-header"><h3>DNS Records</h3></div>
+        {% if not recon.dns.applicable %}
+            <p class="no-data">{{ recon.dns.message }}</p>
+        {% else %}
+            {% set records = recon.dns.records %}
+            <div class="dns-records">
+                <div class="record-group">
+                    <span class="record-type">A Records</span>
+                    {% if records.a %}{% for r in records.a %}<span class="record-value">{{ r }}</span>{% endfor %}{% else %}<span class="no-data">None found</span>{% endif %}
+                </div>
+                <div class="record-group">
+                    <span class="record-type">MX Records</span>
+                    {% if records.mx %}{% for r in records.mx %}<span class="record-value">{{ r }}</span>{% endfor %}{% else %}<span class="no-data">None found</span>{% endif %}
+                </div>
+                <div class="record-group">
+                    <span class="record-type">NS Records</span>
+                    {% if records.ns %}{% for r in records.ns %}<span class="record-value">{{ r }}</span>{% endfor %}{% else %}<span class="no-data">None found</span>{% endif %}
+                </div>
+                <div class="record-group">
+                    <span class="record-type">TXT Records</span>
+                    {% if records.txt %}{% for r in records.txt %}<span class="record-value">{{ r }}</span>{% endfor %}{% else %}<span class="no-data">None found</span>{% endif %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Reverse DNS -->
+    <div class="card result-card">
+        <div class="card-header"><h3>Reverse DNS</h3></div>
+        {% if not recon.reverse_dns.applicable %}
+            <p class="no-data">{{ recon.reverse_dns.message }}</p>
+        {% elif recon.reverse_dns.error %}
+            <p class="no-data">{{ recon.reverse_dns.error }}</p>
+        {% else %}
+            <div class="info-item"><span class="label">Hostname</span><span class="value">{{ recon.reverse_dns.hostname }}</span></div>
+        {% endif %}
+    </div>
+
+    <!-- HTTP Headers -->
+    <div class="card result-card">
+        <div class="card-header"><h3>HTTP Headers</h3></div>
+        {% if recon.http_headers.error %}
+            <p class="error">{{ recon.http_headers.error }}</p>
+        {% else %}
+            <div class="info-grid">
+                <div class="info-item"><span class="label">Status Code</span><span class="value">{{ recon.http_headers.status_code }}</span></div>
+                <div class="info-item"><span class="label">Server</span><span class="value">{{ recon.http_headers.server }}</span></div>
+                <div class="info-item"><span class="label">Content-Type</span><span class="value">{{ recon.http_headers.content_type }}</span></div>
+                <div class="info-item"><span class="label">Content-Length</span><span class="value">{{ recon.http_headers.content_length }}</span></div>
+            </div>
+            <h4>Security Headers</h4>
+            <div class="info-grid">
+                {% for header, value in recon.http_headers.security_headers.items() %}
+                <div class="info-item"><span class="label">{{ header }}</span><span class="value">{{ value }}</span></div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+</section>
+{% endif %}
+{% endblock %}
