@@ -6,3 +6,4 @@ dnspython
 requests
 psutil
 python-nmap
+beautifulsoup4

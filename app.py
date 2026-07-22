@@ -4,6 +4,7 @@ from flask import Flask, render_template, request, send_from_directory
 from recon import SystemInfo, TargetRecon
 from scanner import NetworkScanner
 from report import ReportGenerator
+from fingerprint import WebsiteFingerprinter
 
 app = Flask(__name__)
 
@@ -35,6 +36,21 @@ def recon():
         return render_template("recon.html", recon=recon_data)
 
     return render_template("recon.html")
+
+
+@app.route("/fingerprint", methods=["GET", "POST"])
+def fingerprint():
+    """Website fingerprinting page."""
+    if request.method == "POST":
+        target = request.form.get("target", "").strip()
+        if not target:
+            return render_template("fingerprint.html", error="Please enter a URL or domain.")
+
+        printer = WebsiteFingerprinter(target)
+        fingerprint_data = printer.collect()
+        return render_template("fingerprint.html", fingerprint=fingerprint_data)
+
+    return render_template("fingerprint.html")
 
 
 @app.route("/scan", methods=["GET", "POST"])
