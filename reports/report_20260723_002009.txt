@@ -1,11 +1,11 @@
 +---------------------------------------------------------------+
 |                   ARGUS SECURITY ASSESSMENT                   |
-|                 Generated: 2026-07-22 01:45:25                |
+|                 Generated: 2026-07-23 00:20:09                |
 +---------------------------------------------------------------+
 
 [ REPORT TARGET ]
   Target Host : N/A
-  Report Time : 2026-07-22 01:45:25
+  Report Time : 2026-07-23 00:20:09
 
 [ 1. SYSTEM INFORMATION ]
 =================================================================
@@ -34,7 +34,15 @@
 =================================================================
   No network scan data available.
 
-[ 4. EXECUTIVE SUMMARY ]
+[ 4. WEBSITE FINGERPRINTING ]
+=================================================================
+    No website fingerprinting data available.
+
+[ 5. SUBDOMAIN FINDER ]
+=================================================================
+    No subdomain data available.
+
+[ 6. EXECUTIVE SUMMARY ]
 =================================================================
   No scan data available for summary.
 
