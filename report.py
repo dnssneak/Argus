@@ -229,20 +229,51 @@ class ReportGenerator:
         lines.append("")
 
         # Website Fingerprinting Section
-        lines.append("[ 4. WEBSITE FINGERPRINTING ]")
+        lines.append("[ 4. WEBSITE FINGERPRINTING & SCRAPING ]")
         lines.append("=" * width)
         if self.fingerprint_data and not self.fingerprint_data.get("error"):
             fp = self.fingerprint_data
-            fp_fields = [
-                ("Web Server", fp.get("web_server")),
-                ("Backend Tech", fp.get("backend")),
-                ("CMS", fp.get("cms")),
-                ("Frontend Framework", fp.get("frontend")),
-                ("CDN", fp.get("cdn")),
-                ("HTTP Protocol", fp.get("http_version")),
-            ]
-            for label, val in fp_fields:
-                lines.append(f"    {label:<28} : {val or 'N/A'}")
+            ts = fp.get("tech_stack") or {}
+            meta = fp.get("metadata") or {}
+            contacts = fp.get("contacts_and_links") or {}
+            forms = fp.get("forms_summary") or {}
+            assets = fp.get("assets") or {}
+
+            # Tech Stack
+            lines.append("  Technology Stack:")
+            lines.append(f"    {'Web Server':<24} : {ts.get('web_server') or fp.get('web_server', 'Unknown')}")
+            lines.append(f"    {'Backend Tech':<24} : {ts.get('backend') or fp.get('backend', 'Unknown')}")
+            lines.append(f"    {'CMS':<24} : {ts.get('cms') or fp.get('cms', 'None Detected')}")
+            lines.append(f"    {'Frontend Frameworks':<24} : {ts.get('frontend_frameworks') or fp.get('frontend', 'None Detected')}")
+            lines.append(f"    {'CSS Frameworks':<24} : {ts.get('css_frameworks', 'None Detected')}")
+            lines.append(f"    {'CDN / Security':<24} : {ts.get('cdn_security') or fp.get('cdn', 'None Detected')}")
+            lines.append(f"    {'HTTP Protocol':<24} : {ts.get('http_version') or fp.get('http_version', 'HTTP/1.1')}")
+            lines.append("")
+
+            # Scraped Metadata
+            if meta:
+                lines.append("  Scraped Web Metadata:")
+                lines.append(f"    {'Page Title':<24} : {meta.get('title', 'N/A')}")
+                lines.append(f"    {'Meta Description':<24} : {meta.get('description', 'N/A')}")
+                lines.append(f"    {'Language':<24} : {meta.get('lang', 'N/A')}")
+                lines.append("")
+
+            # Links & Contacts
+            if contacts:
+                lines.append("  Links & Contacts Scraped:")
+                lines.append(f"    Internal Links Count     : {contacts.get('internal_links_count', 0)}")
+                lines.append(f"    External Links Count     : {contacts.get('external_links_count', 0)}")
+                emails = contacts.get("emails", [])
+                if emails:
+                    lines.append(f"    Scraped Emails           : {', '.join(emails)}")
+                lines.append("")
+
+            # Assets & Forms
+            if assets or forms:
+                lines.append("  Assets & Structure:")
+                lines.append(f"    Total HTML Forms         : {forms.get('total', 0)}")
+                lines.append(f"    Scraped Script Sources   : {len(assets.get('scripts', []))}")
+                lines.append(f"    Scraped Stylesheets      : {len(assets.get('stylesheets', []))}")
         elif self.fingerprint_data and self.fingerprint_data.get("error"):
             lines.append(f"    Error: {self.fingerprint_data.get('error')}")
         else:
@@ -665,32 +696,43 @@ class ReportGenerator:
             return f'<div class="section"><h2>Website Fingerprinting</h2><p class="error">{self.fingerprint_data.get("error")}</p></div>'
 
         fp = self.fingerprint_data
+        ts = fp.get("tech_stack") or {}
+        meta = fp.get("metadata") or {}
+        contacts = fp.get("contacts_and_links") or {}
+
+        web_server = ts.get('web_server') or fp.get('web_server', 'Unknown')
+        backend = ts.get('backend') or fp.get('backend', 'Unknown')
+        cms = ts.get('cms') or fp.get('cms', 'None Detected')
+        frontend = ts.get('frontend_frameworks') or fp.get('frontend', 'None Detected')
+        css = ts.get('css_frameworks', 'None Detected')
+        cdn = ts.get('cdn_security') or fp.get('cdn', 'None Detected')
+        http_ver = ts.get('http_version') or fp.get('http_version', 'HTTP/1.1')
+
+        meta_html = ""
+        if meta:
+            meta_html = f"""<h3>Scraped Metadata</h3>
+            <div class="info-row"><span class="label">Title</span><span class="value">{meta.get('title', 'N/A')}</span></div>
+            <div class="info-row"><span class="label">Description</span><span class="value">{meta.get('description', 'N/A')}</span></div>"""
+
+        contacts_html = ""
+        if contacts:
+            emails = ", ".join(contacts.get("emails", [])) or "None Detected"
+            contacts_html = f"""<h3>Links & Scraped Contacts</h3>
+            <div class="info-row"><span class="label">Discovered Links</span><span class="value">{contacts.get('internal_links_count', 0)} Internal | {contacts.get('external_links_count', 0)} External</span></div>
+            <div class="info-row"><span class="label">Scraped Emails</span><span class="value">{emails}</span></div>"""
+
         return f"""<div class="section">
-            <h2>Website Fingerprinting</h2>
-            <div class="info-row">
-                <span class="label">Web Server</span>
-                <span class="value">{fp.get('web_server', 'Unknown')}</span>
-            </div>
-            <div class="info-row">
-                <span class="label">Backend Technology</span>
-                <span class="value">{fp.get('backend', 'Unknown')}</span>
-            </div>
-            <div class="info-row">
-                <span class="label">Content Management System</span>
-                <span class="value">{fp.get('cms', 'None Detected')}</span>
-            </div>
-            <div class="info-row">
-                <span class="label">Frontend Framework</span>
-                <span class="value">{fp.get('frontend', 'None Detected')}</span>
-            </div>
-            <div class="info-row">
-                <span class="label">Content Delivery Network</span>
-                <span class="value">{fp.get('cdn', 'None Detected')}</span>
-            </div>
-            <div class="info-row">
-                <span class="label">HTTP Protocol</span>
-                <span class="value">{fp.get('http_version', 'HTTP/1.1')}</span>
-            </div>
+            <h2>Website Fingerprinting & Scraping</h2>
+            <h3>Technology Stack</h3>
+            <div class="info-row"><span class="label">Web Server</span><span class="value">{web_server}</span></div>
+            <div class="info-row"><span class="label">Backend Technology</span><span class="value">{backend}</span></div>
+            <div class="info-row"><span class="label">Content Management System</span><span class="value">{cms}</span></div>
+            <div class="info-row"><span class="label">Frontend Frameworks</span><span class="value">{frontend}</span></div>
+            <div class="info-row"><span class="label">CSS Frameworks</span><span class="value">{css}</span></div>
+            <div class="info-row"><span class="label">CDN / Security</span><span class="value">{cdn}</span></div>
+            <div class="info-row"><span class="label">HTTP Protocol</span><span class="value">{http_ver}</span></div>
+            {meta_html}
+            {contacts_html}
         </div>"""
 
     def _build_subdomain_html(self):

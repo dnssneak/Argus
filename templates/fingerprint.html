@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 
-{% block title %}Argus - Website Fingerprinting{% endblock %}
+{% block title %}Argus - Dynamic Web Scraping & Fingerprinting{% endblock %}
 
 {% block content %}
 <section class="page-header">
     <span class="page-tag">Module 4</span>
-    <h1 class="page-title">Website Fingerprinting</h1>
-    <p class="page-desc">Analyze and detect technologies powering the target website</p>
+    <h1 class="page-title">Web Footprinting & Scraping</h1>
+    <p class="page-desc">Scrape live metadata, assets, links, and profile tech stack signatures</p>
 </section>
 
 <!-- Input Form -->
@@ -22,7 +22,7 @@
     <form action="/fingerprint" method="POST" class="target-form">
         <input type="text" name="target" placeholder="Enter domain or URL (e.g., example.com or https://github.com)" required>
         <button type="submit" class="btn btn-primary">
-            <span>Analyze Site</span>
+            <span>Scrape & Analyze</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M5 12h14M12 5l7 7-7 7"/>
             </svg>
@@ -38,6 +38,11 @@
 <section class="results-container">
     <div class="results-header">
         <h2>Results for <span class="target-highlight">{{ fingerprint.target }}</span></h2>
+        {% if fingerprint.status_code %}
+        <span class="status-badge" style="background: rgba(0, 230, 153, 0.15); color: #00e699; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; border: 1px solid rgba(0, 230, 153, 0.3);">
+            {{ fingerprint.status_code }} ({{ fingerprint.page_size_kb }} KB)
+        </span>
+        {% endif %}
     </div>
 
     {% if fingerprint.error %}
@@ -55,8 +60,8 @@
             <p class="error" style="color: var(--accent-red);">{{ fingerprint.error }}</p>
         </div>
     {% else %}
-        <!-- Technology Fingerprint Profile -->
-        <div class="card result-card">
+        <!-- Technology Stack Profile -->
+        <div class="card result-card" style="margin-bottom: 1.5rem;">
             <div class="card-header">
                 <div class="card-icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -64,32 +69,207 @@
                         <polyline points="8 6 2 12 8 18" />
                     </svg>
                 </div>
-                <h3>Technology Profile</h3>
+                <h3>Technology Stack Profile</h3>
             </div>
             <div class="info-grid">
                 <div class="info-item">
                     <span class="label">Web Server</span>
-                    <span class="value">{{ fingerprint.web_server }}</span>
+                    <span class="value">{{ fingerprint.tech_stack.web_server }}</span>
                 </div>
                 <div class="info-item">
                     <span class="label">Backend Technology</span>
-                    <span class="value">{{ fingerprint.backend }}</span>
+                    <span class="value">{{ fingerprint.tech_stack.backend }}</span>
                 </div>
                 <div class="info-item">
                     <span class="label">Content Management System</span>
-                    <span class="value">{{ fingerprint.cms }}</span>
+                    <span class="value">{{ fingerprint.tech_stack.cms }}</span>
                 </div>
                 <div class="info-item">
-                    <span class="label">Frontend Framework</span>
-                    <span class="value">{{ fingerprint.frontend }}</span>
+                    <span class="label">Frontend Frameworks</span>
+                    <span class="value">{{ fingerprint.tech_stack.frontend_frameworks }}</span>
                 </div>
                 <div class="info-item">
-                    <span class="label">Content Delivery Network</span>
-                    <span class="value">{{ fingerprint.cdn }}</span>
+                    <span class="label">CSS Frameworks</span>
+                    <span class="value">{{ fingerprint.tech_stack.css_frameworks }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">CDN / Security Provider</span>
+                    <span class="value">{{ fingerprint.tech_stack.cdn_security }}</span>
                 </div>
                 <div class="info-item">
                     <span class="label">HTTP Protocol</span>
-                    <span class="value">{{ fingerprint.http_version }}</span>
+                    <span class="value">{{ fingerprint.tech_stack.http_version }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Final Scraped URL</span>
+                    <span class="value" style="word-break: break-all;">{{ fingerprint.final_url }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scraped Web Page Metadata -->
+        <div class="card result-card" style="margin-bottom: 1.5rem;">
+            <div class="card-header">
+                <div class="card-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                </div>
+                <h3>Scraped Web Metadata</h3>
+            </div>
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="label">Page Title</span>
+                    <span class="value">{{ fingerprint.metadata.title }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Language</span>
+                    <span class="value">{{ fingerprint.metadata.lang }}</span>
+                </div>
+                <div class="info-item" style="grid-column: 1 / -1;">
+                    <span class="label">Meta Description</span>
+                    <span class="value">{{ fingerprint.metadata.description }}</span>
+                </div>
+                {% if fingerprint.metadata.keywords != 'Not Found' %}
+                <div class="info-item" style="grid-column: 1 / -1;">
+                    <span class="label">Meta Keywords</span>
+                    <span class="value">{{ fingerprint.metadata.keywords }}</span>
+                </div>
+                {% endif %}
+                {% if fingerprint.metadata.canonical != 'Not Found' %}
+                <div class="info-item" style="grid-column: 1 / -1;">
+                    <span class="label">Canonical URL</span>
+                    <span class="value" style="word-break: break-all;">{{ fingerprint.metadata.canonical }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Links, Contacts & Form Structure Grid -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
+            <!-- Contacts & Links Card -->
+            <div class="card result-card">
+                <div class="card-header">
+                    <div class="card-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                        </svg>
+                    </div>
+                    <h3>Links & Contacts Scraped</h3>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                    <div>
+                        <span class="label" style="display: block; font-size: 0.8rem; color: var(--text-muted);">Discovered Links</span>
+                        <span class="value" style="font-weight: 600;">{{ fingerprint.contacts_and_links.internal_links_count }} Internal | {{ fingerprint.contacts_and_links.external_links_count }} External</span>
+                    </div>
+
+                    <div>
+                        <span class="label" style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem;">Scraped Emails</span>
+                        {% if fingerprint.contacts_and_links.emails %}
+                            <ul style="list-style: none; padding-left: 0; margin-top: 0.25rem;">
+                            {% for email in fingerprint.contacts_and_links.emails %}
+                                <li style="font-family: monospace; font-size: 0.85rem; color: var(--accent-cyan);">{{ email }}</li>
+                            {% endfor %}
+                            </ul>
+                        {% else %}
+                            <span class="value" style="color: var(--text-muted);">None detected in page source</span>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <span class="label" style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem;">Social Media Links</span>
+                        {% if fingerprint.contacts_and_links.social_links %}
+                            <ul style="list-style: none; padding-left: 0; margin-top: 0.25rem;">
+                            {% for link in fingerprint.contacts_and_links.social_links %}
+                                <li style="margin-bottom: 4px;"><a href="{{ link }}" target="_blank" rel="noopener" style="color: var(--accent-cyan); font-size: 0.85rem; word-break: break-all;">{{ link }}</a></li>
+                            {% endfor %}
+                            </ul>
+                        {% else %}
+                            <span class="value" style="color: var(--text-muted);">None detected</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Page Headings & Forms Card -->
+            <div class="card result-card">
+                <div class="card-header">
+                    <div class="card-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="8" y1="6" x2="21" y2="6"></line>
+                            <line x1="8" y1="12" x2="21" y2="12"></line>
+                            <line x1="8" y1="18" x2="21" y2="18"></line>
+                            <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                            <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                            <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                        </svg>
+                    </div>
+                    <h3>Structure & Form Detection</h3>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                    <div>
+                        <span class="label" style="display: block; font-size: 0.8rem; color: var(--text-muted);">HTML Forms Summary</span>
+                        <span class="value" style="font-weight: 600;">
+                            Total Forms: {{ fingerprint.forms_summary.total }}
+                            {% if fingerprint.forms_summary.has_login %}<span style="color: var(--accent-gold); font-size: 0.8rem; margin-left: 8px;">(Login Form Detected)</span>{% endif %}
+                        </span>
+                    </div>
+
+                    <div>
+                        <span class="label" style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem;">Primary Headings (H1)</span>
+                        {% if fingerprint.headings.h1 %}
+                            <ul style="padding-left: 1.2rem; margin-top: 0.25rem; font-size: 0.85rem;">
+                            {% for h1 in fingerprint.headings.h1 %}
+                                <li>{{ h1 }}</li>
+                            {% endfor %}
+                            </ul>
+                        {% else %}
+                            <span class="value" style="color: var(--text-muted);">No H1 tags found</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scraped Assets (Scripts & Stylesheets) -->
+        <div class="card result-card">
+            <div class="card-header">
+                <div class="card-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                    </svg>
+                </div>
+                <h3>Scraped Web Assets ({{ fingerprint.assets.scripts|length }} Scripts, {{ fingerprint.assets.stylesheets|length }} Stylesheets)</h3>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
+                <div>
+                    <h4 style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.5rem;">JS Script Tag Sources</h4>
+                    {% if fingerprint.assets.scripts %}
+                    <ul style="list-style: none; padding-left: 0; font-family: monospace; font-size: 0.8rem; max-height: 150px; overflow-y: auto;">
+                        {% for script in fingerprint.assets.scripts %}
+                        <li style="margin-bottom: 4px; word-break: break-all; color: var(--accent-cyan);">{{ script }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <p style="font-size: 0.85rem; color: var(--text-muted);">No external scripts found</p>
+                    {% endif %}
+                </div>
+                <div>
+                    <h4 style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.5rem;">CSS Stylesheet Link Hrefs</h4>
+                    {% if fingerprint.assets.stylesheets %}
+                    <ul style="list-style: none; padding-left: 0; font-family: monospace; font-size: 0.8rem; max-height: 150px; overflow-y: auto;">
+                        {% for css in fingerprint.assets.stylesheets %}
+                        <li style="margin-bottom: 4px; word-break: break-all; color: var(--accent-cyan);">{{ css }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <p style="font-size: 0.85rem; color: var(--text-muted);">No external stylesheets found</p>
+                    {% endif %}
                 </div>
             </div>
         </div>
