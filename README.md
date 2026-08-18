@@ -69,26 +69,28 @@ Argus utilizes a modern, clean, and lightweight tech stack:
 
 ```text
 Argus/
-├── app.py                 # Flask web server and routing definitions
-├── recon.py               # Module 1 (SystemInfo) & Module 2 (TargetRecon)
-├── scanner.py             # Module 3 (NetworkScanner - Nmap integration)
-├── fingerprint.py         # Module 4 (WebsiteFingerprinter - Tech stack detection)
-├── subdomain.py           # Module 5 (SubdomainFinder - crt.sh + wordlist)
-├── report.py              # Module 6 (ReportGenerator - HTML & TXT formatting)
-├── requirements.txt       # Python package list
-├── static/                # Static assets
-│   ├── script.js          # Interactive dashboard controls and charts
-│   └── style.css          # Dark-mode security themed styling
-├── templates/             # Jinja2 HTML templates
-│   ├── base.html          # Standard layout container
-│   ├── index.html         # Landing / main portal page
-│   ├── dashboard.html     # System status page
-│   ├── recon.html         # Targets OSINT page
-│   ├── scan.html          # Port scanner configuration & results
-│   ├── fingerprint.html   # Web tech stack results
-│   ├── subdomain.html     # Subdomain listing page
-│   ├── report.html        # Export menu and generator page
-│   └── results.html       # Consolidated quick results view
+├── backend/               # Backend logic & modules
+│   ├── app.py             # Flask web server and routing definitions
+│   ├── recon.py           # Module 1 (SystemInfo) & Module 2 (TargetRecon)
+│   ├── scanner.py         # Module 3 (NetworkScanner - Nmap integration)
+│   ├── fingerprint.py     # Module 4 (WebsiteFingerprinter - Tech stack detection)
+│   ├── subdomain.py       # Module 5 (SubdomainFinder - crt.sh + wordlist)
+│   ├── report.py          # Module 6 (ReportGenerator - HTML & TXT formatting)
+│   └── requirements.txt   # Python package list
+├── frontend/              # Frontend assets and views
+│   ├── static/            # Static assets
+│   │   ├── script.js      # Interactive dashboard controls and charts
+│   │   └── style.css      # Dark-mode security themed styling
+│   └── templates/         # Jinja2 HTML templates
+│       ├── base.html      # Standard layout container
+│       ├── index.html     # Landing / main portal page
+│       ├── dashboard.html # System status page
+│       ├── recon.html     # Targets OSINT page
+│       ├── scan.html      # Port scanner configuration & results
+│       ├── fingerprint.html # Web tech stack results
+│       ├── subdomain.html # Subdomain listing page
+│       ├── report.html    # Export menu and generator page
+│       └── results.html   # Consolidated quick results view
 └── reports/               # Output directory for generated reports (Auto-created)
 ```
 
@@ -133,7 +135,7 @@ Argus/
 
 4. **Install Python dependencies**:
    ```bash
-   pip install -r requirements.txt
+   pip install -r backend/requirements.txt
    ```
 
 ---
@@ -142,7 +144,7 @@ Argus/
 
 1. **Start the local Flask dev server**:
    ```bash
-   python app.py
+   python backend/app.py
    ```
    *By default, the server will launch in debug mode on port `5000`.*
 

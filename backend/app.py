@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# pyrefly: ignore [missing-import]
 from flask import Flask, render_template, request, send_from_directory
 
 from recon import SystemInfo, TargetRecon
@@ -7,7 +8,7 @@ from report import ReportGenerator
 from fingerprint import WebsiteFingerprinter
 from subdomain import SubdomainFinder
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder='../frontend/templates', static_folder='../frontend/static')
 
 
 @app.route("/")
@@ -130,4 +131,6 @@ def results():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    import os
+    port = int(os.environ.get("PORT", 5001))
+    app.run(host="0.0.0.0", port=port, debug=True)

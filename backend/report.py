@@ -20,7 +20,7 @@ class ReportGenerator:
         self.fingerprint_data = fingerprint_data or {}
         self.subdomain_data = subdomain_data or {}
         self.timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        self.report_dir = os.path.join(os.path.dirname(__file__), "reports")
+        self.report_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "reports"))
         os.makedirs(self.report_dir, exist_ok=True)
 
     def generate_txt(self, filename=None):
