@@ -1,6 +1,9 @@
 # Requirements
 
 flask
+sqlalchemy
+pydantic
+pytest
 python-whois
 dnspython
 requests

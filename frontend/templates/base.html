@@ -1,17 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Argus{% endblock %}</title>
+    <title>{% block title %}Argus — Cyber Security Platform{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link
-        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-
 <body>
     <script>
         // Check if user has already seen the opening transition in this session
@@ -44,7 +42,7 @@
         </div>
 
         <!-- Glitch text -->
-        <div class="glitch-loader" data-text="ARGUS">ARGUS</div>
+        <div class="glitch-loader" data-text="ARGUS 2.0">ARGUS 2.0</div>
 
         <!-- Animated bar -->
         <div class="loader-bar-container">
@@ -72,11 +70,13 @@
                     <path d="M2 12l10 5 10-5" />
                 </svg>
             </div>
-            <span>Argus</span>
+            <span>Argus <small style="font-size: 0.65rem; color: var(--accent-purple); border: 1px solid var(--border-accent); padding: 1px 5px; border-radius: 4px; vertical-align: middle;">v2.0</small></span>
         </div>
         <div class="nav-links">
             <a href="/" class="nav-link {% if request.path == '/' %}active{% endif %}">Home</a>
             <a href="/dashboard" class="nav-link {% if request.path == '/dashboard' %}active{% endif %}">Dashboard</a>
+            <a href="/projects-page" class="nav-link {% if request.path == '/projects-page' %}active{% endif %}">Projects</a>
+            <a href="/assets-page" class="nav-link {% if request.path == '/assets-page' %}active{% endif %}">Assets</a>
             <a href="/recon" class="nav-link {% if request.path == '/recon' %}active{% endif %}">Recon</a>
             <a href="/scan" class="nav-link {% if request.path == '/scan' %}active{% endif %}">Scan</a>
             <a href="/fingerprint" class="nav-link {% if request.path == '/fingerprint' %}active{% endif %}">Fingerprint</a>
@@ -92,15 +92,21 @@
 
     <!-- Main Content -->
     <main class="main-content">
-        {% block content %}{% endblock %}
+        <div class="content-container" style="max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem;">
+            {% block content %}{% endblock %}
+        </div>
     </main>
 
+    <!-- Global Toast Container -->
+    <div id="toastContainer" class="toast-container" style="position: fixed; bottom: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 10px;"></div>
+
     <!-- Footer -->
-    <footer class="footer">
-        <p>Argus v1.0 | Educational Cybersecurity Tool</p>
+    <footer class="footer" style="text-align: center; padding: 2rem; border-top: 1px solid var(--border); margin-top: 4rem; color: var(--text-muted); font-size: 0.85rem; font-family: var(--font-mono);">
+        <p>Argus v2.0 | Attack Surface Discovery & Assessment Platform</p>
     </footer>
 
     <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    {% block scripts %}{% endblock %}
 </body>
-
 </html>

@@ -1,124 +1,159 @@
 {% extends "base.html" %}
 
-{% block title %}Argus - Dashboard{% endblock %}
+{% block title %}Argus — SOC Dashboard{% endblock %}
 
 {% block content %}
-<section class="page-header">
-    <span class="page-tag">Module 1</span>
-    <h1 class="page-title">System Information</h1>
-    <p class="page-desc">Local machine environment overview</p>
+<section class="page-header" style="margin-bottom: 2rem;">
+    <span class="page-tag" style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--accent-purple); text-transform: uppercase; letter-spacing: 0.1em; background: rgba(168, 85, 247, 0.1); padding: 4px 10px; border-radius: 4px; border: 1px solid var(--border-accent);">Security Operations Center</span>
+    <h1 class="page-title" style="font-size: 2.2rem; font-weight: 700; margin-top: 0.5rem; background: linear-gradient(90deg, #ffffff, var(--accent-purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Security Dashboard & System Posture</h1>
+    <p class="page-desc" style="color: var(--text-secondary); font-size: 1.05rem;">Real-time attack surface intelligence, vulnerability summary, and environment state</p>
 </section>
 
-<!-- System Info Card -->
-<section class="card dashboard-card">
-    <div class="card-header">
-        <div class="card-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+<!-- Argus 2.0 Attack Surface Metrics Grid (v1.0 Cyber Style) -->
+<section class="stats-section" style="margin-bottom: 3rem;">
+    <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem;">
+        <div class="stat-card" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; transition: var(--transition);">
+            <div class="stat-icon" style="color: var(--accent-purple); font-size: 1.5rem; margin-bottom: 0.75rem;">
+                <i class="fa-solid fa-cubes"></i>
+            </div>
+            <div class="stat-number" id="dashTotalAssets" style="font-family: var(--font-mono); font-size: 2rem; font-weight: 700; color: var(--text-primary);">0</div>
+            <div class="stat-label" style="color: var(--text-secondary); font-size: 0.9rem;">Total Discovered Assets</div>
+        </div>
+
+        <div class="stat-card" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; transition: var(--transition);">
+            <div class="stat-icon" style="color: var(--accent-violet); font-size: 1.5rem; margin-bottom: 0.75rem;">
+                <i class="fa-solid fa-globe"></i>
+            </div>
+            <div class="stat-number" id="dashInternetFacing" style="font-family: var(--font-mono); font-size: 2rem; font-weight: 700; color: var(--text-primary);">0</div>
+            <div class="stat-label" style="color: var(--text-secondary); font-size: 0.9rem;">Internet-Facing Targets</div>
+        </div>
+
+        <div class="stat-card" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; transition: var(--transition);">
+            <div class="stat-icon" style="color: var(--accent-magenta); font-size: 1.5rem; margin-bottom: 0.75rem;">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <div class="stat-number" id="dashHighRisk" style="font-family: var(--font-mono); font-size: 2rem; font-weight: 700; color: var(--accent-magenta);">0</div>
+            <div class="stat-label" style="color: var(--text-secondary); font-size: 0.9rem;">High-Risk Targets</div>
+        </div>
+
+        <div class="stat-card" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; transition: var(--transition);">
+            <div class="stat-icon" style="color: var(--accent-green); font-size: 1.5rem; margin-bottom: 0.75rem;">
+                <i class="fa-solid fa-rotate"></i>
+            </div>
+            <div class="stat-number" id="dashActiveScans" style="font-family: var(--font-mono); font-size: 2rem; font-weight: 700; color: var(--accent-green);">0</div>
+            <div class="stat-label" style="color: var(--text-secondary); font-size: 0.9rem;">Active Pipeline Scans</div>
+        </div>
+    </div>
+</section>
+
+<!-- Machine Identity Card (Argus 1.0 Core System Info) -->
+<section class="card dashboard-card" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 2rem; margin-bottom: 2.5rem;">
+    <div class="card-header" style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem;">
+        <div class="card-icon" style="color: var(--accent-purple);">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="2" y="3" width="20" height="14" rx="2" />
                 <line x1="8" y1="21" x2="16" y2="21" />
                 <line x1="12" y1="17" x2="12" y2="21" />
             </svg>
         </div>
-        <h2>Machine Identity</h2>
+        <h2 style="font-size: 1.4rem; font-weight: 600;">Machine Identity & Environment</h2>
     </div>
-    <div class="info-grid">
+    <div class="info-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem;">
         <div class="info-item">
-            <span class="label">Operating System</span>
-            <span class="value">{{ system.operating_system }}</span>
+            <span class="label" style="display: block; color: var(--text-muted); font-size: 0.8rem; font-family: var(--font-mono); text-transform: uppercase;">Operating System</span>
+            <span class="value" style="font-size: 1.05rem; font-weight: 600; color: var(--text-primary);">{{ system.operating_system if system and system.operating_system else 'Windows' }}</span>
         </div>
         <div class="info-item">
-            <span class="label">Hostname</span>
-            <span class="value">{{ system.hostname }}</span>
+            <span class="label" style="display: block; color: var(--text-muted); font-size: 0.8rem; font-family: var(--font-mono); text-transform: uppercase;">Hostname</span>
+            <span class="value" style="font-size: 1.05rem; font-weight: 600; color: var(--accent-purple); font-family: var(--font-mono);">{{ system.hostname if system and system.hostname else 'Localhost' }}</span>
         </div>
         <div class="info-item">
-            <span class="label">Current User</span>
-            <span class="value">{{ system.current_user }}</span>
+            <span class="label" style="display: block; color: var(--text-muted); font-size: 0.8rem; font-family: var(--font-mono); text-transform: uppercase;">Current User</span>
+            <span class="value" style="font-size: 1.05rem; font-weight: 600; color: var(--text-primary);">{{ system.current_user if system and system.current_user else 'Security Analyst' }}</span>
         </div>
         <div class="info-item">
-            <span class="label">Local IP Address</span>
-            <span class="value">{{ system.local_ip }}</span>
+            <span class="label" style="display: block; color: var(--text-muted); font-size: 0.8rem; font-family: var(--font-mono); text-transform: uppercase;">Local IP Address</span>
+            <span class="value" style="font-size: 1.05rem; font-weight: 600; color: var(--text-primary); font-family: var(--font-mono);">{{ system.local_ip if system and system.local_ip else '127.0.0.1' }}</span>
         </div>
         <div class="info-item">
-            <span class="label">Public IP Address</span>
-            <span class="value">{{ system.public_ip }}</span>
+            <span class="label" style="display: block; color: var(--text-muted); font-size: 0.8rem; font-family: var(--font-mono); text-transform: uppercase;">Public IP Address</span>
+            <span class="value" style="font-size: 1.05rem; font-weight: 600; color: var(--accent-green); font-family: var(--font-mono);">{{ system.public_ip if system and system.public_ip else 'Protected' }}</span>
         </div>
     </div>
 </section>
 
-<!-- Network Interfaces Card -->
-<section class="card dashboard-card">
-    <div class="card-header">
-        <div class="card-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+<!-- Network Interfaces Card (Argus 1.0 Core) -->
+{% if system and system.network_interfaces %}
+<section class="card dashboard-card" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 2rem; margin-bottom: 2.5rem;">
+    <div class="card-header" style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem;">
+        <div class="card-icon" style="color: var(--accent-purple);">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M5 12.55a11 11 0 0114.08 0" />
                 <path d="M1.42 9a16 16 0 0121.16 0" />
                 <path d="M8.53 16.11a6 6 0 016.95 0" />
                 <line x1="12" y1="20" x2="12.01" y2="20" />
             </svg>
         </div>
-        <h2>Network Interfaces</h2>
+        <h2 style="font-size: 1.4rem; font-weight: 600;">Active Network Interfaces</h2>
     </div>
-    <div class="interface-list">
-        {% if system.network_interfaces %}
+    <div class="interface-list" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
         {% for iface in system.network_interfaces %}
-        <div class="info-item">
-            <span class="label">{{ iface.name }}</span>
-            <span class="value">{{ iface.ip }}</span>
+        <div class="info-item" style="background: rgba(0, 0, 0, 0.3); padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border);">
+            <span class="label" style="display: block; color: var(--text-muted); font-size: 0.75rem; font-family: var(--font-mono);">{{ iface.name }}</span>
+            <span class="value" style="font-family: var(--font-mono); color: var(--accent-purple); font-weight: 600;">{{ iface.ip }}</span>
         </div>
         {% endfor %}
-        {% else %}
-        <p class="no-data">No network interfaces found.</p>
-        {% endif %}
     </div>
 </section>
+{% endif %}
 
-<!-- Quick Actions -->
-<section class="quick-actions">
-    <h3>Quick Navigation</h3>
-    <div class="action-grid">
-        <a href="/recon" class="action-card">
-            <div class="action-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10" />
-                    <line x1="2" y1="12" x2="22" y2="12" />
-                </svg>
-            </div>
-            <span>Start Recon</span>
+<!-- Quick Actions (Argus 1.0 Module Navigation) -->
+<section class="quick-actions" style="margin-top: 2.5rem;">
+    <h3 style="font-size: 1.2rem; font-weight: 600; margin-bottom: 1rem; color: var(--text-primary);">Security Operations Quick Navigation</h3>
+    <div class="action-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem;">
+        <a href="/projects-page" class="action-card" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; text-decoration: none; display: flex; flex-direction: column; align-items: center; gap: 0.75rem; color: var(--text-primary); transition: var(--transition);">
+            <div class="action-icon" style="color: var(--accent-purple); font-size: 1.5rem;"><i class="fa-solid fa-folder-tree"></i></div>
+            <span style="font-weight: 600; font-size: 0.95rem;">Projects Scope</span>
         </a>
-        <a href="/scan" class="action-card">
-            <div class="action-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
-                </svg>
-            </div>
-            <span>Run Scan</span>
+        <a href="/assets-page" class="action-card" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; text-decoration: none; display: flex; flex-direction: column; align-items: center; gap: 0.75rem; color: var(--text-primary); transition: var(--transition);">
+            <div class="action-icon" style="color: var(--accent-purple); font-size: 1.5rem;"><i class="fa-solid fa-network-wired"></i></div>
+            <span style="font-weight: 600; font-size: 0.95rem;">Asset Inventory</span>
         </a>
-        <a href="/fingerprint" class="action-card">
-            <div class="action-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                </svg>
-            </div>
-            <span>Fingerprint Site</span>
+        <a href="/recon" class="action-card" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; text-decoration: none; display: flex; flex-direction: column; align-items: center; gap: 0.75rem; color: var(--text-primary); transition: var(--transition);">
+            <div class="action-icon" style="color: var(--accent-purple); font-size: 1.5rem;"><i class="fa-solid fa-bullseye"></i></div>
+            <span style="font-weight: 600; font-size: 0.95rem;">Target Recon</span>
         </a>
-        <a href="/subdomain" class="action-card">
-            <div class="action-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/>
-                    <line x1="4" y1="22" x2="4" y2="15"/>
-                </svg>
-            </div>
-            <span>Find Subdomains</span>
+        <a href="/scan" class="action-card" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; text-decoration: none; display: flex; flex-direction: column; align-items: center; gap: 0.75rem; color: var(--text-primary); transition: var(--transition);">
+            <div class="action-icon" style="color: var(--accent-purple); font-size: 1.5rem;"><i class="fa-solid fa-crosshairs"></i></div>
+            <span style="font-weight: 600; font-size: 0.95rem;">Network Scan</span>
         </a>
-        <a href="/report" class="action-card">
-            <div class="action-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
-                    <polyline points="14 2 14 8 20 8" />
-                </svg>
-            </div>
-            <span>Generate Report</span>
+        <a href="/fingerprint" class="action-card" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; text-decoration: none; display: flex; flex-direction: column; align-items: center; gap: 0.75rem; color: var(--text-primary); transition: var(--transition);">
+            <div class="action-icon" style="color: var(--accent-purple); font-size: 1.5rem;"><i class="fa-solid fa-fingerprint"></i></div>
+            <span style="font-weight: 600; font-size: 0.95rem;">Web Fingerprint</span>
+        </a>
+        <a href="/report" class="action-card" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; text-decoration: none; display: flex; flex-direction: column; align-items: center; gap: 0.75rem; color: var(--text-primary); transition: var(--transition);">
+            <div class="action-icon" style="color: var(--accent-purple); font-size: 1.5rem;"><i class="fa-solid fa-file-shield"></i></div>
+            <span style="font-weight: 600; font-size: 0.95rem;">Generate Report</span>
         </a>
     </div>
 </section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        try {
+            const res = await fetch('/api/v1/stats');
+            const data = await res.json();
+            if (data.success) {
+                document.getElementById('dashTotalAssets').textContent = data.stats.total_assets;
+                document.getElementById('dashInternetFacing').textContent = data.stats.internet_facing;
+                document.getElementById('dashHighRisk').textContent = data.stats.high_risk_assets;
+                document.getElementById('dashActiveScans').textContent = data.stats.active_scans;
+            }
+        } catch (e) {
+            console.error('Failed to load stats:', e);
+        }
+    });
+</script>
 {% endblock %}

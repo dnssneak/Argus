@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Projects — Argus 2.0{% endblock %}
+{% block page_title %}Security Assessment Projects{% endblock %}
+{% block page_subtitle %}Manage assessment scopes, target environments, and project boundaries{% endblock %}
+
+{% block top_actions %}
+<button class="btn btn-primary" onclick="openCreateProjectModal()">
+    <i class="fa-solid fa-plus"></i> New Project
+</button>
+{% endblock %}
+
+{% block content %}
+<div class="card-panel">
+    <div class="panel-header">
+        <h2 class="panel-title">Active Projects Scope</h2>
+        <div class="metric-sub" id="projectsCount">Loading projects...</div>
+    </div>
+    
+    <div id="projectsGrid" class="metrics-grid">
+        <!-- Dynamically populated via app.js -->
+    </div>
+</div>
+
+<!-- Modal: Create New Project -->
+<div id="createProjectModal" class="modal-overlay">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3 class="modal-title">Create New Project</h3>
+            <button class="modal-close" onclick="closeCreateProjectModal()">&times;</button>
+        </div>
+        <form id="createProjectForm" onsubmit="handleCreateProject(event)">
+            <div class="form-group">
+                <label for="projectName">Project Name *</label>
+                <input type="text" id="projectName" class="form-control" placeholder="e.g., Enterprise Infrastructure Audit 2026" required>
+            </div>
+            <div class="form-group">
+                <label for="projectDesc">Description</label>
+                <textarea id="projectDesc" class="form-control" rows="3" placeholder="Target scope details, owner, or objective..."></textarea>
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px;">
+                <button type="button" class="btn btn-secondary" onclick="closeCreateProjectModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary">Create Project</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        loadProjectsPage();
+    });
+</script>
+{% endblock %}

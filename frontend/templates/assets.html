@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}Asset Inventory — Argus 2.0{% endblock %}
+{% block page_title %}Attack Surface Asset Inventory{% endblock %}
+{% block page_subtitle %}Centralized inventory of discovered domains, subdomains, IPs, and services{% endblock %}
+
+{% block top_actions %}
+<button class="btn btn-primary" onclick="openRegisterAssetModal()">
+    <i class="fa-solid fa-plus"></i> Register Asset
+</button>
+{% endblock %}
+
+{% block content %}
+<div class="card-panel">
+    <div class="panel-header" style="flex-wrap: wrap; gap: 16px;">
+        <h2 class="panel-title">Asset Repository</h2>
+        <div style="display: flex; gap: 12px; align-items: center;">
+            <input type="text" id="assetSearchInput" class="form-control" placeholder="Search target, IP, domain..." onkeyup="filterAssets()" style="width: 240px;">
+            <select id="assetTypeFilter" class="form-control" onchange="filterAssets()">
+                <option value="">All Types</option>
+                <option value="Domain">Domain</option>
+                <option value="Subdomain">Subdomain</option>
+                <option value="IP">IP Address</option>
+                <option value="Website">Website</option>
+                <option value="API">API</option>
+            </select>
+        </div>
+    </div>
+
+    <div style="overflow-x: auto;">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Asset Target</th>
+                    <th>Type</th>
+                    <th>IP Address</th>
+                    <th>Risk Score</th>
+                    <th>Services</th>
+                    <th>Tech Stack</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="assetTableBody">
+                <!-- Dynamically populated via app.js -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal: Register Asset -->
+<div id="registerAssetModal" class="modal-overlay">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3 class="modal-title">Register Target Asset</h3>
+            <button class="modal-close" onclick="closeRegisterAssetModal()">&times;</button>
+        </div>
+        <form id="registerAssetForm" onsubmit="handleRegisterAsset(event)">
+            <div class="form-group">
+                <label for="assetName">Asset Name / Target *</label>
+                <input type="text" id="assetName" class="form-control" placeholder="e.g. api.example.com or 192.168.1.10" required>
+            </div>
+            <div class="form-group">
+                <label for="assetType">Asset Type</label>
+                <select id="assetType" class="form-control">
+                    <option value="Domain">Domain</option>
+                    <option value="Subdomain">Subdomain</option>
+                    <option value="IP">IP Address</option>
+                    <option value="Website">Website</option>
+                    <option value="API">API Endpoint</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="assetIp">IP Address (Optional)</label>
+                <input type="text" id="assetIp" class="form-control" placeholder="e.g. 104.21.55.2">
+            </div>
+            <div class="form-group">
+                <label for="assetRisk">Initial Risk Score (0 - 100)</label>
+                <input type="number" id="assetRisk" class="form-control" min="0" max="100" value="0">
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px;">
+                <button type="button" class="btn btn-secondary" onclick="closeRegisterAssetModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save Asset</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Asset Detail Viewer -->
+<div id="assetDetailModal" class="modal-overlay">
+    <div class="modal-box" style="max-width: 680px;">
+        <div class="modal-header">
+            <h3 class="modal-title" id="detailAssetName">Asset Details</h3>
+            <button class="modal-close" onclick="closeAssetDetailModal()">&times;</button>
+        </div>
+        <div id="assetDetailContent" style="display: flex; flex-direction: column; gap: 16px;">
+            <!-- Dynamically populated -->
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        loadAssetsPage();
+    });
+</script>
+{% endblock %}
