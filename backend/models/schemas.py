@@ -6,18 +6,59 @@ from pydantic import BaseModel, Field, ConfigDict
 class ProjectBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=128, description="Unique project name")
     description: Optional[str] = None
+    status: str = Field(default="ACTIVE", description="Project status: ACTIVE or ARCHIVED")
 
 
 class ProjectCreate(ProjectBase):
-    pass
+    owner_id: Optional[str] = "local-user"
+
+
+class ProjectUpdate(BaseModel):
+    name: Optional[str] = Field(None, min_length=1, max_length=128)
+    description: Optional[str] = None
+    status: Optional[str] = Field(None, description="ACTIVE or ARCHIVED")
 
 
 class ProjectResponse(ProjectBase):
     id: int
+    owner_id: str
+    target_count: int = 0
     asset_count: int = 0
     scan_count: int = 0
+    finding_count: int = 0
+    last_scan: Optional[str] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+# --- Target Schemas ---
+class TargetBase(BaseModel):
+    target: str = Field(..., min_length=1, max_length=255, description="Domain, IP, CIDR, or URL")
+    target_type: str = Field(default="Domain", description="Domain, Subdomain, IP, CIDR, URL")
+    status: str = Field(default="active")
+
+
+class TargetCreate(TargetBase):
+    project_id: Optional[int] = None
+
+
+class TargetResponse(TargetBase):
+    id: int
+    project_id: int
+    created_at: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+# --- Activity Schemas ---
+class ActivityResponse(BaseModel):
+    id: int
+    project_id: int
+    action: str
+    details: Optional[str] = None
+    created_at: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 

@@ -39,8 +39,14 @@ def dashboard():
 
 @app.route("/projects-page")
 def projects_page():
-    """Projects management view."""
+    """Projects list view."""
     return render_template("projects.html")
+
+
+@app.route("/projects/<int:project_id>")
+def project_detail_page(project_id):
+    """Dedicated Project Dashboard view."""
+    return render_template("project_detail.html", project_id=project_id)
 
 
 @app.route("/assets-page")

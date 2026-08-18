@@ -1,48 +1,126 @@
 {% extends "base.html" %}
 
 {% block title %}Projects — Argus 2.0{% endblock %}
-{% block page_title %}Security Assessment Projects{% endblock %}
-{% block page_subtitle %}Manage assessment scopes, target environments, and project boundaries{% endblock %}
-
-{% block top_actions %}
-<button class="btn btn-primary" onclick="openCreateProjectModal()">
-    <i class="fa-solid fa-plus"></i> New Project
-</button>
-{% endblock %}
 
 {% block content %}
-<div class="card-panel">
-    <div class="panel-header">
-        <h2 class="panel-title">Active Projects Scope</h2>
-        <div class="metric-sub" id="projectsCount">Loading projects...</div>
+<section class="page-header" style="margin-bottom: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <span class="page-tag" style="display: inline-block; font-family: var(--font-mono); font-size: 0.78rem; color: var(--accent-purple); text-transform: uppercase; letter-spacing: 0.1em; background: rgba(168, 85, 247, 0.1); padding: 5px 16px; border-radius: 30px; border: 1px solid var(--border-accent);">Root Assessment Containers</span>
+            <h1 class="page-title" style="font-size: 2.2rem; font-weight: 700; margin-top: 0.5rem; background: linear-gradient(90deg, #ffffff, var(--accent-purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Security Assessment Projects</h1>
+            <p class="page-desc" style="color: var(--text-secondary); font-size: 1.05rem;">Manage assessment scopes, target boundaries, and project environments</p>
+        </div>
+        <div>
+            <button class="btn btn-primary" onclick="openCreateProjectModal()" style="background: linear-gradient(135deg, var(--accent-purple), var(--accent-magenta)); color: #fff; border: none; padding: 12px 20px; border-radius: 8px; font-weight: 600; font-family: var(--font-sans); cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-plus"></i> Create Project
+            </button>
+        </div>
     </div>
-    
-    <div id="projectsGrid" class="metrics-grid">
-        <!-- Dynamically populated via app.js -->
+</section>
+
+<!-- Filter & Search Controls Bar -->
+<div class="card" style="width: 100%; background: var(--bg-card); border: 1px solid var(--border); border-radius: 50px; padding: 12px 24px; margin-bottom: 2rem; box-shadow: var(--shadow);">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <!-- Status Filter Tabs (Reordered to All, Active, Archived) -->
+        <div style="display: flex; gap: 10px;">
+            <button id="tabAll" class="btn" onclick="filterProjectsByStatus('ALL')" style="background: rgba(168, 85, 247, 0.2); color: var(--accent-purple); border: 1px solid var(--border-accent); padding: 8px 20px; border-radius: 30px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: var(--transition);">All</button>
+            <button id="tabActive" class="btn" onclick="filterProjectsByStatus('ACTIVE')" style="background: rgba(0,0,0,0.3); color: var(--text-muted); border: 1px solid var(--border); padding: 8px 20px; border-radius: 30px; font-size: 0.85rem; font-weight: 500; cursor: pointer; transition: var(--transition);">Active</button>
+            <button id="tabArchived" class="btn" onclick="filterProjectsByStatus('ARCHIVED')" style="background: rgba(0,0,0,0.3); color: var(--text-muted); border: 1px solid var(--border); padding: 8px 20px; border-radius: 30px; font-size: 0.85rem; font-weight: 500; cursor: pointer; transition: var(--transition);">Archived</button>
+        </div>
+
+        <!-- Live Search Input (Extended length with glowing focus effect) -->
+        <div class="search-wrapper-pill" style="position: relative; width: 340px; max-width: 100%;">
+            <input type="text" id="projectSearchInput" class="search-input-pill" placeholder="Search projects..." onkeyup="handleProjectSearch()">
+            <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.85rem; transition: all 0.3s ease;"></i>
+        </div>
     </div>
 </div>
 
+<!-- Projects Grid Container -->
+<div id="projectsGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 1.5rem;">
+    <!-- Dynamically populated via app.js -->
+</div>
+
 <!-- Modal: Create New Project -->
-<div id="createProjectModal" class="modal-overlay">
-    <div class="modal-box">
-        <div class="modal-header">
-            <h3 class="modal-title">Create New Project</h3>
-            <button class="modal-close" onclick="closeCreateProjectModal()">&times;</button>
+<div id="createProjectModal" class="modal-overlay" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 9999;">
+    <div style="background: var(--bg-card); border: 1px solid var(--border-accent); border-radius: 16px; width: 100%; max-width: 520px; padding: 2rem; box-shadow: var(--shadow-lg);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem;">
+            <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary);">Create New Project</h3>
+            <button onclick="closeCreateProjectModal()" style="background: none; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer;">&times;</button>
         </div>
-        <form id="createProjectForm" onsubmit="handleCreateProject(event)">
-            <div class="form-group">
-                <label for="projectName">Project Name *</label>
-                <input type="text" id="projectName" class="form-control" placeholder="e.g., Enterprise Infrastructure Audit 2026" required>
+        <form id="createProjectForm" onsubmit="handleCreateProjectSubmit(event)">
+            <div style="margin-bottom: 1.25rem;">
+                <label style="display: block; font-size: 0.8rem; font-family: var(--font-mono); color: var(--text-muted); uppercase; margin-bottom: 6px;">Project Name *</label>
+                <input type="text" id="projectName" required placeholder="e.g. ACME Security Assessment" style="width: 100%; background: rgba(0,0,0,0.4); border: 1px solid var(--border); color: var(--text-primary); padding: 10px 14px; border-radius: 8px; outline: none; font-family: var(--font-sans);">
             </div>
-            <div class="form-group">
-                <label for="projectDesc">Description</label>
-                <textarea id="projectDesc" class="form-control" rows="3" placeholder="Target scope details, owner, or objective..."></textarea>
+            <div style="margin-bottom: 1.25rem;">
+                <label style="display: block; font-size: 0.8rem; font-family: var(--font-mono); color: var(--text-muted); uppercase; margin-bottom: 6px;">Description</label>
+                <textarea id="projectDesc" rows="3" placeholder="External attack surface assessment details..." style="width: 100%; background: rgba(0,0,0,0.4); border: 1px solid var(--border); color: var(--text-primary); padding: 10px 14px; border-radius: 8px; outline: none; font-family: var(--font-sans);"></textarea>
             </div>
-            <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px;">
-                <button type="button" class="btn btn-secondary" onclick="closeCreateProjectModal()">Cancel</button>
-                <button type="submit" class="btn btn-primary">Create Project</button>
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; font-size: 0.8rem; font-family: var(--font-mono); color: var(--text-muted); uppercase; margin-bottom: 6px;">Status *</label>
+                <select id="projectStatus" style="width: 100%; background: rgba(0,0,0,0.4); border: 1px solid var(--border); color: var(--text-primary); padding: 10px 14px; border-radius: 8px; outline: none; font-family: var(--font-sans);">
+                    <option value="ACTIVE">ACTIVE</option>
+                    <option value="ARCHIVED">ARCHIVED</option>
+                </select>
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 12px;">
+                <button type="button" onclick="closeCreateProjectModal()" style="background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: var(--text-primary); padding: 10px 18px; border-radius: 8px; cursor: pointer;">Cancel</button>
+                <button type="submit" style="background: linear-gradient(135deg, var(--accent-purple), var(--accent-magenta)); border: none; color: #fff; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer;">Create Project</button>
             </div>
         </form>
+    </div>
+</div>
+
+<!-- Modal: Edit Project -->
+<div id="editProjectModal" class="modal-overlay" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 9999;">
+    <div style="background: var(--bg-card); border: 1px solid var(--border-accent); border-radius: 16px; width: 100%; max-width: 520px; padding: 2rem; box-shadow: var(--shadow-lg);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem;">
+            <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary);">Edit Project</h3>
+            <button onclick="closeEditProjectModal()" style="background: none; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer;">&times;</button>
+        </div>
+        <form id="editProjectForm" onsubmit="handleEditProjectSubmit(event)">
+            <input type="hidden" id="editProjectId">
+            <div style="margin-bottom: 1.25rem;">
+                <label style="display: block; font-size: 0.8rem; font-family: var(--font-mono); color: var(--text-muted); uppercase; margin-bottom: 6px;">Project Name *</label>
+                <input type="text" id="editProjectName" required style="width: 100%; background: rgba(0,0,0,0.4); border: 1px solid var(--border); color: var(--text-primary); padding: 10px 14px; border-radius: 8px; outline: none; font-family: var(--font-sans);">
+            </div>
+            <div style="margin-bottom: 1.25rem;">
+                <label style="display: block; font-size: 0.8rem; font-family: var(--font-mono); color: var(--text-muted); uppercase; margin-bottom: 6px;">Description</label>
+                <textarea id="editProjectDesc" rows="3" style="width: 100%; background: rgba(0,0,0,0.4); border: 1px solid var(--border); color: var(--text-primary); padding: 10px 14px; border-radius: 8px; outline: none; font-family: var(--font-sans);"></textarea>
+            </div>
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; font-size: 0.8rem; font-family: var(--font-mono); color: var(--text-muted); uppercase; margin-bottom: 6px;">Status *</label>
+                <select id="editProjectStatus" style="width: 100%; background: rgba(0,0,0,0.4); border: 1px solid var(--border); color: var(--text-primary); padding: 10px 14px; border-radius: 8px; outline: none; font-family: var(--font-sans);">
+                    <option value="ACTIVE">ACTIVE</option>
+                    <option value="ARCHIVED">ARCHIVED</option>
+                </select>
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 12px;">
+                <button type="button" onclick="closeEditProjectModal()" style="background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: var(--text-primary); padding: 10px 18px; border-radius: 8px; cursor: pointer;">Cancel</button>
+                <button type="submit" style="background: linear-gradient(135deg, var(--accent-purple), var(--accent-magenta)); border: none; color: #fff; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer;">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Delete Protection Warning -->
+<div id="deleteProtectionModal" class="modal-overlay" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 10000;">
+    <div style="background: var(--bg-card); border: 1px solid var(--accent-magenta); border-radius: 16px; width: 100%; max-width: 520px; padding: 2rem; box-shadow: 0 20px 50px rgba(0,0,0,0.9);">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 1rem; color: var(--accent-magenta);">
+            <i class="fa-solid fa-triangle-exclamation" style="font-size: 1.8rem;"></i>
+            <h3 style="font-size: 1.3rem; font-weight: 700; color: var(--text-primary);">Delete Protection Warning</h3>
+        </div>
+        <p id="deleteProtectionText" style="color: var(--text-secondary); margin-bottom: 1.5rem; line-height: 1.5;"></p>
+
+        <div style="background: rgba(0,0,0,0.4); padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 1.5rem; font-family: var(--font-mono); font-size: 0.85rem; color: var(--accent-purple);" id="deleteCountsBox">
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px;">
+            <button onclick="closeDeleteProtectionModal()" style="background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: var(--text-primary); padding: 8px 16px; border-radius: 8px; cursor: pointer;">Cancel</button>
+            <button id="archiveInsteadBtn" style="background: rgba(168,85,247,0.2); border: 1px solid var(--border-accent); color: var(--accent-purple); padding: 8px 16px; border-radius: 8px; cursor: pointer;">Archive Instead</button>
+            <button id="forceDeleteBtn" style="background: var(--accent-magenta); border: none; color: #fff; padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer;">Force Delete</button>
+        </div>
     </div>
 </div>
 {% endblock %}

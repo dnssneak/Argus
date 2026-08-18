@@ -15,24 +15,85 @@ class Project(Base):
     __tablename__ = "projects"
 
     id = Column(Integer, primary_key=True, index=True)
+    owner_id = Column(String(128), default="local-user", nullable=False, index=True)
     name = Column(String(128), unique=True, nullable=False, index=True)
     description = Column(Text, nullable=True)
+    status = Column(String(32), default="ACTIVE", nullable=False, index=True)  # ACTIVE, ARCHIVED
     created_at = Column(DateTime, default=utc_now)
     updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
 
     # Relationships
+    targets = relationship("Target", back_populates="project", cascade="all, delete-orphan")
     assets = relationship("Asset", back_populates="project", cascade="all, delete-orphan")
     scans = relationship("Scan", back_populates="project", cascade="all, delete-orphan")
+    activities = relationship("Activity", back_populates="project", cascade="all, delete-orphan")
+
+    def to_dict(self):
+        last_scan_time = None
+        if self.scans:
+            sorted_scans = sorted(self.scans, key=lambda s: s.start_time or datetime.min, reverse=True)
+            if sorted_scans and sorted_scans[0].start_time:
+                last_scan_time = sorted_scans[0].start_time.isoformat()
+
+        return {
+            "id": self.id,
+            "owner_id": self.owner_id,
+            "name": self.name,
+            "description": self.description,
+            "status": self.status,
+            "target_count": len(self.targets),
+            "asset_count": len(self.assets),
+            "scan_count": len(self.scans),
+            "finding_count": sum(len(a.findings) for a in self.assets),
+            "last_scan": last_scan_time,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+
+class Target(Base):
+    """Target scope entity associated with a project."""
+    __tablename__ = "targets"
+
+    id = Column(Integer, primary_key=True, index=True)
+    project_id = Column(Integer, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False, index=True)
+    target = Column(String(255), nullable=False, index=True)
+    target_type = Column(String(64), default="Domain")  # Domain, Subdomain, IP, CIDR, URL
+    status = Column(String(32), default="active")  # active, pending, scanned
+    created_at = Column(DateTime, default=utc_now)
+
+    project = relationship("Project", back_populates="targets")
 
     def to_dict(self):
         return {
             "id": self.id,
-            "name": self.name,
-            "description": self.description,
-            "asset_count": len(self.assets),
-            "scan_count": len(self.scans),
+            "project_id": self.project_id,
+            "target": self.target,
+            "target_type": self.target_type,
+            "status": self.status,
             "created_at": self.created_at.isoformat() if self.created_at else None,
-            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+
+class Activity(Base):
+    """Audit & history log entity for project events."""
+    __tablename__ = "activities"
+
+    id = Column(Integer, primary_key=True, index=True)
+    project_id = Column(Integer, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False, index=True)
+    action = Column(String(128), nullable=False)
+    details = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=utc_now)
+
+    project = relationship("Project", back_populates="activities")
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "project_id": self.project_id,
+            "action": self.action,
+            "details": self.details,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
         }
 
 

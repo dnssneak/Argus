@@ -31,9 +31,22 @@ def get_db():
 
 def init_db():
     """Initialize database tables and create default workspace project if empty."""
+    from sqlalchemy import inspect, text
     from models.models import Project
+
     Base.metadata.create_all(bind=engine)
     
+    # Auto-migrate columns for local SQLite DB if missing
+    inspector = inspect(engine)
+    if "projects" in inspector.get_table_names():
+        columns = [c["name"] for c in inspector.get_columns("projects")]
+        with engine.connect() as conn:
+            if "owner_id" not in columns:
+                conn.execute(text("ALTER TABLE projects ADD COLUMN owner_id VARCHAR(128) DEFAULT 'local-user'"))
+            if "status" not in columns:
+                conn.execute(text("ALTER TABLE projects ADD COLUMN status VARCHAR(32) DEFAULT 'ACTIVE'"))
+            conn.commit()
+
     # Ensure default project exists
     db = SessionLocal()
     try:
@@ -41,7 +54,9 @@ def init_db():
         if not default_proj:
             default_proj = Project(
                 name="Default Project",
-                description="Default security assessment project for Argus 2.0"
+                description="Default security assessment project for Argus 2.0",
+                status="ACTIVE",
+                owner_id="local-user"
             )
             db.add(default_proj)
             db.commit()

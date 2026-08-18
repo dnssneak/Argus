@@ -11,14 +11,21 @@ def get_db():
     return SessionLocal()
 
 
+from services.project_service import ProjectService
+
+
 # --- PROJECTS API ---
 
 @api_bp.route("/projects", methods=["GET"])
 def list_projects():
     db = get_db()
     try:
-        projects = db.query(Project).order_by(Project.created_at.desc()).all()
-        return jsonify({"success": True, "projects": [p.to_dict() for p in projects]})
+        search = request.args.get("search")
+        status = request.args.get("status")
+        owner_id = request.args.get("owner_id", "local-user")
+
+        projects = ProjectService.list_projects(db, owner_id=owner_id, search=search, status=status)
+        return jsonify({"success": True, "count": len(projects), "projects": [p.to_dict() for p in projects]})
     finally:
         db.close()
 
@@ -28,22 +35,22 @@ def create_project():
     db = get_db()
     try:
         data = request.get_json() or {}
-        name = data.get("name", "").strip()
-        description = data.get("description", "").strip()
+        name = data.get("name")
+        description = data.get("description")
+        status = data.get("status", "ACTIVE")
+        owner_id = data.get("owner_id", "local-user")
 
-        if not name:
-            return jsonify({"success": False, "error": "Project name is required"}), 400
-
-        existing = db.query(Project).filter_by(name=name).first()
-        if existing:
-            return jsonify({"success": False, "error": f"Project '{name}' already exists"}), 400
-
-        project = Project(name=name, description=description)
-        db.add(project)
-        db.commit()
-        db.refresh(project)
-
+        project = ProjectService.create_project(
+            db=db,
+            name=name,
+            description=description,
+            status=status,
+            owner_id=owner_id
+        )
         return jsonify({"success": True, "project": project.to_dict()}), 201
+    except ValueError as e:
+        db.rollback()
+        return jsonify({"success": False, "error": str(e)}), 400
     except Exception as e:
         db.rollback()
         return jsonify({"success": False, "error": str(e)}), 500
@@ -55,14 +62,51 @@ def create_project():
 def get_project(project_id):
     db = get_db()
     try:
-        project = db.get(Project, project_id)
+        project = ProjectService.get_project(db, project_id)
         if not project:
             return jsonify({"success": False, "error": "Project not found"}), 404
 
         data = project.to_dict()
+        data["targets"] = [t.to_dict() for t in project.targets]
         data["assets"] = [a.to_dict() for a in project.assets]
         data["scans"] = [s.to_dict() for s in project.scans]
         return jsonify({"success": True, "project": data})
+    finally:
+        db.close()
+
+
+@api_bp.route("/projects/<int:project_id>", methods=["PUT"])
+def update_project(project_id):
+    db = get_db()
+    try:
+        data = request.get_json() or {}
+        project = ProjectService.update_project(
+            db=db,
+            project_id=project_id,
+            name=data.get("name"),
+            description=data.get("description"),
+            status=data.get("status")
+        )
+        return jsonify({"success": True, "project": project.to_dict()})
+    except ValueError as e:
+        db.rollback()
+        return jsonify({"success": False, "error": str(e)}), 400
+    except Exception as e:
+        db.rollback()
+        return jsonify({"success": False, "error": str(e)}), 500
+    finally:
+        db.close()
+
+
+@api_bp.route("/projects/<int:project_id>/archive", methods=["POST"])
+def archive_project(project_id):
+    db = get_db()
+    try:
+        project = ProjectService.archive_project(db, project_id)
+        return jsonify({"success": True, "project": project.to_dict(), "message": f"Project '{project.name}' archived."})
+    except ValueError as e:
+        db.rollback()
+        return jsonify({"success": False, "error": str(e)}), 400
     finally:
         db.close()
 
@@ -71,16 +115,50 @@ def get_project(project_id):
 def delete_project(project_id):
     db = get_db()
     try:
-        project = db.get(Project, project_id)
-        if not project:
-            return jsonify({"success": False, "error": "Project not found"}), 404
+        force = request.args.get("force", "").lower() == "true"
+        success, message, counts = ProjectService.delete_project(db, project_id, force=force)
 
-        db.delete(project)
-        db.commit()
-        return jsonify({"success": True, "message": "Project deleted successfully"})
+        if not success:
+            return jsonify({
+                "success": False,
+                "error": message,
+                "delete_protection": True,
+                "counts": counts
+            }), 400
+
+        return jsonify({"success": True, "message": message})
     except Exception as e:
         db.rollback()
         return jsonify({"success": False, "error": str(e)}), 500
+    finally:
+        db.close()
+
+
+@api_bp.route("/projects/<int:project_id>/targets", methods=["POST"])
+def add_project_target(project_id):
+    db = get_db()
+    try:
+        data = request.get_json() or {}
+        target_str = data.get("target")
+        target_type = data.get("target_type")
+
+        target = ProjectService.add_target(db, project_id, target_str=target_str, target_type=target_type)
+        return jsonify({"success": True, "target": target.to_dict()}), 201
+    except ValueError as e:
+        db.rollback()
+        return jsonify({"success": False, "error": str(e)}), 400
+    finally:
+        db.close()
+
+
+@api_bp.route("/projects/<int:project_id>/dashboard", methods=["GET"])
+def get_project_dashboard_api(project_id):
+    db = get_db()
+    try:
+        dashboard_data = ProjectService.get_project_dashboard(db, project_id)
+        return jsonify({"success": True, "data": dashboard_data})
+    except ValueError as e:
+        return jsonify({"success": False, "error": str(e)}), 404
     finally:
         db.close()
 
