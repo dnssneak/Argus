@@ -44,6 +44,10 @@ def init_db():
             if col not in existing_cols:
                 conn.exec_driver_sql(f"ALTER TABLE {table} ADD COLUMN {col} {col_type}")
 
+        # projects table
+        add_col("projects", "owner_id", "VARCHAR(128) DEFAULT 'local-user'")
+        add_col("projects", "status", "VARCHAR(32) DEFAULT 'ACTIVE'")
+
         # assets table
         add_col("assets", "exposure", "VARCHAR(64) DEFAULT 'Unknown'")
         add_col("assets", "discovery_sources", "TEXT DEFAULT 'DNS'")
@@ -75,7 +79,9 @@ def init_db():
         if not default_proj:
             default_proj = Project(
                 name="Default Project",
-                description="Default security assessment project for Argus 2.0"
+                description="Default security assessment project for Argus 2.0",
+                status="ACTIVE",
+                owner_id="local-user"
             )
             db.add(default_proj)
             db.commit()
