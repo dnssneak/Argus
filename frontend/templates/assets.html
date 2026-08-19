@@ -12,11 +12,11 @@
 
 {% block content %}
 <div class="card-panel">
-    <div class="panel-header" style="flex-wrap: wrap; gap: 16px;">
-        <h2 class="panel-title">Asset Repository</h2>
-        <div style="display: flex; gap: 12px; align-items: center;">
-            <input type="text" id="assetSearchInput" class="form-control" placeholder="Search target, IP, domain..." onkeyup="filterAssets()" style="width: 450px; border-radius: 30px; padding: 14px 24px;">
-            <select id="assetTypeFilter" class="form-control" onchange="filterAssets()" style="width: 180px; border-radius: 30px; padding: 14px 24px; appearance: none; -webkit-appearance: none; background-image: url('data:image/svg+xml;utf8,<svg fill=\'%23a8a5b8\' height=\'24\' viewBox=\'0 0 24 24\' width=\'24\' xmlns=\'http://www.w3.org/2000/svg\'><path d=\'M7 10l5 5 5-5z\'/></svg>'); background-repeat: no-repeat; background-position: right 16px center;">
+    <div class="panel-header" style="flex-wrap: wrap; gap: 20px 16px; margin-bottom: 1.75rem; align-items: center;">
+        <h2 class="panel-title" style="font-size: 1.5rem; font-weight: 700; margin-bottom: 12px; min-width: 220px;">Asset Repository</h2>
+        <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 4px;">
+            <input type="text" id="assetSearchInput" class="form-control" placeholder="Search target, IP, domain..." onkeyup="filterAssets()" style="width: 450px; max-width: 100%; border-radius: 30px; padding: 14px 24px;">
+            <select id="assetTypeFilter" class="form-control" onchange="filterAssets()" style="width: 180px; max-width: 100%; border-radius: 30px; padding: 14px 24px; appearance: none; -webkit-appearance: none; background-image: url('data:image/svg+xml;utf8,<svg fill=\'%23a8a5b8\' height=\'24\' viewBox=\'0 0 24 24\' width=\'24\' xmlns=\'http://www.w3.org/2000/svg\'><path d=\'M7 10l5 5 5-5z\'/></svg>'); background-repeat: no-repeat; background-position: right 16px center;">
                 <option value="">All Types</option>
                 <option value="Domain">Domain</option>
                 <option value="Subdomain">Subdomain</option>

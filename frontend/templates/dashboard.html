@@ -14,8 +14,10 @@
         Security Dashboard & System Posture</h1>
     <p class="page-desc" style="color: var(--text-secondary); font-size: 1.05rem;">Real-time attack surface
         intelligence, vulnerability summary, and environment state</p>
-</section><!-- Argus 2.0 Attack Surface Metrics Grid (v1.0 Cyber Style) -->
-<section class="stats-section" style="margin-bottom: 3rem;">
+</section>
+
+<!-- Argus 2.0 Attack Surface Metrics Grid -->
+<section class="stats-section" style="margin-bottom: 2.5rem;">
     <div class="stats-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.85rem; width: 100%;">
         <div class="stat-card" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem 1rem; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 10px; transition: var(--transition);">
             <div class="stat-icon" style="color: var(--accent-purple); font-size: 1.6rem;">
@@ -51,7 +53,11 @@
     </div>
 </section>
 
-<!-- Machine Identity Card (Argus 1.0 Core System Info) -->
+<!-- Seamless Inline 3D Cyber Network Graphic (Natural UI Beautification) -->
+<div style="width: 100%; height: 450px; margin-bottom: 2.5rem; position: relative; border-radius: 20px; overflow: hidden; background: radial-gradient(circle at 50% 50%, rgba(20, 14, 42, 0.5) 0%, transparent 75%);">
+    <canvas id="network3DCanvas" style="width: 100%; height: 100%; display: block; cursor: grab;"></canvas>
+</div>
+<!-- Machine Identity Card -->
 <section class="card dashboard-card"
     style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 2rem; margin-bottom: 2.5rem;">
     <div class="card-header"
@@ -66,48 +72,49 @@
         <h2 style="font-size: 1.4rem; font-weight: 600;">Machine Identity & Environment</h2>
     </div>
     <div class="info-grid"
-        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem;">
-        <div class="info-item">
+        style="display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem;">
+        <div class="info-item"
+            style="flex: 1 1 260px; max-width: 380px; background: rgba(0, 0, 0, 0.3); padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border);">
             <span class="label"
-                style="display: block; color: var(--text-muted); font-size: 0.8rem; font-family: var(--font-mono); text-transform: uppercase;">Operating
-                System</span>
-            <span class="value" style="font-size: 1.05rem; font-weight: 600; color: var(--text-primary);">{{
+                style="display: block; color: var(--text-muted); font-size: 0.75rem; font-family: var(--font-mono);">OPERATING SYSTEM</span>
+            <span class="value" style="font-family: var(--font-mono); color: var(--text-primary); font-weight: 600;">{{
                 system.operating_system if system and system.operating_system else 'Windows' }}</span>
         </div>
-        <div class="info-item">
+        <div class="info-item"
+            style="flex: 1 1 260px; max-width: 380px; background: rgba(0, 0, 0, 0.3); padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border);">
             <span class="label"
-                style="display: block; color: var(--text-muted); font-size: 0.8rem; font-family: var(--font-mono); text-transform: uppercase;">Hostname</span>
+                style="display: block; color: var(--text-muted); font-size: 0.75rem; font-family: var(--font-mono);">HOSTNAME</span>
             <span class="value"
-                style="font-size: 1.05rem; font-weight: 600; color: var(--accent-purple); font-family: var(--font-mono);">{{
+                style="font-family: var(--font-mono); color: var(--accent-purple); font-weight: 600;">{{
                 system.hostname if system and system.hostname else 'Localhost' }}</span>
         </div>
-        <div class="info-item">
+        <div class="info-item"
+            style="flex: 1 1 260px; max-width: 380px; background: rgba(0, 0, 0, 0.3); padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border);">
             <span class="label"
-                style="display: block; color: var(--text-muted); font-size: 0.8rem; font-family: var(--font-mono); text-transform: uppercase;">Current
-                User</span>
-            <span class="value" style="font-size: 1.05rem; font-weight: 600; color: var(--text-primary);">{{
+                style="display: block; color: var(--text-muted); font-size: 0.75rem; font-family: var(--font-mono);">CURRENT USER</span>
+            <span class="value" style="font-family: var(--font-mono); color: var(--text-primary); font-weight: 600;">{{
                 system.current_user if system and system.current_user else 'Security Analyst' }}</span>
         </div>
-        <div class="info-item">
+        <div class="info-item"
+            style="flex: 1 1 260px; max-width: 380px; background: rgba(0, 0, 0, 0.3); padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border);">
             <span class="label"
-                style="display: block; color: var(--text-muted); font-size: 0.8rem; font-family: var(--font-mono); text-transform: uppercase;">Local
-                IP Address</span>
+                style="display: block; color: var(--text-muted); font-size: 0.75rem; font-family: var(--font-mono);">LOCAL IP ADDRESS</span>
             <span class="value"
-                style="font-size: 1.05rem; font-weight: 600; color: var(--text-primary); font-family: var(--font-mono);">{{
+                style="font-family: var(--font-mono); color: var(--accent-green); font-weight: 600;">{{
                 system.local_ip if system and system.local_ip else '127.0.0.1' }}</span>
         </div>
-        <div class="info-item">
+        <div class="info-item"
+            style="flex: 1 1 260px; max-width: 380px; background: rgba(0, 0, 0, 0.3); padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border);">
             <span class="label"
-                style="display: block; color: var(--text-muted); font-size: 0.8rem; font-family: var(--font-mono); text-transform: uppercase;">Public
-                IP Address</span>
+                style="display: block; color: var(--text-muted); font-size: 0.75rem; font-family: var(--font-mono);">PUBLIC IP ADDRESS</span>
             <span class="value"
-                style="font-size: 1.05rem; font-weight: 600; color: var(--accent-green); font-family: var(--font-mono);">{{
+                style="font-family: var(--font-mono); color: var(--accent-green); font-weight: 600;">{{
                 system.public_ip if system and system.public_ip else 'Protected' }}</span>
         </div>
     </div>
 </section>
 
-<!-- Network Interfaces Card (Argus 1.0 Core) -->
+<!-- Network Interfaces Card -->
 {% if system and system.network_interfaces %}
 <section class="card dashboard-card"
     style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 2rem; margin-bottom: 2.5rem;">
@@ -131,7 +138,7 @@
             <span class="label"
                 style="display: block; color: var(--text-muted); font-size: 0.75rem; font-family: var(--font-mono);">{{
                 iface.name }}</span>
-            <span class="value" style="font-family: var(--font-mono); color: var(--accent-purple); font-weight: 600;">{{
+            <span class="value" style="font-family: var(--font-mono); color: var(--accent-green); font-weight: 600;">{{
                 iface.ip }}</span>
         </div>
         {% endfor %}
@@ -139,54 +146,22 @@
 </section>
 {% endif %}
 
-<!-- Quick Actions (Argus 1.0 Module Navigation) -->
-<section class="quick-actions" style="margin-top: 2.5rem;">
-    <h3 style="font-size: 1.2rem; font-weight: 600; margin-bottom: 1rem; color: var(--text-primary);">Security
-        Operations Quick Navigation</h3>
-    <div class="action-grid"
-        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem;">
-        <a href="/projects-page" class="action-card"
-            style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; text-decoration: none; display: flex; flex-direction: column; align-items: center; gap: 0.75rem; color: var(--text-primary); transition: var(--transition);">
-            <div class="action-icon" style="color: var(--accent-purple); font-size: 1.5rem;"><i
-                    class="fa-solid fa-folder-tree"></i></div>
-            <span style="font-weight: 600; font-size: 0.95rem;">Projects Scope</span>
-        </a>
-        <a href="/assets-page" class="action-card"
-            style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; text-decoration: none; display: flex; flex-direction: column; align-items: center; gap: 0.75rem; color: var(--text-primary); transition: var(--transition);">
-            <div class="action-icon" style="color: var(--accent-purple); font-size: 1.5rem;"><i
-                    class="fa-solid fa-network-wired"></i></div>
-            <span style="font-weight: 600; font-size: 0.95rem;">Asset Inventory</span>
-        </a>
-        <a href="/recon" class="action-card"
-            style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; text-decoration: none; display: flex; flex-direction: column; align-items: center; gap: 0.75rem; color: var(--text-primary); transition: var(--transition);">
-            <div class="action-icon" style="color: var(--accent-purple); font-size: 1.5rem;"><i
-                    class="fa-solid fa-bullseye"></i></div>
-            <span style="font-weight: 600; font-size: 0.95rem;">Target Recon</span>
-        </a>
-        <a href="/scan" class="action-card"
-            style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; text-decoration: none; display: flex; flex-direction: column; align-items: center; gap: 0.75rem; color: var(--text-primary); transition: var(--transition);">
-            <div class="action-icon" style="color: var(--accent-purple); font-size: 1.5rem;"><i
-                    class="fa-solid fa-crosshairs"></i></div>
-            <span style="font-weight: 600; font-size: 0.95rem;">Network Scan</span>
-        </a>
-        <a href="/fingerprint" class="action-card"
-            style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; text-decoration: none; display: flex; flex-direction: column; align-items: center; gap: 0.75rem; color: var(--text-primary); transition: var(--transition);">
-            <div class="action-icon" style="color: var(--accent-purple); font-size: 1.5rem;"><i
-                    class="fa-solid fa-fingerprint"></i></div>
-            <span style="font-weight: 600; font-size: 0.95rem;">Web Fingerprint</span>
-        </a>
-        <a href="/report" class="action-card"
-            style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; text-decoration: none; display: flex; flex-direction: column; align-items: center; gap: 0.75rem; color: var(--text-primary); transition: var(--transition);">
-            <div class="action-icon" style="color: var(--accent-purple); font-size: 1.5rem;"><i
-                    class="fa-solid fa-file-shield"></i></div>
-            <span style="font-weight: 600; font-size: 0.95rem;">Generate Report</span>
-        </a>
-    </div>
-</section>
 {% endblock %}
 
 {% block scripts %}
 <script>
+    let graphCanvas, ctx;
+    let nodes = [], links = [], pulses = [], backgroundParticles = [];
+    
+    // High-performance Camera & Rotation State
+    let rotY = 0, rotX = 0.2;
+    let targetRotY = 0, targetRotX = 0.2;
+    let mouseParallaxX = 0, mouseParallaxY = 0;
+    let zoomScale = 1.0, targetZoom = 1.0;
+    let canvasWidth = 800, canvasHeight = 450;
+    let isDragging = false;
+    let lastMouseX = 0, lastMouseY = 0;
+
     document.addEventListener('DOMContentLoaded', async () => {
         try {
             const res = await fetch('/api/v1/stats');
@@ -200,6 +175,355 @@
         } catch (e) {
             console.error('Failed to load stats:', e);
         }
+
+        initInline3DGraph();
     });
+
+    function initInline3DGraph() {
+        graphCanvas = document.getElementById('network3DCanvas');
+        if (!graphCanvas) return;
+        ctx = graphCanvas.getContext('2d');
+
+        resizeGraphCanvas();
+        window.addEventListener('resize', resizeGraphCanvas);
+
+        generate3DTopology();
+        setupUserInteractivity();
+
+        // Spawn dynamic laser pulses
+        setInterval(triggerRandomPulseEvent, 1600);
+
+        // Start 60-120fps hardware-accelerated 3D render loop
+        render3DGraph();
+    }
+
+    function resizeGraphCanvas() {
+        if (!graphCanvas) return;
+        const rect = graphCanvas.parentElement.getBoundingClientRect();
+        const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+        
+        canvasWidth = rect.width;
+        canvasHeight = rect.height;
+        
+        graphCanvas.width = rect.width * dpr;
+        graphCanvas.height = rect.height * dpr;
+        ctx.scale(dpr, dpr);
+    }
+
+    function setupUserInteractivity() {
+        if (!graphCanvas) return;
+
+        graphCanvas.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            lastMouseX = e.clientX;
+            lastMouseY = e.clientY;
+            graphCanvas.style.cursor = 'grabbing';
+        });
+
+        window.addEventListener('mouseup', () => {
+            isDragging = false;
+            if (graphCanvas) graphCanvas.style.cursor = 'grab';
+        });
+
+        graphCanvas.addEventListener('mousemove', (e) => {
+            const rect = graphCanvas.getBoundingClientRect();
+            if (isDragging) {
+                const deltaX = e.clientX - lastMouseX;
+                const deltaY = e.clientY - lastMouseY;
+                targetRotY += deltaX * 0.006;
+                targetRotX += deltaY * 0.006;
+                targetRotX = Math.max(-1.0, Math.min(1.0, targetRotX));
+                lastMouseX = e.clientX;
+                lastMouseY = e.clientY;
+            } else {
+                const mouseX = e.clientX - rect.left;
+                const mouseY = e.clientY - rect.top;
+                mouseParallaxX = ((mouseX / rect.width) - 0.5) * 0.12;
+                mouseParallaxY = ((mouseY / rect.height) - 0.5) * 0.12;
+            }
+        });
+
+        graphCanvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            targetZoom -= e.deltaY * 0.001;
+            targetZoom = Math.max(0.6, Math.min(2.0, targetZoom));
+        }, { passive: false });
+    }
+
+    function generate3DTopology() {
+        nodes = [];
+        links = [];
+        pulses = [];
+        backgroundParticles = [];
+
+        // Ambient 3D Starfield Particles
+        for (let i = 0; i < 50; i++) {
+            backgroundParticles.push({
+                x: (Math.random() - 0.5) * 900,
+                y: (Math.random() - 0.5) * 700,
+                z: (Math.random() - 0.5) * 700,
+                radius: Math.random() * 2 + 0.8,
+                color: Math.random() > 0.5 ? 'rgba(192, 132, 252, 0.4)' : 'rgba(34, 211, 238, 0.4)'
+            });
+        }
+
+        // Central Root Node
+        const root = {
+            id: 0,
+            label: 'paterva.com',
+            symbol: '🌐',
+            x: 0, y: -160, z: 0,
+            color: '#C084FC',
+            glowColor: 'rgba(192, 132, 252, 0.35)',
+            radius: 18
+        };
+        nodes.push(root);
+
+        // Identity Pivot Node
+        const emailNode = {
+            id: 1,
+            label: 'roelof@paterva.com',
+            symbol: '📧',
+            x: 0, y: -50, z: 0,
+            color: '#22D3EE',
+            glowColor: 'rgba(34, 211, 238, 0.35)',
+            radius: 15
+        };
+        nodes.push(emailNode);
+        links.push({ source: root, target: emailNode });
+
+        // Maltego Attack Graph Cluster Targets
+        const targetsList = [
+            { name: 'docslide.us', symbol: '💻', isRisk: true },
+            { name: 'ctas.paterva.com', symbol: '🖥️' },
+            { name: 'maltego.blogspot.com', symbol: '🌐' },
+            { name: 'pastebin.com', symbol: '📄' },
+            { name: 'www.sciencedirect.com', symbol: '📚' },
+            { name: 'www.slideshare.net', symbol: '📊' },
+            { name: 'www.first.org', symbol: '🛡️' },
+            { name: 'www.blackhat.com', symbol: '🎯' },
+            { name: 'dev.paterva.com', symbol: '⚡', isRisk: true },
+            { name: 'www.ekoparty.org', symbol: '🚩' },
+            { name: 'www.htmlcorner.com', symbol: '💻' },
+            { name: 'www.academia.edu', symbol: '🎓' },
+            { name: 'booksite.elsevier.com', symbol: '📖' },
+            { name: 'maltego22.rssing.com', symbol: '📡' },
+            { name: '2016.hack.lu', symbol: '⚠️', isRisk: true }
+        ];
+
+        const cols = 5;
+        const spacingX = 135;
+        const spacingY = 75;
+
+        targetsList.forEach((t, i) => {
+            const row = Math.floor(i / cols);
+            const col = i % cols;
+            const x = (col - (cols - 1) / 2) * spacingX + (Math.random() * 20 - 10);
+            const y = 35 + row * spacingY + (Math.random() * 16 - 8);
+            const z = (Math.random() * 220 - 110);
+
+            const node = {
+                id: i + 2,
+                label: t.name,
+                symbol: t.symbol,
+                x: x, y: y, z: z,
+                baseY: y,
+                floatOffset: Math.random() * Math.PI * 2,
+                color: t.isRisk ? '#FB7185' : '#34D399',
+                glowColor: t.isRisk ? 'rgba(251, 113, 133, 0.35)' : 'rgba(52, 211, 153, 0.35)',
+                radius: t.isRisk ? 12 : 10,
+                isRisk: t.isRisk
+            };
+            nodes.push(node);
+            links.push({ source: emailNode, target: node });
+        });
+    }
+
+    function triggerRandomPulseEvent() {
+        if (!nodes.length) return;
+        const targetNode = nodes[Math.floor(Math.random() * (nodes.length - 2)) + 2];
+        const sourceNode = nodes[1];
+
+        pulses.push({
+            source: sourceNode,
+            target: targetNode,
+            progress: 0,
+            speed: 0.016 + Math.random() * 0.014,
+            color: targetNode.color
+        });
+
+        targetNode.rippleRadius = 4;
+        targetNode.rippleAlpha = 1.0;
+    }
+
+    let animTime = 0;
+    function render3DGraph() {
+        if (!ctx || !graphCanvas) return;
+
+        ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+        animTime += 0.016; // Stable 60fps time increment
+
+        // Camera lerp
+        if (!isDragging) {
+            targetRotY += 0.0025; // Smooth continuous orbit
+        }
+        rotY += (targetRotY - rotY) * 0.08;
+        rotX += (targetRotX - rotX) * 0.08;
+        zoomScale += (targetZoom - zoomScale) * 0.08;
+
+        const effectiveRotY = rotY + mouseParallaxX;
+        const effectiveRotX = rotX + mouseParallaxY;
+
+        const centerX = canvasWidth / 2;
+        const centerY = canvasHeight / 2 - 20;
+        const focalLength = 480 * zoomScale;
+
+        const cosY = Math.cos(effectiveRotY), sinY = Math.sin(effectiveRotY);
+        const cosX = Math.cos(effectiveRotX), sinX = Math.sin(effectiveRotX);
+
+        // 1. Render Background Particles (Fast single-pass draw)
+        for (let i = 0; i < backgroundParticles.length; i++) {
+            const p = backgroundParticles[i];
+            let x1 = p.x * cosY - p.z * sinY;
+            let z1 = p.z * cosY + p.x * sinY;
+            let y2 = p.y * cosX - z1 * sinX;
+            let z2 = z1 * cosX + p.y * sinX;
+
+            const scale = focalLength / (focalLength + z2 + 300);
+            const px = centerX + x1 * scale;
+            const py = centerY + y2 * scale;
+
+            ctx.beginPath();
+            ctx.arc(px, py, p.radius * scale, 0, Math.PI * 2);
+            ctx.fillStyle = p.color;
+            ctx.fill();
+        }
+
+        // 2. Compute 3D Positions & Wave Floating
+        for (let i = 0; i < nodes.length; i++) {
+            const n = nodes[i];
+            if (n.id >= 2) {
+                n.y = n.baseY + Math.sin(animTime * 1.5 + n.floatOffset) * 6;
+            }
+
+            let x1 = n.x * cosY - n.z * sinY;
+            let z1 = n.z * cosY + n.x * sinY;
+            let y2 = n.y * cosX - z1 * sinX;
+            let z2 = z1 * cosX + n.y * sinX;
+
+            n.rotZ = z2;
+            const scale = focalLength / (focalLength + z2 + 300);
+            n.projX = centerX + x1 * scale;
+            n.projY = centerY + y2 * scale;
+            n.scale = scale;
+            n.drawRadius = Math.max(5, n.radius * scale);
+            n.alpha = Math.min(0.95, Math.max(0.3, (z2 + 350) / 500));
+        }
+
+        // Fast Depth Sorting
+        nodes.sort((a, b) => a.rotZ - b.rotZ);
+
+        // 3. Render 3D Laser Connection Lines (Optimized Single-Pass)
+        for (let i = 0; i < links.length; i++) {
+            const l = links[i];
+            const s = l.source;
+            const t = l.target;
+
+            ctx.beginPath();
+            ctx.moveTo(s.projX, s.projY);
+            ctx.lineTo(t.projX, t.projY);
+            ctx.strokeStyle = t.isRisk ? 'rgba(251, 113, 133, 0.35)' : 'rgba(192, 132, 252, 0.28)';
+            ctx.lineWidth = 1.4 * ((s.scale + t.scale) / 2);
+            ctx.globalAlpha = (s.alpha + t.alpha) / 2;
+            if (t.isRisk) ctx.setLineDash([5, 5]);
+            else ctx.setLineDash([]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+
+        // 4. Render Dynamic Firing Light Particles
+        for (let i = pulses.length - 1; i >= 0; i--) {
+            const p = pulses[i];
+            p.progress += p.speed;
+
+            if (p.progress >= 1) {
+                pulses.splice(i, 1);
+                continue;
+            }
+
+            const px = p.source.projX + (p.target.projX - p.source.projX) * p.progress;
+            const py = p.source.projY + (p.target.projY - p.source.projY) * p.progress;
+
+            ctx.beginPath();
+            ctx.arc(px, py, 4.5 * p.target.scale, 0, Math.PI * 2);
+            ctx.fillStyle = p.color;
+            ctx.globalAlpha = 0.95;
+            ctx.fill();
+        }
+
+        // 5. Render 3D Nodes (Optimized Multi-Ring Fill without shadowBlur overhead)
+        for (let i = 0; i < nodes.length; i++) {
+            const n = nodes[i];
+            ctx.save();
+            ctx.globalAlpha = n.alpha;
+
+            // Sonar Ripple Rings
+            if (n.rippleRadius) {
+                n.rippleRadius += 0.6;
+                n.rippleAlpha -= 0.025;
+                if (n.rippleAlpha <= 0) {
+                    n.rippleRadius = 0;
+                    n.rippleAlpha = 0;
+                } else {
+                    ctx.beginPath();
+                    ctx.arc(n.projX, n.projY, n.drawRadius + n.rippleRadius, 0, Math.PI * 2);
+                    ctx.strokeStyle = n.color;
+                    ctx.lineWidth = 1.5;
+                    ctx.globalAlpha = n.rippleAlpha;
+                    ctx.stroke();
+                    ctx.globalAlpha = n.alpha;
+                }
+            }
+
+            // Outer Translucent Glow Ring
+            ctx.beginPath();
+            ctx.arc(n.projX, n.projY, n.drawRadius * 2.2, 0, Math.PI * 2);
+            ctx.fillStyle = n.glowColor;
+            ctx.fill();
+
+            // Core Solid Node Circle
+            ctx.beginPath();
+            ctx.arc(n.projX, n.projY, n.drawRadius, 0, Math.PI * 2);
+            ctx.fillStyle = n.color;
+            ctx.fill();
+
+            // Inner Specular White Core Spot
+            ctx.beginPath();
+            ctx.arc(n.projX - n.drawRadius * 0.25, n.projY - n.drawRadius * 0.25, n.drawRadius * 0.35, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.65)';
+            ctx.fill();
+
+            // Node Symbol Emoji
+            if (n.scale > 0.5) {
+                ctx.font = `${Math.round(11 * n.scale)}px sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(n.symbol, n.projX, n.projY);
+            }
+
+            // Monospace Label
+            if (n.scale > 0.6 || n.id <= 1) {
+                ctx.font = `${Math.max(10, Math.round(11 * n.scale))}px monospace`;
+                ctx.fillStyle = 'rgba(240, 240, 255, 0.9)';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'top';
+                ctx.fillText(n.label, n.projX, n.projY + n.drawRadius + 8 * n.scale);
+            }
+
+            ctx.restore();
+        }
+
+        requestAnimationFrame(render3DGraph);
+    }
 </script>
 {% endblock %}
