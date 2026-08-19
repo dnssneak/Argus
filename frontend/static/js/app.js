@@ -337,7 +337,7 @@ async function archiveProject(id, event = null) {
 
 function closeDeleteProtectionModal() {
     const modal = document.getElementById('deleteProtectionModal');
-    if (modal) modal.style.display = 'none';
+    if (modal) modal.classList.remove('active');
 }
 
 // Delete Protection handling
@@ -374,7 +374,7 @@ async function deleteProject(id, force = false, event = null) {
                 deleteProject(id, true);
             };
 
-            document.getElementById('deleteProtectionModal').style.display = 'flex';
+            document.getElementById('deleteProtectionModal')?.classList.add('active');
         } else {
             showToast(data.error || 'Failed to delete project', 'error');
         }
@@ -505,12 +505,12 @@ async function loadProjectDashboard(projectId) {
 
 function openAddTargetModal() {
     const modal = document.getElementById('addTargetModal');
-    if (modal) modal.style.display = 'flex';
+    if (modal) modal.classList.add('active');
 }
 
 function closeAddTargetModal() {
     const modal = document.getElementById('addTargetModal');
-    if (modal) modal.style.display = 'none';
+    if (modal) modal.classList.remove('active');
 }
 
 async function handleAddTargetSubmit(event) {
@@ -563,7 +563,7 @@ function triggerProjectScan() {
 
                 // Show Launch Scan modal
                 const modal = document.getElementById('startScanModal');
-                if (modal) modal.style.display = 'flex';
+                if (modal) modal.classList.add('active');
             } else {
                 showToast(data.error || 'Failed to load project targets', 'error');
             }
@@ -575,7 +575,7 @@ function triggerProjectScan() {
 
 function closeStartScanModal() {
     const modal = document.getElementById('startScanModal');
-    if (modal) modal.style.display = 'none';
+    if (modal) modal.classList.remove('active');
 }
 
 function handleStartScanSubmit(event) {
