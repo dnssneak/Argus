@@ -4,51 +4,56 @@
 
 {% block content %}
 <section class="page-header" style="margin-bottom: 2rem;">
-    <span class="page-tag" style="display: inline-block; font-family: var(--font-mono); font-size: 0.78rem; color: var(--accent-purple); text-transform: uppercase; letter-spacing: 0.1em; background: rgba(168, 85, 247, 0.1); padding: 5px 16px; border-radius: 30px; border: 1px solid var(--border-accent);">Security Operations Center</span>
-    <h1 class="page-title" style="font-size: 2.2rem; font-weight: 700; margin-top: 0.5rem; background: linear-gradient(90deg, #ffffff, var(--accent-purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Security Dashboard & System Posture</h1>
-    <p class="page-desc" style="color: var(--text-secondary); font-size: 1.05rem;">Real-time attack surface intelligence, vulnerability summary, and environment state</p>
-</section>
-
-<!-- Argus 2.0 Attack Surface Metrics Grid (v1.0 Cyber Style) -->
+    <span class="page-tag"
+        style="display: inline-block; font-family: var(--font-mono); font-size: 0.78rem; color: var(--accent-purple); text-transform: uppercase; letter-spacing: 0.1em; background: rgba(168, 85, 247, 0.1); padding: 5px 16px; border-radius: 30px; border: 1px solid var(--border-accent);">Security
+        Operations Center</span>
+    <h1 class="page-title"
+        style="font-size: 2.2rem; font-weight: 700; margin-top: 0.5rem; background: linear-gradient(90deg, #ffffff, var(--accent-purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+        Security Dashboard & System Posture</h1>
+    <p class="page-desc" style="color: var(--text-secondary); font-size: 1.05rem;">Real-time attack surface
+        intelligence, vulnerability summary, and environment state</p>
+</section><!-- Argus 2.0 Attack Surface Metrics Grid (v1.0 Cyber Style) -->
 <section class="stats-section" style="margin-bottom: 3rem;">
-    <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem;">
-        <div class="stat-card" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; transition: var(--transition);">
-            <div class="stat-icon" style="color: var(--accent-purple); font-size: 1.5rem; margin-bottom: 0.75rem;">
+    <div class="stats-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.85rem; width: 100%;">
+        <div class="stat-card" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem 1rem; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 10px; transition: var(--transition);">
+            <div class="stat-icon" style="color: var(--accent-purple); font-size: 1.6rem;">
                 <i class="fa-solid fa-cubes"></i>
             </div>
-            <div class="stat-number" id="dashTotalAssets" style="font-family: var(--font-mono); font-size: 2rem; font-weight: 700; color: var(--text-primary);">0</div>
-            <div class="stat-label" style="color: var(--text-secondary); font-size: 0.9rem;">Total Discovered Assets</div>
+            <div class="stat-number" id="dashTotalAssets" style="font-family: var(--font-mono); font-size: 2.2rem; font-weight: 700; color: var(--text-primary); line-height: 1;">0</div>
+            <div class="stat-label" style="color: var(--text-secondary); font-size: 0.88rem; font-weight: 500;">Total Discovered Assets</div>
         </div>
 
-        <div class="stat-card" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; transition: var(--transition);">
-            <div class="stat-icon" style="color: var(--accent-violet); font-size: 1.5rem; margin-bottom: 0.75rem;">
+        <div class="stat-card" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem 1rem; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 10px; transition: var(--transition);">
+            <div class="stat-icon" style="color: var(--accent-purple); font-size: 1.6rem;">
                 <i class="fa-solid fa-globe"></i>
             </div>
-            <div class="stat-number" id="dashInternetFacing" style="font-family: var(--font-mono); font-size: 2rem; font-weight: 700; color: var(--text-primary);">0</div>
-            <div class="stat-label" style="color: var(--text-secondary); font-size: 0.9rem;">Internet-Facing Targets</div>
+            <div class="stat-number" id="dashInternetFacing" style="font-family: var(--font-mono); font-size: 2.2rem; font-weight: 700; color: var(--text-primary); line-height: 1;">0</div>
+            <div class="stat-label" style="color: var(--text-secondary); font-size: 0.88rem; font-weight: 500;">Internet-Facing Targets</div>
         </div>
 
-        <div class="stat-card" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; transition: var(--transition);">
-            <div class="stat-icon" style="color: var(--accent-magenta); font-size: 1.5rem; margin-bottom: 0.75rem;">
+        <div class="stat-card" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem 1rem; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 10px; transition: var(--transition);">
+            <div class="stat-icon" style="color: var(--accent-magenta); font-size: 1.6rem;">
                 <i class="fa-solid fa-triangle-exclamation"></i>
             </div>
-            <div class="stat-number" id="dashHighRisk" style="font-family: var(--font-mono); font-size: 2rem; font-weight: 700; color: var(--accent-magenta);">0</div>
-            <div class="stat-label" style="color: var(--text-secondary); font-size: 0.9rem;">High-Risk Targets</div>
+            <div class="stat-number" id="dashHighRisk" style="font-family: var(--font-mono); font-size: 2.2rem; font-weight: 700; color: var(--accent-magenta); line-height: 1;">0</div>
+            <div class="stat-label" style="color: var(--text-secondary); font-size: 0.88rem; font-weight: 500;">High-Risk Targets</div>
         </div>
 
-        <div class="stat-card" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; transition: var(--transition);">
-            <div class="stat-icon" style="color: var(--accent-green); font-size: 1.5rem; margin-bottom: 0.75rem;">
+        <div class="stat-card" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem 1rem; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 10px; transition: var(--transition);">
+            <div class="stat-icon" style="color: var(--accent-green); font-size: 1.6rem;">
                 <i class="fa-solid fa-rotate"></i>
             </div>
-            <div class="stat-number" id="dashActiveScans" style="font-family: var(--font-mono); font-size: 2rem; font-weight: 700; color: var(--accent-green);">0</div>
-            <div class="stat-label" style="color: var(--text-secondary); font-size: 0.9rem;">Active Pipeline Scans</div>
+            <div class="stat-number" id="dashActiveScans" style="font-family: var(--font-mono); font-size: 2.2rem; font-weight: 700; color: var(--accent-green); line-height: 1;">0</div>
+            <div class="stat-label" style="color: var(--text-secondary); font-size: 0.88rem; font-weight: 500;">Active Pipeline Scans</div>
         </div>
     </div>
 </section>
 
 <!-- Machine Identity Card (Argus 1.0 Core System Info) -->
-<section class="card dashboard-card" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 2rem; margin-bottom: 2.5rem;">
-    <div class="card-header" style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem;">
+<section class="card dashboard-card"
+    style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 2rem; margin-bottom: 2.5rem;">
+    <div class="card-header"
+        style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem;">
         <div class="card-icon" style="color: var(--accent-purple);">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="2" y="3" width="20" height="14" rx="2" />
@@ -58,34 +63,54 @@
         </div>
         <h2 style="font-size: 1.4rem; font-weight: 600;">Machine Identity & Environment</h2>
     </div>
-    <div class="info-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem;">
+    <div class="info-grid"
+        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem;">
         <div class="info-item">
-            <span class="label" style="display: block; color: var(--text-muted); font-size: 0.8rem; font-family: var(--font-mono); text-transform: uppercase;">Operating System</span>
-            <span class="value" style="font-size: 1.05rem; font-weight: 600; color: var(--text-primary);">{{ system.operating_system if system and system.operating_system else 'Windows' }}</span>
+            <span class="label"
+                style="display: block; color: var(--text-muted); font-size: 0.8rem; font-family: var(--font-mono); text-transform: uppercase;">Operating
+                System</span>
+            <span class="value" style="font-size: 1.05rem; font-weight: 600; color: var(--text-primary);">{{
+                system.operating_system if system and system.operating_system else 'Windows' }}</span>
         </div>
         <div class="info-item">
-            <span class="label" style="display: block; color: var(--text-muted); font-size: 0.8rem; font-family: var(--font-mono); text-transform: uppercase;">Hostname</span>
-            <span class="value" style="font-size: 1.05rem; font-weight: 600; color: var(--accent-purple); font-family: var(--font-mono);">{{ system.hostname if system and system.hostname else 'Localhost' }}</span>
+            <span class="label"
+                style="display: block; color: var(--text-muted); font-size: 0.8rem; font-family: var(--font-mono); text-transform: uppercase;">Hostname</span>
+            <span class="value"
+                style="font-size: 1.05rem; font-weight: 600; color: var(--accent-purple); font-family: var(--font-mono);">{{
+                system.hostname if system and system.hostname else 'Localhost' }}</span>
         </div>
         <div class="info-item">
-            <span class="label" style="display: block; color: var(--text-muted); font-size: 0.8rem; font-family: var(--font-mono); text-transform: uppercase;">Current User</span>
-            <span class="value" style="font-size: 1.05rem; font-weight: 600; color: var(--text-primary);">{{ system.current_user if system and system.current_user else 'Security Analyst' }}</span>
+            <span class="label"
+                style="display: block; color: var(--text-muted); font-size: 0.8rem; font-family: var(--font-mono); text-transform: uppercase;">Current
+                User</span>
+            <span class="value" style="font-size: 1.05rem; font-weight: 600; color: var(--text-primary);">{{
+                system.current_user if system and system.current_user else 'Security Analyst' }}</span>
         </div>
         <div class="info-item">
-            <span class="label" style="display: block; color: var(--text-muted); font-size: 0.8rem; font-family: var(--font-mono); text-transform: uppercase;">Local IP Address</span>
-            <span class="value" style="font-size: 1.05rem; font-weight: 600; color: var(--text-primary); font-family: var(--font-mono);">{{ system.local_ip if system and system.local_ip else '127.0.0.1' }}</span>
+            <span class="label"
+                style="display: block; color: var(--text-muted); font-size: 0.8rem; font-family: var(--font-mono); text-transform: uppercase;">Local
+                IP Address</span>
+            <span class="value"
+                style="font-size: 1.05rem; font-weight: 600; color: var(--text-primary); font-family: var(--font-mono);">{{
+                system.local_ip if system and system.local_ip else '127.0.0.1' }}</span>
         </div>
         <div class="info-item">
-            <span class="label" style="display: block; color: var(--text-muted); font-size: 0.8rem; font-family: var(--font-mono); text-transform: uppercase;">Public IP Address</span>
-            <span class="value" style="font-size: 1.05rem; font-weight: 600; color: var(--accent-green); font-family: var(--font-mono);">{{ system.public_ip if system and system.public_ip else 'Protected' }}</span>
+            <span class="label"
+                style="display: block; color: var(--text-muted); font-size: 0.8rem; font-family: var(--font-mono); text-transform: uppercase;">Public
+                IP Address</span>
+            <span class="value"
+                style="font-size: 1.05rem; font-weight: 600; color: var(--accent-green); font-family: var(--font-mono);">{{
+                system.public_ip if system and system.public_ip else 'Protected' }}</span>
         </div>
     </div>
 </section>
 
 <!-- Network Interfaces Card (Argus 1.0 Core) -->
 {% if system and system.network_interfaces %}
-<section class="card dashboard-card" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 2rem; margin-bottom: 2.5rem;">
-    <div class="card-header" style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem;">
+<section class="card dashboard-card"
+    style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 2rem; margin-bottom: 2.5rem;">
+    <div class="card-header"
+        style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem;">
         <div class="card-icon" style="color: var(--accent-purple);">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M5 12.55a11 11 0 0114.08 0" />
@@ -96,11 +121,16 @@
         </div>
         <h2 style="font-size: 1.4rem; font-weight: 600;">Active Network Interfaces</h2>
     </div>
-    <div class="interface-list" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
+    <div class="interface-list"
+        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
         {% for iface in system.network_interfaces %}
-        <div class="info-item" style="background: rgba(0, 0, 0, 0.3); padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border);">
-            <span class="label" style="display: block; color: var(--text-muted); font-size: 0.75rem; font-family: var(--font-mono);">{{ iface.name }}</span>
-            <span class="value" style="font-family: var(--font-mono); color: var(--accent-purple); font-weight: 600;">{{ iface.ip }}</span>
+        <div class="info-item"
+            style="background: rgba(0, 0, 0, 0.3); padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border);">
+            <span class="label"
+                style="display: block; color: var(--text-muted); font-size: 0.75rem; font-family: var(--font-mono);">{{
+                iface.name }}</span>
+            <span class="value" style="font-family: var(--font-mono); color: var(--accent-purple); font-weight: 600;">{{
+                iface.ip }}</span>
         </div>
         {% endfor %}
     </div>
@@ -109,30 +139,44 @@
 
 <!-- Quick Actions (Argus 1.0 Module Navigation) -->
 <section class="quick-actions" style="margin-top: 2.5rem;">
-    <h3 style="font-size: 1.2rem; font-weight: 600; margin-bottom: 1rem; color: var(--text-primary);">Security Operations Quick Navigation</h3>
-    <div class="action-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem;">
-        <a href="/projects-page" class="action-card" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; text-decoration: none; display: flex; flex-direction: column; align-items: center; gap: 0.75rem; color: var(--text-primary); transition: var(--transition);">
-            <div class="action-icon" style="color: var(--accent-purple); font-size: 1.5rem;"><i class="fa-solid fa-folder-tree"></i></div>
+    <h3 style="font-size: 1.2rem; font-weight: 600; margin-bottom: 1rem; color: var(--text-primary);">Security
+        Operations Quick Navigation</h3>
+    <div class="action-grid"
+        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem;">
+        <a href="/projects-page" class="action-card"
+            style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; text-decoration: none; display: flex; flex-direction: column; align-items: center; gap: 0.75rem; color: var(--text-primary); transition: var(--transition);">
+            <div class="action-icon" style="color: var(--accent-purple); font-size: 1.5rem;"><i
+                    class="fa-solid fa-folder-tree"></i></div>
             <span style="font-weight: 600; font-size: 0.95rem;">Projects Scope</span>
         </a>
-        <a href="/assets-page" class="action-card" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; text-decoration: none; display: flex; flex-direction: column; align-items: center; gap: 0.75rem; color: var(--text-primary); transition: var(--transition);">
-            <div class="action-icon" style="color: var(--accent-purple); font-size: 1.5rem;"><i class="fa-solid fa-network-wired"></i></div>
+        <a href="/assets-page" class="action-card"
+            style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; text-decoration: none; display: flex; flex-direction: column; align-items: center; gap: 0.75rem; color: var(--text-primary); transition: var(--transition);">
+            <div class="action-icon" style="color: var(--accent-purple); font-size: 1.5rem;"><i
+                    class="fa-solid fa-network-wired"></i></div>
             <span style="font-weight: 600; font-size: 0.95rem;">Asset Inventory</span>
         </a>
-        <a href="/recon" class="action-card" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; text-decoration: none; display: flex; flex-direction: column; align-items: center; gap: 0.75rem; color: var(--text-primary); transition: var(--transition);">
-            <div class="action-icon" style="color: var(--accent-purple); font-size: 1.5rem;"><i class="fa-solid fa-bullseye"></i></div>
+        <a href="/recon" class="action-card"
+            style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; text-decoration: none; display: flex; flex-direction: column; align-items: center; gap: 0.75rem; color: var(--text-primary); transition: var(--transition);">
+            <div class="action-icon" style="color: var(--accent-purple); font-size: 1.5rem;"><i
+                    class="fa-solid fa-bullseye"></i></div>
             <span style="font-weight: 600; font-size: 0.95rem;">Target Recon</span>
         </a>
-        <a href="/scan" class="action-card" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; text-decoration: none; display: flex; flex-direction: column; align-items: center; gap: 0.75rem; color: var(--text-primary); transition: var(--transition);">
-            <div class="action-icon" style="color: var(--accent-purple); font-size: 1.5rem;"><i class="fa-solid fa-crosshairs"></i></div>
+        <a href="/scan" class="action-card"
+            style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; text-decoration: none; display: flex; flex-direction: column; align-items: center; gap: 0.75rem; color: var(--text-primary); transition: var(--transition);">
+            <div class="action-icon" style="color: var(--accent-purple); font-size: 1.5rem;"><i
+                    class="fa-solid fa-crosshairs"></i></div>
             <span style="font-weight: 600; font-size: 0.95rem;">Network Scan</span>
         </a>
-        <a href="/fingerprint" class="action-card" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; text-decoration: none; display: flex; flex-direction: column; align-items: center; gap: 0.75rem; color: var(--text-primary); transition: var(--transition);">
-            <div class="action-icon" style="color: var(--accent-purple); font-size: 1.5rem;"><i class="fa-solid fa-fingerprint"></i></div>
+        <a href="/fingerprint" class="action-card"
+            style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; text-decoration: none; display: flex; flex-direction: column; align-items: center; gap: 0.75rem; color: var(--text-primary); transition: var(--transition);">
+            <div class="action-icon" style="color: var(--accent-purple); font-size: 1.5rem;"><i
+                    class="fa-solid fa-fingerprint"></i></div>
             <span style="font-weight: 600; font-size: 0.95rem;">Web Fingerprint</span>
         </a>
-        <a href="/report" class="action-card" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; text-decoration: none; display: flex; flex-direction: column; align-items: center; gap: 0.75rem; color: var(--text-primary); transition: var(--transition);">
-            <div class="action-icon" style="color: var(--accent-purple); font-size: 1.5rem;"><i class="fa-solid fa-file-shield"></i></div>
+        <a href="/report" class="action-card"
+            style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; text-decoration: none; display: flex; flex-direction: column; align-items: center; gap: 0.75rem; color: var(--text-primary); transition: var(--transition);">
+            <div class="action-icon" style="color: var(--accent-purple); font-size: 1.5rem;"><i
+                    class="fa-solid fa-file-shield"></i></div>
             <span style="font-weight: 600; font-size: 0.95rem;">Generate Report</span>
         </a>
     </div>
