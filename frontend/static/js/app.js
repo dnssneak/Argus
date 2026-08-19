@@ -215,17 +215,17 @@ function renderProjectsGrid(projects) {
                             <i class="fa-regular fa-clock" style="font-size: 0.7rem; color: var(--accent-purple); flex-shrink: 0;"></i> <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${lastScanText}</span>
                         </span>
                         <div style="display: flex; gap: 6px; align-items: center; flex-shrink: 0; position: relative; z-index: 2;">
-                            <button onclick="openProjectDetail(${p.id}, event)" class="btn-open-3d" style="cursor: pointer;">
+                            <button type="button" onclick="openProjectDetail(${p.id}, event)" class="btn-open-3d">
                                 Open <i class="fa-solid fa-arrow-right" style="font-size: 0.68rem;"></i>
                             </button>
-                            <button onclick="openEditProjectModalById(${p.id}, event)" class="btn-action-icon" title="Edit Project" style="cursor: pointer;">
-                                <i class="fa-solid fa-pen"></i>
+                            <button type="button" onclick="openEditProjectModalById(${p.id}, event)" class="btn-action-icon" title="Edit Project">
+                                <i class="fa-solid fa-pen" style="font-size: 0.75rem;"></i>
                             </button>
-                            <button onclick="archiveProject(${p.id}, event)" class="btn-action-icon btn-archive" title="Archive Project" style="cursor: pointer;">
-                                <i class="fa-solid fa-box-archive"></i>
+                            <button type="button" onclick="archiveProject(${p.id}, event)" class="btn-action-icon btn-archive" title="Archive Project">
+                                <i class="fa-solid fa-box-archive" style="font-size: 0.75rem;"></i>
                             </button>
-                            <button onclick="deleteProject(${p.id}, false, event)" class="btn-action-icon btn-delete" title="Delete Project" style="cursor: pointer;">
-                                <i class="fa-solid fa-trash"></i>
+                            <button type="button" onclick="deleteProject(${p.id}, false, event)" class="btn-action-icon btn-delete" title="Delete Project">
+                                <i class="fa-solid fa-trash" style="font-size: 0.75rem;"></i>
                             </button>
                         </div>
                     </div>
@@ -237,11 +237,19 @@ function renderProjectsGrid(projects) {
 
 // Modal Handlers
 function openCreateProjectModal() {
-    document.getElementById('createProjectModal')?.classList.add('active');
+    const modal = document.getElementById('createProjectModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        modal.classList.add('active');
+    }
 }
 
 function closeCreateProjectModal() {
-    document.getElementById('createProjectModal')?.classList.remove('active');
+    const modal = document.getElementById('createProjectModal');
+    if (modal) {
+        modal.classList.remove('active');
+        modal.style.display = 'none';
+    }
 }
 
 async function handleCreateProjectSubmit(event) {
@@ -282,11 +290,19 @@ function openEditProjectModal(id, name, description, status) {
     if (mDesc) mDesc.value = description;
     if (mStatus) mStatus.value = status;
 
-    document.getElementById('editProjectModal')?.classList.add('active');
+    const modal = document.getElementById('editProjectModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        modal.classList.add('active');
+    }
 }
 
 function closeEditProjectModal() {
-    document.getElementById('editProjectModal')?.classList.remove('active');
+    const modal = document.getElementById('editProjectModal');
+    if (modal) {
+        modal.classList.remove('active');
+        modal.style.display = 'none';
+    }
 }
 
 async function handleEditProjectSubmit(event) {
@@ -337,7 +353,10 @@ async function archiveProject(id, event = null) {
 
 function closeDeleteProtectionModal() {
     const modal = document.getElementById('deleteProtectionModal');
-    if (modal) modal.classList.remove('active');
+    if (modal) {
+        modal.classList.remove('active');
+        modal.style.display = 'none';
+    }
 }
 
 // Delete Protection handling
@@ -355,26 +374,41 @@ async function deleteProject(id, force = false, event = null) {
             closeDeleteProtectionModal();
         } else if (data.delete_protection) {
             // Display Delete Protection Warning Modal
-            const counts = data.counts;
-            document.getElementById('deleteProtectionText').textContent = data.error;
-            document.getElementById('deleteCountsBox').innerHTML = `
-                <div>Associated Records:</div>
-                <div>• ${counts.assets} Discovered Assets</div>
-                <div>• ${counts.findings} Security Findings</div>
-                <div>• ${counts.scans} Pipeline Scans</div>
-                <div>• ${counts.targets} Assessment Targets</div>
-            `;
+            const counts = data.counts || { assets: 0, findings: 0, scans: 0, targets: 0 };
+            const textElem = document.getElementById('deleteProtectionText');
+            if (textElem) textElem.textContent = data.error || 'Project has active dependencies.';
 
-            document.getElementById('archiveInsteadBtn').onclick = () => {
-                closeDeleteProtectionModal();
-                archiveProject(id);
-            };
+            const countsElem = document.getElementById('deleteCountsBox');
+            if (countsElem) {
+                countsElem.innerHTML = `
+                    <div>Associated Records:</div>
+                    <div>• ${counts.assets || 0} Discovered Assets</div>
+                    <div>• ${counts.findings || 0} Security Findings</div>
+                    <div>• ${counts.scans || 0} Pipeline Scans</div>
+                    <div>• ${counts.targets || 0} Assessment Targets</div>
+                `;
+            }
 
-            document.getElementById('forceDeleteBtn').onclick = () => {
-                deleteProject(id, true);
-            };
+            const archiveBtn = document.getElementById('archiveInsteadBtn');
+            if (archiveBtn) {
+                archiveBtn.onclick = () => {
+                    closeDeleteProtectionModal();
+                    archiveProject(id);
+                };
+            }
 
-            document.getElementById('deleteProtectionModal')?.classList.add('active');
+            const forceBtn = document.getElementById('forceDeleteBtn');
+            if (forceBtn) {
+                forceBtn.onclick = () => {
+                    deleteProject(id, true);
+                };
+            }
+
+            const modal = document.getElementById('deleteProtectionModal');
+            if (modal) {
+                modal.style.display = 'flex';
+                modal.classList.add('active');
+            }
         } else {
             showToast(data.error || 'Failed to delete project', 'error');
         }
