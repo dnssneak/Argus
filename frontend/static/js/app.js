@@ -13,7 +13,7 @@ function showToast(message, type = 'info') {
     toast.className = 'toast';
     toast.style.cssText = 'background: var(--bg-card); border: 1px solid var(--border-accent); color: var(--text-primary); padding: 12px 18px; border-radius: 8px; font-size: 0.9rem; display: flex; align-items: center; gap: 10px; box-shadow: var(--shadow-lg); border-left: 4px solid var(--accent-purple);';
     toast.innerHTML = `<i class="fa-solid fa-circle-info" style="color: var(--accent-purple);"></i> <span>${message}</span>`;
-    
+
     container.appendChild(toast);
     setTimeout(() => {
         toast.style.opacity = '0';
@@ -54,7 +54,7 @@ async function loadProjectsPage() {
     const search = document.getElementById('projectSearchInput')?.value || '';
     let url = `/api/v1/projects?status=${activeStatusFilter}`;
     if (search.trim()) {
-        url += `&search=${encodeURIComponent(search.strip ? search.strip() : search.trim())}`;
+        url += `&search=${encodeURIComponent(search.trim())}`;
     }
 
     try {
@@ -62,7 +62,8 @@ async function loadProjectsPage() {
         const data = await res.json();
 
         if (data.success) {
-            renderProjectsGrid(data.projects);
+            loadedProjectsList = data.projects || [];
+            renderProjectsGrid(loadedProjectsList);
         }
     } catch (err) {
         showToast('Failed to load projects: ' + err.message, 'error');
@@ -100,6 +101,21 @@ function handleProjectSearch() {
     loadProjectsPage();
 }
 
+function openProjectDetail(id, event = null) {
+    if (event) event.stopPropagation();
+    if (id) {
+        window.location.href = `/projects/${id}`;
+    }
+}
+
+function openEditProjectModalById(id, event = null) {
+    if (event) event.stopPropagation();
+    const p = loadedProjectsList.find(item => item.id == id);
+    if (p) {
+        openEditProjectModal(p.id, p.name, p.description || '', p.status);
+    }
+}
+
 function renderProjectsGrid(projects) {
     const grid = document.getElementById('projectsGrid');
     if (!grid) return;
@@ -122,18 +138,18 @@ function renderProjectsGrid(projects) {
 
     grid.innerHTML = projects.map(p => {
         const isArchived = p.status === 'ARCHIVED';
-        const badgeStyle = isArchived 
-            ? 'background: rgba(251, 191, 36, 0.15); color: #FBBF24; border: 1px solid rgba(251, 191, 36, 0.35);' 
+        const badgeStyle = isArchived
+            ? 'background: rgba(251, 191, 36, 0.15); color: #FBBF24; border: 1px solid rgba(251, 191, 36, 0.35);'
             : 'background: rgba(74, 222, 128, 0.15); color: #4ADE80; border: 1px solid rgba(74, 222, 128, 0.3);';
 
         const lastScanText = p.last_scan ? new Date(p.last_scan).toLocaleDateString() : 'No scans yet';
 
         return `
-            <div class="project-card-3d">
+            <div class="project-card-3d" onclick="openProjectDetail(${p.id}, event)">
                 <div>
                     <!-- Header Row: ID Tag & Status Badge -->
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem;">
-                        <span style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--accent-purple); background: rgba(168,85,247,0.1); padding: 3px 8px; border-radius: 6px; border: 1px solid var(--border);">
+                        <span style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--accent-purple); background: rgba(168,85,247,0.1); padding: 3px 8px; border-radius: 6px; border: 1px solid var(--border-accent);">
                             <i class="fa-solid fa-hashtag" style="font-size: 0.65rem;"></i> ${p.id}
                         </span>
                         <span class="badge" style="${badgeStyle} font-family: var(--font-mono); font-size: 0.7rem; padding: 3px 10px; border-radius: 20px; font-weight: 600;">
@@ -142,8 +158,8 @@ function renderProjectsGrid(projects) {
                     </div>
                     
                     <!-- Title -->
-                    <h3 style="margin-bottom: 0.6rem;">
-                        <a href="/projects/${p.id}" class="card-title-link">${escapeHtml(p.name)}</a>
+                    <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.6rem;">
+                        <a href="/projects/${p.id}" onclick="openProjectDetail(${p.id}, event)" style="color: var(--text-primary); text-decoration: none; transition: color 0.2s ease;" onmouseover="this.style.color='var(--accent-purple)'" onmouseout="this.style.color='var(--text-primary)'">${escapeHtml(p.name)}</a>
                     </h3>
 
                     <!-- Description -->
@@ -156,17 +172,17 @@ function renderProjectsGrid(projects) {
                     <!-- Statistics Row -->
                     <div style="display: flex; justify-content: space-between; gap: 6px; margin-bottom: 1.25rem; font-family: var(--font-mono); font-size: 0.78rem; background: rgba(0,0,0,0.35); border: 1px solid var(--border); padding: 10px 14px; border-radius: 12px;">
                         <div style="text-align: center; flex: 1;">
-                            <span style="display: block; color: var(--text-muted); font-size: 0.68rem; uppercase;">Targets</span>
+                            <span style="display: block; color: var(--text-muted); font-size: 0.68rem; text-transform: uppercase;">Targets</span>
                             <strong style="color: var(--accent-purple); font-size: 0.95rem;">${p.target_count || 0}</strong>
                         </div>
                         <div style="width: 1px; background: var(--border);"></div>
                         <div style="text-align: center; flex: 1;">
-                            <span style="display: block; color: var(--text-muted); font-size: 0.68rem; uppercase;">Assets</span>
+                            <span style="display: block; color: var(--text-muted); font-size: 0.68rem; text-transform: uppercase;">Assets</span>
                             <strong style="color: var(--text-primary); font-size: 0.95rem;">${p.asset_count || 0}</strong>
                         </div>
                         <div style="width: 1px; background: var(--border);"></div>
                         <div style="text-align: center; flex: 1;">
-                            <span style="display: block; color: var(--text-muted); font-size: 0.68rem; uppercase;">Findings</span>
+                            <span style="display: block; color: var(--text-muted); font-size: 0.68rem; text-transform: uppercase;">Findings</span>
                             <strong style="color: var(--accent-magenta); font-size: 0.95rem;">${p.finding_count || 0}</strong>
                         </div>
                     </div>
@@ -176,17 +192,17 @@ function renderProjectsGrid(projects) {
                         <span style="font-size: 0.72rem; color: var(--text-muted); font-family: var(--font-mono); display: flex; align-items: center; gap: 5px; min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="Last Scan: ${lastScanText}">
                             <i class="fa-regular fa-clock" style="font-size: 0.7rem; color: var(--accent-purple); flex-shrink: 0;"></i> <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${lastScanText}</span>
                         </span>
-                        <div style="display: flex; gap: 6px; align-items: center; flex-shrink: 0;">
-                            <a href="/projects/${p.id}" class="btn-open-3d">
+                        <div style="display: flex; gap: 6px; align-items: center; flex-shrink: 0; position: relative; z-index: 2;">
+                            <button onclick="openProjectDetail(${p.id}, event)" class="btn-open-3d" style="cursor: pointer;">
                                 Open <i class="fa-solid fa-arrow-right" style="font-size: 0.68rem;"></i>
-                            </a>
-                            <button onclick="openEditProjectModal(${p.id}, '${escapeHtml(p.name)}', '${escapeHtml(p.description || '')}', '${p.status}')" class="btn-action-icon" title="Edit Project">
+                            </button>
+                            <button onclick="openEditProjectModalById(${p.id}, event)" class="btn-action-icon" title="Edit Project" style="cursor: pointer;">
                                 <i class="fa-solid fa-pen"></i>
                             </button>
-                            <button onclick="archiveProject(${p.id})" class="btn-action-icon btn-archive" title="Archive Project">
+                            <button onclick="archiveProject(${p.id}, event)" class="btn-action-icon btn-archive" title="Archive Project" style="cursor: pointer;">
                                 <i class="fa-solid fa-box-archive"></i>
                             </button>
-                            <button onclick="deleteProject(${p.id})" class="btn-action-icon btn-delete" title="Delete Project">
+                            <button onclick="deleteProject(${p.id}, false, event)" class="btn-action-icon btn-delete" title="Delete Project" style="cursor: pointer;">
                                 <i class="fa-solid fa-trash"></i>
                             </button>
                         </div>
@@ -276,7 +292,8 @@ async function handleEditProjectSubmit(event) {
     }
 }
 
-async function archiveProject(id) {
+async function archiveProject(id, event = null) {
+    if (event) event.stopPropagation();
     try {
         const res = await fetch(`/api/v1/projects/${id}/archive`, { method: 'POST' });
         const data = await res.json();
@@ -294,7 +311,8 @@ async function archiveProject(id) {
 }
 
 // Delete Protection handling
-async function deleteProject(id, force = false) {
+async function deleteProject(id, force = false, event = null) {
+    if (event) event.stopPropagation();
     currentDeleteProjectId = id;
     try {
         const res = await fetch(`/api/v1/projects/${id}?force=${force}`, { method: 'DELETE' });
@@ -316,7 +334,7 @@ async function deleteProject(id, force = false) {
                 <div>• ${counts.scans} Pipeline Scans</div>
                 <div>• ${counts.targets} Assessment Targets</div>
             `;
-            
+
             document.getElementById('archiveInsteadBtn').onclick = () => {
                 closeDeleteProtectionModal();
                 archiveProject(id);
@@ -356,12 +374,12 @@ async function loadProjectDashboard(projectId) {
             document.getElementById('projNameText').textContent = p.name;
             document.getElementById('projDescText').textContent = p.description || 'No description provided.';
             document.getElementById('projStatusBadge').textContent = p.status;
-            
+
             const badge = document.getElementById('projStatusBadge');
             if (p.status === 'ARCHIVED') {
-                badge.style.cssText = 'background: rgba(251, 191, 36, 0.15); color: #FBBF24; border: 1px solid rgba(251, 191, 36, 0.35);';
+                badge.style.cssText = 'display: inline-flex; align-items: center; height: 28px; background: rgba(251, 191, 36, 0.15); color: #FBBF24; border: 1px solid rgba(251, 191, 36, 0.35); padding: 0 14px; border-radius: 30px; font-weight: 600; font-family: var(--font-mono); font-size: 0.75rem; line-height: 1; box-sizing: border-box;';
             } else {
-                badge.style.cssText = 'background: rgba(74, 222, 128, 0.15); color: #4ADE80; border: 1px solid rgba(74, 222, 128, 0.3);';
+                badge.style.cssText = 'display: inline-flex; align-items: center; height: 28px; background: rgba(74, 222, 128, 0.15); color: #4ADE80; border: 1px solid rgba(74, 222, 128, 0.3); padding: 0 14px; border-radius: 30px; font-weight: 600; font-family: var(--font-mono); font-size: 0.75rem; line-height: 1; box-sizing: border-box;';
             }
 
             // Real Statistics Cards
@@ -383,12 +401,12 @@ async function loadProjectDashboard(projectId) {
                 `;
             } else {
                 targetsBox.innerHTML = `
-                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
                         ${targets.map(t => `
-                            <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); padding: 12px 16px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
-                                <div style="font-family: var(--font-mono); font-weight: 600; color: var(--accent-purple);">${escapeHtml(t.target)}</div>
+                            <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); padding: 12px 18px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; width: 100%; box-sizing: border-box;">
+                                <div style="font-family: var(--font-mono); font-weight: 600; color: var(--accent-purple); font-size: 0.95rem;">${escapeHtml(t.target)}</div>
                                 <div style="display: flex; gap: 10px; align-items: center;">
-                                    <span class="badge" style="background: rgba(168,85,247,0.1); border: 1px solid var(--border-accent); color: var(--accent-purple); font-size: 0.75rem; padding: 2px 8px; border-radius: 4px;">${t.target_type}</span>
+                                    <span class="badge" style="background: rgba(168,85,247,0.1); border: 1px solid var(--border-accent); color: var(--accent-purple); font-size: 0.75rem; padding: 3px 10px; border-radius: 20px;">${t.target_type}</span>
                                     <span style="font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono);">${new Date(t.created_at).toLocaleDateString()}</span>
                                 </div>
                             </div>
@@ -472,7 +490,63 @@ async function handleAddTargetSubmit(event) {
 }
 
 function triggerProjectScan() {
-    openAddTargetModal();
+    const projId = document.getElementById('currentProjectId')?.value;
+    if (!projId) return;
+
+    fetch(`/api/v1/projects/${projId}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                const targets = (data.project ? data.project.targets : (data.data ? data.data.targets : [])) || [];
+                if (targets.length === 0) {
+                    showToast('No targets in project scope yet! Please click "+ Add Target" first.', 'error');
+                    openAddTargetModal();
+                    return;
+                }
+
+                // Populate target select dropdown in startScanModal
+                const select = document.getElementById('scanTargetSelect');
+                if (select) {
+                    select.innerHTML = targets.map(t => `<option value="${escapeHtml(t.target)}">${escapeHtml(t.target)} (${t.target_type})</option>`).join('');
+                }
+
+                // Show Launch Scan modal
+                const modal = document.getElementById('startScanModal');
+                if (modal) modal.style.display = 'flex';
+            } else {
+                showToast(data.error || 'Failed to load project targets', 'error');
+            }
+        })
+        .catch(err => {
+            showToast('Error loading project targets: ' + err.message, 'error');
+        });
+}
+
+function closeStartScanModal() {
+    const modal = document.getElementById('startScanModal');
+    if (modal) modal.style.display = 'none';
+}
+
+function handleStartScanSubmit(event) {
+    event.preventDefault();
+    const target = document.getElementById('scanTargetSelect')?.value;
+    const engine = document.getElementById('scanEngineSelect')?.value || 'recon';
+    const projId = document.getElementById('currentProjectId')?.value;
+
+    if (!target) {
+        showToast('Please select a target to scan.', 'error');
+        return;
+    }
+
+    showToast(`Launching ${engine.toUpperCase()} engine scan for '${target}'...`);
+    closeStartScanModal();
+
+    setTimeout(() => {
+        let route = `/recon?target=${encodeURIComponent(target)}&project_id=${projId}`;
+        if (engine === 'fingerprint') route = `/fingerprint?target=${encodeURIComponent(target)}&project_id=${projId}`;
+        if (engine === 'subdomain') route = `/subdomain?target=${encodeURIComponent(target)}&project_id=${projId}`;
+        window.location.href = route;
+    }, 600);
 }
 
 function escapeHtml(str) {
