@@ -1,5 +1,7 @@
 import os
+# pyrefly: ignore [missing-import]
 from sqlalchemy import create_engine
+# pyrefly: ignore [missing-import]
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 # Database URL configuration (SQLite default, customizable via environment variable)
@@ -31,21 +33,44 @@ def get_db():
 
 def init_db():
     """Initialize database tables and create default workspace project if empty."""
-    from sqlalchemy import inspect, text
-    from models.models import Project
-
+    from models.models import Project, Asset, Service, Technology, Endpoint, AssetHistory, AssetNote
     Base.metadata.create_all(bind=engine)
     
-    # Auto-migrate columns for local SQLite DB if missing
-    inspector = inspect(engine)
-    if "projects" in inspector.get_table_names():
-        columns = [c["name"] for c in inspector.get_columns("projects")]
-        with engine.connect() as conn:
-            if "owner_id" not in columns:
-                conn.execute(text("ALTER TABLE projects ADD COLUMN owner_id VARCHAR(128) DEFAULT 'local-user'"))
-            if "status" not in columns:
-                conn.execute(text("ALTER TABLE projects ADD COLUMN status VARCHAR(32) DEFAULT 'ACTIVE'"))
-            conn.commit()
+    # Dynamic SQLite migrations for new columns
+    with engine.begin() as conn:
+        def add_col(table, col, col_type):
+            res = conn.exec_driver_sql(f"PRAGMA table_info({table})")
+            existing_cols = [row[1] for row in res.fetchall()]
+            if col not in existing_cols:
+                conn.exec_driver_sql(f"ALTER TABLE {table} ADD COLUMN {col} {col_type}")
+
+        # projects table
+        add_col("projects", "owner_id", "VARCHAR(128) DEFAULT 'local-user'")
+        add_col("projects", "status", "VARCHAR(32) DEFAULT 'ACTIVE'")
+
+        # assets table
+        add_col("assets", "exposure", "VARCHAR(64) DEFAULT 'Unknown'")
+        add_col("assets", "discovery_sources", "TEXT DEFAULT 'DNS'")
+        add_col("assets", "confidence", "INTEGER DEFAULT 90")
+        add_col("assets", "tags", "TEXT DEFAULT ''")
+        add_col("assets", "web_url", "VARCHAR(512)")
+        add_col("assets", "web_status_code", "INTEGER")
+        add_col("assets", "web_title", "VARCHAR(256)")
+        add_col("assets", "web_server", "VARCHAR(128)")
+        add_col("assets", "web_security_headers", "TEXT")
+        add_col("assets", "cert_issuer", "VARCHAR(256)")
+        add_col("assets", "cert_valid_from", "DATETIME")
+        add_col("assets", "cert_expires", "DATETIME")
+        add_col("assets", "cert_sans", "TEXT")
+
+        # services table
+        add_col("services", "state", "VARCHAR(32) DEFAULT 'Open'")
+        add_col("services", "discovery_source", "VARCHAR(64)")
+
+        # technologies table
+        add_col("technologies", "vendor", "VARCHAR(128)")
+        add_col("technologies", "detection_source", "VARCHAR(64)")
+        add_col("technologies", "confidence", "INTEGER DEFAULT 90")
 
     # Ensure default project exists
     db = SessionLocal()
@@ -63,3 +88,4 @@ def init_db():
             db.refresh(default_proj)
     finally:
         db.close()
+

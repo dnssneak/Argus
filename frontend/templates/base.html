@@ -93,9 +93,28 @@
     <!-- Main Content -->
     <main class="main-content">
         <div class="content-container" style="max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem;">
+            <!-- Page Header -->
+            {% if self.page_title()|trim or self.top_actions()|trim %}
+            <div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem; flex-wrap: wrap; gap: 16px;">
+                <div>
+                    <h1 class="page-title">
+                        {% block page_title %}{% endblock %}
+                    </h1>
+                    <p class="page-desc" style="color: var(--text-secondary); margin: 0;">
+                        {% block page_subtitle %}{% endblock %}
+                    </p>
+                </div>
+                <div class="top-actions">
+                    {% block top_actions %}{% endblock %}
+                </div>
+            </div>
+            {% endif %}
+
+            
             {% block content %}{% endblock %}
         </div>
     </main>
+
 
     <!-- Global Toast Container -->
     <div id="toastContainer" class="toast-container" style="position: fixed; bottom: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 10px;"></div>

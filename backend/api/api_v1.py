@@ -1,6 +1,7 @@
+# pyrefly: ignore [missing-import]
 from flask import Blueprint, jsonify, request
 from db.database import SessionLocal
-from models.models import Project, Asset, Service, Technology, Finding, Scan, Relationship
+from models.models import Project, Asset, Service, Technology, Finding, Scan, Relationship, Endpoint, AssetHistory, AssetNote
 from models.schemas import ProjectCreate, AssetCreate, FindingCreate
 
 api_bp = Blueprint("api_v1", __name__, url_prefix="/api/v1")
@@ -254,6 +255,34 @@ def create_asset():
         db.close()
 
 
+def compute_risk_factors(asset):
+    factors = []
+    if asset.exposure == "Internet-Facing":
+        factors.append("Internet-facing endpoint exposure")
+    if asset.risk_score >= 80:
+        factors.append("Critical risk priority threshold exceeded")
+    
+    # Open services
+    if asset.services:
+        factors.append(f"{len(asset.services)} open network services detected")
+        for s in asset.services:
+            if s.port in [22, 23, 21, 3389]:
+                factors.append(f"Exposed management service: {s.service_name} ({s.port}/{s.protocol})")
+                
+    # Security findings
+    if asset.findings:
+        criticals = sum(1 for f in asset.findings if f.severity.lower() == "critical")
+        highs = sum(1 for f in asset.findings if f.severity.lower() == "high")
+        if criticals:
+            factors.append(f"{criticals} unresolved Critical vulnerabilities")
+        if highs:
+            factors.append(f"{highs} unresolved High vulnerabilities")
+            
+    if not factors:
+        factors.append("Default security baseline risk criteria")
+    return factors
+
+
 @api_bp.route("/assets/<int:asset_id>", methods=["GET"])
 def get_asset_detail(asset_id):
     db = get_db()
@@ -266,8 +295,12 @@ def get_asset_detail(asset_id):
         data["services"] = [s.to_dict() for s in asset.services]
         data["technologies"] = [t.to_dict() for t in asset.technologies]
         data["findings"] = [f.to_dict() for f in asset.findings]
+        data["endpoints"] = [e.to_dict() for e in asset.endpoints]
+        data["history"] = sorted([h.to_dict() for h in asset.history], key=lambda x: x["created_at"] or "", reverse=True)
+        data["notes"] = sorted([n.to_dict() for n in asset.notes], key=lambda x: x["created_at"] or "", reverse=True)
         data["outgoing_relationships"] = [r.to_dict() for r in asset.outgoing_relationships]
         data["incoming_relationships"] = [r.to_dict() for r in asset.incoming_relationships]
+        data["risk_factors"] = compute_risk_factors(asset)
 
         return jsonify({"success": True, "asset": data})
     finally:
@@ -290,6 +323,190 @@ def delete_asset(asset_id):
         return jsonify({"success": False, "error": str(e)}), 500
     finally:
         db.close()
+
+
+@api_bp.route("/assets/<int:asset_id>/notes", methods=["POST"])
+def add_asset_note(asset_id):
+    db = get_db()
+    try:
+        data = request.get_json() or {}
+        content = data.get("content", "").strip()
+        author = data.get("author", "Analyst").strip() or "Analyst"
+
+        if not content:
+            return jsonify({"success": False, "error": "Content is required"}), 400
+
+        asset = db.get(Asset, asset_id)
+        if not asset:
+            return jsonify({"success": False, "error": "Asset not found"}), 404
+
+        note = AssetNote(asset_id=asset_id, author=author, content=content)
+        db.add(note)
+
+        # Add to asset history
+        history_event = AssetHistory(
+            asset_id=asset_id,
+            event_name="Analyst Note Added",
+            event_details=f"Note by {author}: '{content[:50]}'"
+        )
+        db.add(history_event)
+
+        db.commit()
+        db.refresh(note)
+
+        return jsonify({"success": True, "note": note.to_dict()}), 201
+    except Exception as e:
+        db.rollback()
+        return jsonify({"success": False, "error": str(e)}), 500
+    finally:
+        db.close()
+
+
+@api_bp.route("/assets/<int:asset_id>/tags", methods=["POST"])
+def update_asset_tags(asset_id):
+    db = get_db()
+    try:
+        data = request.get_json() or {}
+        tags_list = data.get("tags", [])
+        tags_str = ",".join([t.strip() for t in tags_list if t.strip()])
+
+        asset = db.get(Asset, asset_id)
+        if not asset:
+            return jsonify({"success": False, "error": "Asset not found"}), 404
+
+        old_tags = asset.tags or ""
+        asset.tags = tags_str
+
+        # Add history entry
+        history_event = AssetHistory(
+            asset_id=asset_id,
+            event_name="Asset Tags Updated",
+            event_details=f"Updated tags from '{old_tags}' to '{tags_str}'"
+        )
+        db.add(history_event)
+
+        db.commit()
+        return jsonify({"success": True, "tags": [t.strip() for t in tags_str.split(",") if t.strip()]})
+    except Exception as e:
+        db.rollback()
+        return jsonify({"success": False, "error": str(e)}), 500
+    finally:
+        db.close()
+
+
+@api_bp.route("/assets/<int:asset_id>/scan", methods=["POST"])
+def scan_single_asset(asset_id):
+    db = get_db()
+    try:
+        asset = db.get(Asset, asset_id)
+        if not asset:
+            return jsonify({"success": False, "error": "Asset not found"}), 404
+
+        from recon import TargetRecon
+        from scanner import NetworkScanner
+        from fingerprint import WebsiteFingerprinter
+
+        # Add Scan History Start Event
+        db.add(AssetHistory(
+            asset_id=asset_id,
+            event_name="On-Demand Scan Started",
+            event_details="Initializing target reconnaissance and service discovery."
+        ))
+        db.commit()
+
+        # 1. Target Recon
+        recon = TargetRecon(asset.name)
+        recon_data = recon.collect()
+        if recon_data.get("resolved_ip"):
+            asset.ip_address = recon_data.get("resolved_ip")
+
+        # 2. Port scan
+        scanner = NetworkScanner(asset.name, "full")
+        scan_data = scanner.collect()
+
+        if scan_data.get("error"):
+            # Add to history and return scan execution failure
+            db.add(AssetHistory(
+                asset_id=asset_id,
+                event_name="On-Demand Scan Failed",
+                event_details=scan_data.get("error")
+            ))
+            db.commit()
+            return jsonify({"success": False, "error": scan_data.get("error")}), 500
+
+        # Clear existing services for this asset to avoid duplicates
+        db.query(Service).filter_by(asset_id=asset_id).delete()
+
+        for s in scan_data.get("services", []):
+            srv = Service(
+                asset_id=asset_id,
+                port=s.get("port"),
+                protocol=s.get("protocol").lower(),
+                service_name=s.get("name"),
+                version=s.get("version"),
+                state="Open",
+                discovery_source="Network Scan"
+            )
+            db.add(srv)
+
+        # 3. Fingerprint if it's a website or runs on HTTP/HTTPS
+        is_web = asset.asset_type.lower() in ["website", "api"] or any(s.get("port") in [80, 443, 8080, 8443] for s in scan_data.get("services", []))
+        if is_web:
+            if asset.asset_type.lower() not in ["website", "api"]:
+                asset.asset_type = "Website"
+            
+            url = f"https://{asset.name}" if any(s.get("port") in [443, 8443] for s in scan_data.get("services", [])) else f"http://{asset.name}"
+            printer = WebsiteFingerprinter(url)
+            fp_data = printer.collect()
+            
+            asset.web_url = url
+            asset.web_status_code = fp_data.get("http_status")
+            asset.web_title = fp_data.get("title")
+            asset.web_server = fp_data.get("server_header")
+            
+            # Clear and insert technologies
+            db.query(Technology).filter_by(asset_id=asset_id).delete()
+            for tech_name, tech_ver in fp_data.get("technologies", {}).items():
+                tech = Technology(
+                    asset_id=asset_id,
+                    name=tech_name,
+                    version=tech_ver or None,
+                    category="Web Tech",
+                    detection_source="Web Fingerprint",
+                    confidence=90
+                )
+                db.add(tech)
+
+        # Add to history
+        db.add(AssetHistory(
+            asset_id=asset_id,
+            event_name="On-Demand Scan Completed",
+            event_details=f"Discovered {len(scan_data.get('services', []))} ports, enriched web status indicators."
+        ))
+
+        # Exposure and source updates
+        asset.exposure = "Internet-Facing" if asset.ip_address else "Internal"
+        sources = set(asset.discovery_sources.split(",") if asset.discovery_sources else [])
+        sources.add("HTTP Probe")
+        sources.add("Port Scan")
+        asset.discovery_sources = ",".join(filter(None, sources))
+
+        # Adjust risk score based on open services and findings
+        new_score = min(100, 20 + len(asset.services) * 10 + len(asset.findings) * 20)
+        if asset.exposure == "Internet-Facing":
+            new_score = min(100, new_score + 15)
+        asset.risk_score = new_score
+
+        db.commit()
+        db.refresh(asset)
+
+        return jsonify({"success": True, "message": "Scan completed successfully", "asset": asset.to_dict()})
+    except Exception as e:
+        db.rollback()
+        return jsonify({"success": False, "error": str(e)}), 500
+    finally:
+        db.close()
+
 
 
 # --- DASHBOARD STATS API ---

@@ -1,7 +1,9 @@
 from datetime import datetime, timezone
+# pyrefly: ignore [missing-import]
 from sqlalchemy import (
     Column, Integer, String, Text, DateTime, ForeignKey, Float, Table
 )
+# pyrefly: ignore [missing-import]
 from sqlalchemy.orm import relationship
 from db.database import Base
 
@@ -107,16 +109,34 @@ class Asset(Base):
     asset_type = Column(String(64), nullable=False, default="Domain")  # Domain, Subdomain, IP, Service, Website, API
     ip_address = Column(String(64), nullable=True, index=True)
     domain = Column(String(255), nullable=True, index=True)
-    status = Column(String(32), default="active")  # active, inactive, investigating
+    status = Column(String(32), default="active")  # active, inactive, investigating, archived
     risk_score = Column(Integer, default=0)  # 0 to 100
     first_seen = Column(DateTime, default=utc_now)
     last_seen = Column(DateTime, default=utc_now, onupdate=utc_now)
+    
+    # Argus 2.0 Asset Feature additions
+    exposure = Column(String(64), nullable=True, default="Unknown") # Internet-Facing, Internal, Unknown
+    discovery_sources = Column(Text, nullable=True, default="DNS") # comma-separated
+    confidence = Column(Integer, default=90)
+    tags = Column(Text, nullable=True, default="") # comma-separated
+    web_url = Column(String(512), nullable=True)
+    web_status_code = Column(Integer, nullable=True)
+    web_title = Column(String(256), nullable=True)
+    web_server = Column(String(128), nullable=True)
+    web_security_headers = Column(Text, nullable=True)
+    cert_issuer = Column(String(256), nullable=True)
+    cert_valid_from = Column(DateTime, nullable=True)
+    cert_expires = Column(DateTime, nullable=True)
+    cert_sans = Column(Text, nullable=True)
 
     # Relationships
     project = relationship("Project", back_populates="assets")
     services = relationship("Service", back_populates="asset", cascade="all, delete-orphan")
     technologies = relationship("Technology", back_populates="asset", cascade="all, delete-orphan")
     findings = relationship("Finding", back_populates="asset", cascade="all, delete-orphan")
+    endpoints = relationship("Endpoint", back_populates="asset", cascade="all, delete-orphan")
+    history = relationship("AssetHistory", back_populates="asset", cascade="all, delete-orphan")
+    notes = relationship("AssetNote", back_populates="asset", cascade="all, delete-orphan")
     
     outgoing_relationships = relationship(
         "Relationship",
@@ -132,6 +152,12 @@ class Asset(Base):
     )
 
     def to_dict(self):
+        # Helper to safely split comma-separated text into a list
+        def to_list(val):
+            if not val:
+                return []
+            return [x.strip() for x in val.split(",") if x.strip()]
+
         return {
             "id": self.id,
             "project_id": self.project_id,
@@ -144,8 +170,25 @@ class Asset(Base):
             "service_count": len(self.services),
             "technology_count": len(self.technologies),
             "finding_count": len(self.findings),
+            "endpoint_count": len(self.endpoints),
+            "note_count": len(self.notes),
+            "history_count": len(self.history),
             "first_seen": self.first_seen.isoformat() if self.first_seen else None,
             "last_seen": self.last_seen.isoformat() if self.last_seen else None,
+            # Argus 2.0 Asset Feature additions
+            "exposure": self.exposure or "Unknown",
+            "discovery_sources": to_list(self.discovery_sources or "DNS"),
+            "confidence": self.confidence,
+            "tags": to_list(self.tags),
+            "web_url": self.web_url,
+            "web_status_code": self.web_status_code,
+            "web_title": self.web_title,
+            "web_server": self.web_server,
+            "web_security_headers": self.web_security_headers,
+            "cert_issuer": self.cert_issuer,
+            "cert_valid_from": self.cert_valid_from.isoformat() if self.cert_valid_from else None,
+            "cert_expires": self.cert_expires.isoformat() if self.cert_expires else None,
+            "cert_sans": to_list(self.cert_sans)
         }
 
 
@@ -160,6 +203,8 @@ class Service(Base):
     service_name = Column(String(64), nullable=False)
     banner = Column(Text, nullable=True)
     version = Column(String(128), nullable=True)
+    state = Column(String(32), default="Open")  # Open, Closed, Filtered
+    discovery_source = Column(String(64), nullable=True)
     created_at = Column(DateTime, default=utc_now)
 
     asset = relationship("Asset", back_populates="services")
@@ -173,6 +218,8 @@ class Service(Base):
             "service_name": self.service_name,
             "banner": self.banner,
             "version": self.version,
+            "state": self.state,
+            "discovery_source": self.discovery_source,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }
 
@@ -187,6 +234,9 @@ class Technology(Base):
     version = Column(String(64), nullable=True)
     category = Column(String(64), nullable=True)
     cpe = Column(String(255), nullable=True)
+    vendor = Column(String(128), nullable=True)
+    detection_source = Column(String(64), nullable=True)
+    confidence = Column(Integer, default=90)
 
     asset = relationship("Asset", back_populates="technologies")
 
@@ -198,7 +248,11 @@ class Technology(Base):
             "version": self.version,
             "category": self.category,
             "cpe": self.cpe,
+            "vendor": self.vendor,
+            "detection_source": self.detection_source,
+            "confidence": self.confidence
         }
+
 
 
 class Finding(Base):
@@ -292,3 +346,74 @@ class Scan(Base):
             "start_time": self.start_time.isoformat() if self.start_time else None,
             "end_time": self.end_time.isoformat() if self.end_time else None,
         }
+
+
+class Endpoint(Base):
+    """Endpoint entity for tracking APIs and Web endpoints."""
+    __tablename__ = "endpoints"
+
+    id = Column(Integer, primary_key=True, index=True)
+    asset_id = Column(Integer, ForeignKey("assets.id", ondelete="CASCADE"), nullable=False, index=True)
+    method = Column(String(16), default="GET")
+    path = Column(String(512), nullable=False)
+    status_code = Column(Integer, nullable=True)
+    discovery_source = Column(String(64), nullable=True)
+    created_at = Column(DateTime, default=utc_now)
+
+    asset = relationship("Asset", back_populates="endpoints")
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "asset_id": self.asset_id,
+            "method": self.method,
+            "path": self.path,
+            "status_code": self.status_code,
+            "discovery_source": self.discovery_source,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
+
+
+class AssetHistory(Base):
+    """Tracks historical events/changes for a given asset."""
+    __tablename__ = "asset_history"
+
+    id = Column(Integer, primary_key=True, index=True)
+    asset_id = Column(Integer, ForeignKey("assets.id", ondelete="CASCADE"), nullable=False, index=True)
+    event_name = Column(String(128), nullable=False)
+    event_details = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=utc_now)
+
+    asset = relationship("Asset", back_populates="history")
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "asset_id": self.asset_id,
+            "event_name": self.event_name,
+            "event_details": self.event_details,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
+
+
+class AssetNote(Base):
+    """Tracks analyst notes for an asset."""
+    __tablename__ = "asset_notes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    asset_id = Column(Integer, ForeignKey("assets.id", ondelete="CASCADE"), nullable=False, index=True)
+    author = Column(String(128), default="Analyst")
+    content = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=utc_now)
+
+    asset = relationship("Asset", back_populates="notes")
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "asset_id": self.asset_id,
+            "author": self.author,
+            "content": self.content,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
+
