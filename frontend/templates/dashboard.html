@@ -68,9 +68,12 @@
         </div>
     </div>
 </section>
+
 <!-- Seamless 3D Dynamic Cyber Green Earth Globe (Global Threat Attack Map) -->
-<div style="width: 100%; height: 480px; margin-top: 1rem; margin-bottom: 2rem; position: relative; background: transparent;">
-    <canvas id="earth3DCanvas" style="width: 100%; height: 100%; display: block; cursor: grab; background: transparent;"></canvas>
+<div
+    style="width: 100%; height: 600px; margin-top: 0; margin-bottom: 0; position: relative; background: transparent; user-select: none; -webkit-user-select: none;">
+    <canvas id="earth3DCanvas"
+        style="width: 100%; height: 100%; display: block; outline: none; border: none; -webkit-tap-highlight-color: transparent; cursor: grab; background: transparent; user-select: none; -webkit-user-select: none;"></canvas>
 </div>
 
 <!-- Machine Identity Card -->
@@ -163,26 +166,45 @@
 {% endif %}
 
 {% endblock %}
+\n{% block scripts %}
+<!-- Load Three.js Library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
-{% block scripts %}
 <script>
-    let earthCanvas, ctx;
-    let globeRadius = 175;
-    let globePoints = [];
-    let cities = [];
-    let attackArcs = [];
-    let backgroundStars = [];
+    let container, scene, camera, renderer;
+    let globeGroup;
+    let clock = new THREE.Clock();
+    let animId = null;
 
-    // Interactive 3D Camera Controls
-    let rotY = 0.8, rotX = 0.2;
-    let targetRotY = 0.8, targetRotX = 0.2;
-    let mouseParallaxX = 0, mouseParallaxY = 0;
-    let zoomScale = 1.0, targetZoom = 1.0;
-    let canvasWidth = 800, canvasHeight = 500;
     let isDragging = false;
-    let lastMouseX = 0, lastMouseY = 0;
+    let previousMousePosition = { x: 0, y: 0 };
+
+    // Detailed coordinates data polygons representing Earth landmasses
+    const landPolygons = [
+        // North America
+        [[70, -160], [70, -60], [80, -60], [80, -80], [70, -100], [50, -50], [45, -60], [25, -80], [15, -90], [15, -100], [20, -105], [30, -115], [32, -118], [48, -125], [60, -140], [65, -168]],
+        // Greenland
+        [[80, -70], [82, -60], [83, -40], [83, -10], [75, -20], [70, -20], [60, -40], [60, -50], [65, -60]],
+        // South America
+        [[12, -72], [10, -60], [5, -50], [-5, -35], [-20, -40], [-40, -60], [-55, -70], [-55, -73], [-45, -75], [-20, -70], [-5, -80], [5, -75]],
+        // Africa
+        [[35, -10], [37, 10], [32, 30], [30, 32], [15, 40], [12, 43], [12, 51], [-5, 40], [-34, 20], [-34, 18], [-20, 12], [5, 9], [5, -8], [15, -17], [20, -17]],
+        // Madagascar
+        [[-12, 49], [-16, 50], [-25, 47], [-25, 43], [-15, 47]],
+        // Eurasia / Europe
+        [[70, 20], [70, 100], [75, 120], [70, 170], [60, 170], [60, 140], [40, 120], [30, 120], [22, 110], [20, 105], [10, 108], [15, 96], [20, 90], [10, 78], [25, 68], [12, 44], [30, 32], [40, 26], [40, 35], [36, 40], [30, 35], [25, 40], [35, 15], [38, 26], [45, 13], [36, -5], [43, -9], [50, -5], [60, 5], [65, 15]],
+        // Australia
+        [[-10, 142], [-20, 148], [-35, 150], [-38, 145], [-35, 138], [-35, 115], [-22, 113], [-15, 125], [-12, 130], [-12, 136]],
+        // Antarctica
+        [[-65, -180], [-65, 180], [-90, 180], [-90, -180]]
+    ];
+
+    let landPointsList = []; // Global cache of sampled land positions
+    let attackArcs = [];
+    let rippleEffects = [];
 
     document.addEventListener('DOMContentLoaded', async () => {
+        // Fetch current active vulnerability statistics from API
         try {
             const res = await fetch('/api/v1/stats');
             const data = await res.json();
@@ -196,495 +218,508 @@
             console.error('Failed to load stats:', e);
         }
 
-        init3DCyberEarth();
+        init3DWarfareGlobe();
     });
 
-    function init3DCyberEarth() {
-        earthCanvas = document.getElementById('earth3DCanvas');
-        if (!earthCanvas) return;
-        ctx = earthCanvas.getContext('2d');
+    function init3DWarfareGlobe() {
+        const canvasEl = document.getElementById('earth3DCanvas');
+        if (!canvasEl) return;
+        container = canvasEl.parentElement;
 
-        resizeEarthCanvas();
-        window.addEventListener('resize', resizeEarthCanvas);
+        const w = container.clientWidth;
+        const h = container.clientHeight;
 
-        generateGlobePoints();
-        generateCities();
-        setupUserInteractivity();
+        scene = new THREE.Scene();
 
-        // Pre-spawn initial attack vectors immediately
-        for (let i = 0; i < 8; i++) {
-            spawnCyberAttack();
-            if (attackArcs.length) {
-                attackArcs[attackArcs.length - 1].progress = Math.random() * 0.85;
+        // 1. Perspective Camera - FOV: 68, Z: 15.0, centered with a tilt (Y: 2.5) to capture full high arcs without cutoff
+        camera = new THREE.PerspectiveCamera(68, w / h, 0.1, 1000);
+        camera.position.set(0, 2.5, 15.0);
+        camera.lookAt(0, 0, 0);
+
+        // 2. WebGL Renderer with clear alpha
+        renderer = new THREE.WebGLRenderer({
+            canvas: canvasEl,
+            antialias: true,
+            alpha: true,
+            powerPreference: 'high-performance'
+        });
+        renderer.setSize(w, h);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.setClearColor(0x000000, 0.0); // 100% transparent clearColor
+
+        // Globe root group
+        globeGroup = new THREE.Group();
+        globeGroup.rotation.y = 0.8; // Atlantic alignment
+        globeGroup.rotation.x = 0.25;
+        scene.add(globeGroup);
+
+        buildWarfareGlobeLayers();
+        setupLifecycleListeners();
+
+        // Spawner running at 1500ms
+        setInterval(spawnLandToLandAttack, 1500);
+
+        animate();
+    }
+
+    function buildWarfareGlobeLayers() {
+        const R = 5.6; // Optimized size to fill the boundaries while leaving space for shooting arcs
+
+        // A. Occlusion Core (SphereGeometry(5.5))
+        const occlusionGeom = new THREE.SphereGeometry(5.5, 64, 64);
+        const occlusionMat = new THREE.MeshBasicMaterial({
+            color: 0x010409,
+            transparent: true,
+            opacity: 0.94,
+            depthWrite: true
+        });
+        const occlusionSphere = new THREE.Mesh(occlusionGeom, occlusionMat);
+        globeGroup.add(occlusionSphere);
+
+        // B. Meridian & Parallel Coordinate Grid (Deep Green Color: 0x0f5844)
+        const meridianSteps = 64;
+        const meridianMat = new THREE.LineBasicMaterial({
+            color: 0x0f5844,
+            transparent: true,
+            opacity: 0.35,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        });
+
+        for (let i = 0; i < 24; i++) {
+            const theta = (i * Math.PI * 2) / 24;
+            const points = [];
+            for (let s = 0; s <= meridianSteps; s++) {
+                const phi = (s * Math.PI) / meridianSteps;
+                const x = R * Math.sin(phi) * Math.cos(theta);
+                const y = R * Math.cos(phi);
+                const z = R * Math.sin(phi) * Math.sin(theta);
+                points.push(new THREE.Vector3(x, y, z));
+            }
+            const meridianGeom = new THREE.BufferGeometry().setFromPoints(points);
+            const line = new THREE.Line(meridianGeom, meridianMat);
+            globeGroup.add(line);
+        }
+
+        // Latitudinal Parallel Rings
+        const parallelMat = new THREE.LineBasicMaterial({
+            color: 0x0f5844,
+            transparent: true,
+            opacity: 0.28,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        });
+
+        const parallelLats = [-75, -60, -45, -30, -15, 0, 15, 30, 45, 60, 75];
+        parallelLats.forEach(latDeg => {
+            const alpha = latDeg * (Math.PI / 180);
+            const r_alpha = R * Math.cos(alpha);
+            const y_alpha = R * Math.sin(alpha);
+
+            const points = [];
+            for (let s = 0; s <= meridianSteps; s++) {
+                const beta = (s * Math.PI * 2) / meridianSteps;
+                const x = r_alpha * Math.cos(beta);
+                const y = y_alpha;
+                const z = r_alpha * Math.sin(beta);
+                points.push(new THREE.Vector3(x, y, z));
+            }
+            const parallelGeom = new THREE.BufferGeometry().setFromPoints(points);
+            const line = new THREE.Line(parallelGeom, parallelMat);
+            globeGroup.add(line);
+        });
+
+        // C. Continental Landmass Matrix (Deep Green Color: 0x0f5844)
+        // Draw hidden continent canvas map to sample
+        const maskCanvas = document.createElement('canvas');
+        maskCanvas.width = 1024;
+        maskCanvas.height = 512;
+        const maskCtx = maskCanvas.getContext('2d');
+        maskCtx.fillStyle = '#000000';
+        maskCtx.fillRect(0, 0, 1024, 512);
+
+        maskCtx.fillStyle = '#ffffff';
+        landPolygons.forEach(poly => {
+            maskCtx.beginPath();
+            poly.forEach((pt, idx) => {
+                const x = (pt[1] + 180) * (1024 / 360);
+                const y = (90 - pt[0]) * (512 / 180);
+                if (idx === 0) maskCtx.moveTo(x, y);
+                else maskCtx.lineTo(x, y);
+            });
+            maskCtx.closePath();
+            maskCtx.fill();
+        });
+
+        const maskData = maskCtx.getImageData(0, 0, 1024, 512).data;
+        landPointsList = [];
+
+        // Fibonacci sampling to filter ~6,000 landmass points
+        const numFibSamples = 20000;
+        for (let i = 0; i < numFibSamples; i++) {
+            const phi = Math.acos(-1 + (2 * i) / numFibSamples);
+            const theta = Math.sqrt(numFibSamples * Math.PI) * phi;
+
+            // Direct Cartesian projection
+            const x = R * Math.cos(theta) * Math.sin(phi);
+            const y = R * Math.sin(theta) * Math.sin(phi);
+            const z = R * Math.cos(phi);
+
+            // Translate Cartesian to Lat / Lon to check against map canvas
+            const lat = Math.asin(y / R) * (180 / Math.PI);
+            let lon = Math.atan2(z, x) * (180 / Math.PI);
+            lon = ((lon + 180) % 360 + 360) % 360 - 180;
+
+            const px = Math.floor((lon + 180) * (1024 / 360));
+            const py = Math.floor((90 - lat) * (512 / 180));
+            const idx = (py * 1024 + px) * 4;
+
+            if (maskData[idx] > 128) {
+                // Conforming coordinate transformation formula
+                const rx = -(R * Math.sin(phi) * Math.cos(theta));
+                const ry = R * Math.cos(phi);
+                const rz = R * Math.sin(phi) * Math.sin(theta);
+                landPointsList.push(new THREE.Vector3(rx, ry, rz));
             }
         }
 
-        // Continuously spawn dynamic global attacks at high frequency
-        setInterval(spawnCyberAttack, 350);
+        const pointGeom = new THREE.BufferGeometry();
+        const positions = new Float32Array(landPointsList.length * 3);
+        const colors = new Float32Array(landPointsList.length * 3);
+        const col = new THREE.Color(0x0f5844); // Deep Green Base Color
 
-        // Start 60-120fps hardware-accelerated 3D render loop
-        render3DEarth();
+        for (let i = 0; i < landPointsList.length; i++) {
+            positions[i * 3] = landPointsList[i].x;
+            positions[i * 3 + 1] = landPointsList[i].y;
+            positions[i * 3 + 2] = landPointsList[i].z;
+
+            colors[i * 3] = col.r;
+            colors[i * 3 + 1] = col.g;
+            colors[i * 3 + 2] = col.b;
+        }
+
+        pointGeom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        pointGeom.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+        const pointMat = new THREE.PointsMaterial({
+            size: 0.065,
+            vertexColors: true,
+            transparent: true,
+            opacity: 0.85,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        });
+
+        const landPointCloud = new THREE.Points(pointGeom, pointMat);
+        globeGroup.add(landPointCloud);
+
+        // D. Atmospheric Limb Glow (Deep Green: 0x0f5844)
+        const glowGeom = new THREE.SphereGeometry(R * 1.025, 64, 64);
+        const glowMat = new THREE.MeshBasicMaterial({
+            color: 0x0f5844,
+            transparent: true,
+            opacity: 0.18,
+            blending: THREE.AdditiveBlending,
+            side: THREE.BackSide,
+            depthWrite: false
+        });
+        const glowMesh = new THREE.Mesh(glowGeom, glowMat);
+        globeGroup.add(glowMesh);
+
+        // E. Cohesive Stars Field in Background (Green Stars: 0x0f5844)
+        const starGeom = new THREE.BufferGeometry();
+        const starCount = 350;
+        const starPositions = new Float32Array(starCount * 3);
+        for (let i = 0; i < starCount * 3; i += 3) {
+            // Distribute stars on a wide spherical shell behind the camera's focus
+            const r = 30 + Math.random() * 30;
+            const theta = Math.random() * Math.PI * 2;
+            const phi = Math.acos(2 * Math.random() - 1);
+            starPositions[i] = r * Math.sin(phi) * Math.cos(theta);
+            starPositions[i+1] = r * Math.sin(phi) * Math.sin(theta);
+            starPositions[i+2] = r * Math.cos(phi);
+        }
+        starGeom.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+        const starMat = new THREE.PointsMaterial({
+            color: 0x0f5844,
+            size: 0.12,
+            transparent: true,
+            opacity: 0.5,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        });
+        const stars = new THREE.Points(starGeom, starMat);
+        scene.add(stars); // Fixed in scene space, doesn't rotate with globeGroup
     }
 
-    function resizeEarthCanvas() {
-        if (!earthCanvas) return;
-        const rect = earthCanvas.parentElement.getBoundingClientRect();
-        const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+    function spawnLandToLandAttack() {
+        if (landPointsList.length < 10) return;
+
+        // LIMIT CONCURRENT ATTACK COUNT (Max: 5 active arcs)
+        if (attackArcs.length >= 5) {
+            const oldest = attackArcs.shift();
+            // Remove line mesh
+            globeGroup.remove(oldest.lineMesh);
+            oldest.lineMesh.geometry.dispose();
+            oldest.lineMesh.material.dispose();
+
+            // Remove packets & trail groups
+            oldest.packets.forEach(p => {
+                globeGroup.remove(p.mesh);
+                p.mesh.geometry.dispose();
+                p.mesh.material.dispose();
+
+                globeGroup.remove(p.trailGroup);
+                p.trailNodes.forEach(node => {
+                    node.geometry.dispose();
+                    node.material.dispose();
+                });
+            });
+        }
+
+        // Select two points on land dynamically
+        const originIdx = Math.floor(Math.random() * landPointsList.length);
+        let targetIdx = Math.floor(Math.random() * landPointsList.length);
         
-        canvasWidth = rect.width;
-        canvasHeight = rect.height;
+        // Ensure distance is long enough for visibility (minimum chord distance of 2.0)
+        let tries = 0;
+        while (tries < 20 && (targetIdx === originIdx || landPointsList[originIdx].distanceTo(landPointsList[targetIdx]) < 2.0)) {
+            targetIdx = Math.floor(Math.random() * landPointsList.length);
+            tries++;
+        }
+
+        const pStart = landPointsList[originIdx];
+        const pEnd = landPointsList[targetIdx];
+        const R = 5.6;
+
+        // Arc Midpoint: M = (P_start + P_end) / 2
+        const pMid = new THREE.Vector3().addVectors(pStart, pEnd).multiplyScalar(0.5);
+        const d = pStart.distanceTo(pEnd);
         
-        earthCanvas.width = rect.width * dpr;
-        earthCanvas.height = rect.height * dpr;
-        ctx.scale(dpr, dpr);
+        // HIGH OUTWARD-SHOOTING ARCS: Raised baseline altitude to 4.5 + steep multiplier to counter Bezier interpolation and stretch all the way to viewport edges (touching metrics cards)
+        const mElevated = pMid.clone().normalize().multiplyScalar(R + 4.5 + d * (0.8 + Math.random() * 0.2));
+
+        // Add small sideways bend for organic distribution
+        const dir = new THREE.Vector3().subVectors(pEnd, pStart).normalize();
+        const up = mElevated.clone().normalize();
+        const side = new THREE.Vector3().crossVectors(dir, up).normalize();
+        mElevated.add(side.multiplyScalar((Math.random() - 0.5) * d * 0.25));
+
+        const curve = new THREE.QuadraticBezierCurve3(pStart, mElevated, pEnd);
+
+        // Draw parabolic curve line (Neon Mint Green: 0x00ffaa)
+        const linePoints = curve.getPoints(64);
+        const lineGeom = new THREE.BufferGeometry().setFromPoints(linePoints);
+        const arcMat = new THREE.LineBasicMaterial({
+            color: 0x00ffaa, // Neon Mint Green Shading
+            transparent: true,
+            opacity: 0.65,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        });
+        const lineMesh = new THREE.Line(lineGeom, arcMat);
+        globeGroup.add(lineMesh);
+
+        // Kinetic Particle Pulses: 2 discrete glowing points (Neon Mint Green Shading: 0x00ffaa)
+        const numPackets = 2;
+        const packetsList = [];
+
+        for (let k = 0; k < numPackets; k++) {
+            const pGeom = new THREE.SphereGeometry(0.08, 8, 8);
+            const pMat = new THREE.MeshBasicMaterial({
+                color: 0x00ffaa, // Neon Mint Green Shading
+                transparent: true,
+                blending: THREE.AdditiveBlending
+            });
+            const pMesh = new THREE.Mesh(pGeom, pMat);
+            globeGroup.add(pMesh);
+
+            // Trail nodes representing tail trail
+            const trailGroup = new THREE.Group();
+            globeGroup.add(trailGroup);
+
+            const trailNodes = [];
+            for (let t = 0; t < 4; t++) {
+                const trGeom = new THREE.SphereGeometry(0.05 * (1 - t / 4), 6, 6);
+                const trMat = new THREE.MeshBasicMaterial({
+                    color: 0x00ffaa,
+                    transparent: true,
+                    opacity: 0.8 * (1 - t / 4),
+                    blending: THREE.AdditiveBlending
+                });
+                const trMesh = new THREE.Mesh(trGeom, trMat);
+                trailGroup.add(trMesh);
+                trailNodes.push(trMesh);
+            }
+
+            packetsList.push({
+                mesh: pMesh,
+                trailGroup: trailGroup,
+                trailNodes: trailNodes,
+                offset: k * (1.0 / numPackets),
+                speed: 0.18 + Math.random() * 0.08,
+                hasImpacted: false
+            });
+        }
+
+        attackArcs.push({
+            curve: curve,
+            lineMesh: lineMesh,
+            packets: packetsList,
+            targetPos: pEnd
+        });
     }
 
-    function setupUserInteractivity() {
-        if (!earthCanvas) return;
+    function triggerTargetImpactRipple(pos) {
+        const ringGeom = new THREE.RingGeometry(0.01, 0.3, 32);
+        const ringMat = new THREE.MeshBasicMaterial({
+            color: 0x00ffaa, // Neon Mint Green Shading
+            side: THREE.DoubleSide,
+            transparent: true,
+            opacity: 0.9,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        });
+        const ringMesh = new THREE.Mesh(ringGeom, ringMat);
+        ringMesh.position.copy(pos);
 
-        earthCanvas.addEventListener('mousedown', (e) => {
+        // Orient along normal
+        const norm = pos.clone().normalize();
+        ringMesh.lookAt(pos.clone().add(norm));
+        globeGroup.add(ringMesh);
+
+        rippleEffects.push({
+            mesh: ringMesh,
+            geom: ringGeom,
+            mat: ringMat,
+            time: 0,
+            duration: 1.2
+        });
+    }
+
+    function setupLifecycleListeners() {
+        window.addEventListener('resize', onWindowResize);
+        setupInteraction();
+    }
+
+    // Two-axis drag scrolling setup
+    function setupInteraction() {
+        const canvas = document.getElementById('earth3DCanvas');
+        if (!canvas) return;
+
+        canvas.addEventListener('mousedown', (e) => {
             isDragging = true;
-            lastMouseX = e.clientX;
-            lastMouseY = e.clientY;
-            earthCanvas.style.cursor = 'grabbing';
+            previousMousePosition = { x: e.clientX, y: e.clientY };
         });
 
         window.addEventListener('mouseup', () => {
             isDragging = false;
-            if (earthCanvas) earthCanvas.style.cursor = 'grab';
         });
 
-        earthCanvas.addEventListener('mousemove', (e) => {
-            const rect = earthCanvas.getBoundingClientRect();
-            if (isDragging) {
-                const deltaX = e.clientX - lastMouseX;
-                const deltaY = e.clientY - lastMouseY;
-                targetRotY += deltaX * 0.006;
-                targetRotX += deltaY * 0.006;
-                targetRotX = Math.max(-1.2, Math.min(1.2, targetRotX));
-                lastMouseX = e.clientX;
-                lastMouseY = e.clientY;
-            } else {
-                const mouseX = e.clientX - rect.left;
-                const mouseY = e.clientY - rect.top;
-                mouseParallaxX = ((mouseX / rect.width) - 0.5) * 0.1;
-                mouseParallaxY = ((mouseY / rect.height) - 0.5) * 0.1;
-            }
-        });
-
-        earthCanvas.addEventListener('wheel', (e) => {
-            e.preventDefault();
-            targetZoom -= e.deltaY * 0.001;
-            targetZoom = Math.max(0.6, Math.min(1.8, targetZoom));
-        }, { passive: false });
-    }
-
-    function latLonTo3D(lat, lon, radius) {
-        const phi = (90 - lat) * (Math.PI / 180);
-        const theta = (lon + 180) * (Math.PI / 180);
-        return {
-            x: -(radius * Math.sin(phi) * Math.cos(theta)),
-            y: radius * Math.cos(phi),
-            z: radius * Math.sin(phi) * Math.sin(theta)
-        };
-    }
-
-    function generateGlobePoints() {
-        globePoints = [];
-        backgroundStars = [];
-
-        // Ambient 3D Cyber Starfield
-        for (let i = 0; i < 75; i++) {
-            backgroundStars.push({
-                x: (Math.random() - 0.5) * 950,
-                y: (Math.random() - 0.5) * 750,
-                z: (Math.random() - 0.5) * 750,
-                radius: Math.random() * 2 + 0.8,
-                color: Math.random() > 0.4 ? 'rgba(52, 211, 153, 0.4)' : 'rgba(16, 185, 129, 0.3)'
-            });
-        }
-
-        // High-Resolution Realistic Continent Shapes (Real Earth Landmass Mapping)
-        const continentRegions = [
-            // North America (USA, Canada, Alaska, Mexico, Greenland)
-            { minLat: 15, maxLat: 72, minLon: -168, maxLon: -52, count: 650,
-              isLand: (lat, lon) => (lat > 60 && lon > -55 && lon < -20) || (lat <= 60 && lat >= 25 && lon >= -125 && lon <= -70) || (lat < 25 && lon >= -105 && lon <= -75) || (lat > 50 && lon < -120) },
-
-            // South America (Brazil, Argentina, Colombia, Chile)
-            { minLat: -55, maxLat: 12, minLon: -82, maxLon: -34, count: 480,
-              isLand: (lat, lon) => (lon >= -80 && lon <= -35 && lat <= (12 - (lon + 80) * 0.2) && lat >= -55) },
-
-            // Europe (UK, Scandinavia, Central Europe, Mediterranean)
-            { minLat: 36, maxLat: 71, minLon: -10, maxLon: 45, count: 520,
-              isLand: (lat, lon) => (lat >= 36 && lat <= 71 && lon >= -10 && lon <= 45 && !(lat < 42 && lon > 22)) },
-
-            // Africa (Sahara, West Africa, Congo, South Africa, Madagascar)
-            { minLat: -35, maxLat: 37, minLon: -18, maxLon: 51, count: 700,
-              isLand: (lat, lon) => (lat >= 15 && lon >= -18 && lon <= 38) || (lat < 15 && lon >= -15 && lon <= 51 && lat >= -35) },
-
-            // Asia & Russia (Siberia, China, India, Middle East, SE Asia)
-            { minLat: 1, maxLat: 75, minLon: 40, maxLon: 180, count: 1100,
-              isLand: (lat, lon) => (lat > 50) || (lat <= 50 && lat >= 8 && lon >= 60 && lon <= 145) || (lat < 20 && lon >= 95 && lon <= 140) || (lat >= 12 && lat <= 42 && lon >= 34 && lon <= 60) },
-
-            // Australia & New Zealand
-            { minLat: -44, maxLat: -10, minLon: 112, maxLon: 178, count: 380,
-              isLand: (lat, lon) => (lon <= 154 && lat >= -39 && lat <= -10 && lon >= 113) || (lon >= 165 && lon <= 178 && lat >= -47 && lat <= -34) },
-
-            // Japan, Indonesia & UK Islands
-            { minLat: 30, maxLat: 46, minLon: 129, maxLon: 146, count: 130, isLand: () => true },
-            { minLat: -9, maxLat: 6, minLon: 95, maxLon: 141, count: 180, isLand: () => true },
-            { minLat: 50, maxLat: 59, minLon: -10, maxLon: 2, count: 110, isLand: () => true }
-        ];
-
-        continentRegions.forEach(reg => {
-            let placed = 0;
-            let attempts = 0;
-            while (placed < reg.count && attempts < reg.count * 4) {
-                attempts++;
-                const lat = reg.minLat + Math.random() * (reg.maxLat - reg.minLat);
-                const lon = reg.minLon + Math.random() * (reg.maxLon - reg.minLon);
-
-                if (reg.isLand(lat, lon)) {
-                    const pt = latLonTo3D(lat, lon, globeRadius);
-                    pt.lat = lat;
-                    pt.lon = lon;
-                    globePoints.push(pt);
-                    placed++;
-                }
-            }
-        });
-
-        // 3D Meridians & Parallel Grid Lines
-        for (let lat = -70; lat <= 70; lat += 15) {
-            for (let lon = -180; lon < 180; lon += 12) {
-                const pt = latLonTo3D(lat, lon, globeRadius);
-                pt.isGrid = true;
-                globePoints.push(pt);
-            }
-        }
-    }
-
-    function generateCities() {
-        cities = [
-            { name: 'San Francisco', lat: 37.77, lon: -122.41 },
-            { name: 'New York', lat: 40.71, lon: -74.00 },
-            { name: 'London', lat: 51.50, lon: -0.12 },
-            { name: 'Frankfurt', lat: 50.11, lon: 8.68 },
-            { name: 'Tokyo', lat: 35.67, lon: 139.65 },
-            { name: 'Beijing', lat: 39.90, lon: 116.40 },
-            { name: 'Singapore', lat: 1.35, lon: 103.81 },
-            { name: 'Sydney', lat: -33.86, lon: 151.20 },
-            { name: 'São Paulo', lat: -23.55, lon: -46.63 },
-            { name: 'Dubai', lat: 25.20, lon: 55.27 },
-            { name: 'Moscow', lat: 55.75, lon: 37.61 },
-            { name: 'Cape Town', lat: -33.92, lon: 18.42 }
-        ];
-
-        cities.forEach(c => {
-            const pos = latLonTo3D(c.lat, c.lon, globeRadius);
-            c.x = pos.x;
-            c.y = pos.y;
-            c.z = pos.z;
-            c.rippleRadius = 0;
-            c.rippleAlpha = 0;
-        });
-    }
-
-    function spawnCyberAttack() {
-        if (cities.length < 2) return;
-        const originIndex = Math.floor(Math.random() * cities.length);
-        let targetIndex = Math.floor(Math.random() * cities.length);
-        while (targetIndex === originIndex) {
-            targetIndex = Math.floor(Math.random() * cities.length);
-        }
-
-        const origin = cities[originIndex];
-        const target = cities[targetIndex];
-        const colors = ['#34D399', '#10B981', '#6EE7B7', '#22D3EE', '#A7F3D0'];
-
-        attackArcs.push({
-            origin: origin,
-            target: target,
-            progress: 0,
-            speed: 0.012 + Math.random() * 0.016,
-            arcHeight: 55 + Math.random() * 75,
-            color: colors[Math.floor(Math.random() * colors.length)]
-        });
-    }
-
-    let animTime = 0;
-    function render3DEarth() {
-        if (!ctx || !earthCanvas) return;
-
-        ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-        animTime += 0.016;
-
-        // Camera lerp
-        if (!isDragging) {
-            targetRotY += 0.003; // Continuous Earth spinning
-        }
-        rotY += (targetRotY - rotY) * 0.08;
-        rotX += (targetRotX - rotX) * 0.08;
-        zoomScale += (targetZoom - zoomScale) * 0.08;
-
-        const effectiveRotY = rotY + mouseParallaxX;
-        const effectiveRotX = rotX + mouseParallaxY;
-
-        const centerX = canvasWidth / 2;
-        const centerY = canvasHeight / 2;
-        const currentRadius = globeRadius * zoomScale;
-        const focalLength = 480 * zoomScale;
-
-        const cosY = Math.cos(effectiveRotY), sinY = Math.sin(effectiveRotY);
-        const cosX = Math.cos(effectiveRotX), sinX = Math.sin(effectiveRotX);
-
-        // Robust 3D Projection with Radial Offsets for Outward Arcs
-        function project3D(p, radiusOffset = 0) {
-            const r = currentRadius + radiusOffset;
-            let pos;
-            if (p.lat !== undefined && p.lon !== undefined) {
-                pos = latLonTo3D(p.lat, p.lon, r);
-            } else {
-                const norm = Math.sqrt(p.x * p.x + p.y * p.y + p.z * p.z) || 1;
-                pos = {
-                    x: (p.x / norm) * r,
-                    y: (p.y / norm) * r,
-                    z: (p.z / norm) * r
+        canvas.addEventListener('mousemove', (e) => {
+            if (isDragging && globeGroup) {
+                const deltaMove = {
+                    x: e.clientX - previousMousePosition.x,
+                    y: e.clientY - previousMousePosition.y
                 };
+                // Rotate horizontally (Y-axis) AND vertically (X-axis) in response to mouse movements
+                globeGroup.rotation.y += deltaMove.x * 0.004;
+                globeGroup.rotation.x += deltaMove.y * 0.004;
+                
+                // Clamp X rotation to prevent the poles from flipping completely upside down
+                globeGroup.rotation.x = Math.max(-0.85, Math.min(0.85, globeGroup.rotation.x));
             }
-            
-            // Rotate Y
-            let x1 = pos.x * cosY - pos.z * sinY;
-            let z1 = pos.z * cosY + pos.x * sinY;
-            // Rotate X
-            let y2 = pos.y * cosX - z1 * sinX;
-            let z2 = z1 * cosX + pos.y * sinX;
-
-            const scale = focalLength / (focalLength + z2 + 300);
-            return {
-                px: centerX + x1 * scale,
-                py: centerY + y2 * scale,
-                scale: scale,
-                z: z2,
-                visible: z2 > -40
-            };
-        }
-
-        // 1. Render Background Stars
-        for (let i = 0; i < backgroundStars.length; i++) {
-            const s = backgroundStars[i];
-            let x1 = s.x * cosY - s.z * sinY;
-            let z1 = s.z * cosY + s.x * sinY;
-            let y2 = s.y * cosX - z1 * sinX;
-
-            const px = centerX + x1 * 0.7;
-            const py = centerY + y2 * 0.7;
-            ctx.beginPath();
-            ctx.arc(px, py, s.radius, 0, Math.PI * 2);
-            ctx.fillStyle = s.color;
-            ctx.fill();
-        }
-
-        // 2. Render Single Solid 3D Earth Sphere (Seamless Background Blend)
-        const earthGrad = ctx.createRadialGradient(
-            centerX - currentRadius * 0.35,
-            centerY - currentRadius * 0.35,
-            currentRadius * 0.1,
-            centerX,
-            centerY,
-            currentRadius
-        );
-        earthGrad.addColorStop(0, 'rgba(16, 185, 129, 0.18)'); // Soft top-left specular highlight
-        earthGrad.addColorStop(0.35, 'rgba(10, 25, 20, 0.75)'); // Translucent dark green core
-        earthGrad.addColorStop(0.85, 'rgba(8, 12, 20, 0.95)');  // Page dark background transition
-        earthGrad.addColorStop(1, 'rgba(6, 9, 16, 1)');        // Seamless edge blend into page
-
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, currentRadius, 0, Math.PI * 2);
-        ctx.fillStyle = earthGrad;
-        ctx.fill();
-
-        // 3. Render Globe Landmass Dots & Grid (Front Hemisphere Only)
-        for (let i = 0; i < globePoints.length; i++) {
-            const pt = globePoints[i];
-            const proj = project3D(pt);
-
-            if (proj.z > -10) {
-                const alpha = Math.min(1, Math.max(0.3, (proj.z + 10) / (currentRadius * 0.8)));
-                ctx.beginPath();
-                ctx.arc(proj.px, proj.py, (pt.isGrid ? 1.0 : 2.2) * proj.scale, 0, Math.PI * 2);
-                ctx.fillStyle = pt.isGrid ? 'rgba(52, 211, 153, 0.25)' : '#10B981';
-                ctx.globalAlpha = alpha;
-                ctx.fill();
-                ctx.globalAlpha = 1.0;
-            }
-        }
-
-        // 4. Project City Threat Nodes
-        cities.forEach(c => {
-            c.proj = project3D(c);
+            previousMousePosition = { x: e.clientX, y: e.clientY };
         });
-
-        // 5. Render Dynamic Outward 3D Attack Arcs & Flying Arrowhead Beams
-        for (let i = attackArcs.length - 1; i >= 0; i--) {
-            const arc = attackArcs[i];
-            arc.progress += arc.speed;
-
-            const p1 = latLonTo3D(arc.origin.lat, arc.origin.lon, globeRadius);
-            const p2 = latLonTo3D(arc.target.lat, arc.target.lon, globeRadius);
-
-            // Draw High 3D Curved Arc Path
-            const numSegments = 35;
-            const arcPoints = [];
-
-            for (let s = 0; s <= numSegments; s++) {
-                const t = s / numSegments;
-                const x = p1.x * (1 - t) + p2.x * t;
-                const y = p1.y * (1 - t) + p2.y * t;
-                const z = p1.z * (1 - t) + p2.z * t;
-                const height = Math.sin(t * Math.PI) * arc.arcHeight;
-
-                const proj = project3D({ x: x, y: y, z: z }, height);
-                arcPoints.push(proj);
-            }
-
-            // Draw Wide Translucent Laser Glow
-            ctx.beginPath();
-            let isVisible = false;
-            for (let s = 0; s < arcPoints.length; s++) {
-                const pt = arcPoints[s];
-                if (pt.visible) {
-                    isVisible = true;
-                    if (s === 0 || !arcPoints[s - 1].visible) ctx.moveTo(pt.px, pt.py);
-                    else ctx.lineTo(pt.px, pt.py);
-                }
-            }
-            if (isVisible) {
-                ctx.strokeStyle = 'rgba(52, 211, 153, 0.25)';
-                ctx.lineWidth = 4;
-                ctx.stroke();
-
-                // Solid Core Arc Line
-                ctx.beginPath();
-                for (let s = 0; s < arcPoints.length; s++) {
-                    const pt = arcPoints[s];
-                    if (pt.visible) {
-                        if (s === 0 || !arcPoints[s - 1].visible) ctx.moveTo(pt.px, pt.py);
-                        else ctx.lineTo(pt.px, pt.py);
-                    }
-                }
-                ctx.strokeStyle = '#34D399';
-                ctx.lineWidth = 1.8;
-                ctx.stroke();
-            }
-
-            // Draw Flying Arrowhead & Photon Tail Particles
-            if (arc.progress <= 1) {
-                const t = arc.progress;
-                const dt = 0.02;
-                const tPrev = Math.max(0, t - dt);
-
-                const x = p1.x * (1 - t) + p2.x * t;
-                const y = p1.y * (1 - t) + p2.y * t;
-                const z = p1.z * (1 - t) + p2.z * t;
-                const height = Math.sin(t * Math.PI) * arc.arcHeight;
-
-                const xPrev = p1.x * (1 - tPrev) + p2.x * tPrev;
-                const yPrev = p1.y * (1 - tPrev) + p2.y * tPrev;
-                const zPrev = p1.z * (1 - tPrev) + p2.z * tPrev;
-                const heightPrev = Math.sin(tPrev * Math.PI) * arc.arcHeight;
-
-                const headProj = project3D({ x: x, y: y, z: z }, height);
-                const prevProj = project3D({ x: xPrev, y: yPrev, z: zPrev }, heightPrev);
-
-                if (headProj.visible) {
-                    // Angle of Arrow Motion
-                    const dx = headProj.px - prevProj.px;
-                    const dy = headProj.py - prevProj.py;
-                    const angle = Math.atan2(dy, dx);
-
-                    // Trailing Photon Tail Dots
-                    for (let tail = 1; tail <= 3; tail++) {
-                        const tTail = Math.max(0, t - tail * 0.03);
-                        const xT = p1.x * (1 - tTail) + p2.x * tTail;
-                        const yT = p1.y * (1 - tTail) + p2.y * tTail;
-                        const zT = p1.z * (1 - tTail) + p2.z * tTail;
-                        const hT = Math.sin(tTail * Math.PI) * arc.arcHeight;
-                        const tailProj = project3D({ x: xT, y: yT, z: zT }, hT);
-
-                        if (tailProj.visible) {
-                            ctx.beginPath();
-                            ctx.arc(tailProj.px, tailProj.py, (4 - tail) * tailProj.scale, 0, Math.PI * 2);
-                            ctx.fillStyle = '#34D399';
-                            ctx.globalAlpha = 1 - tail * 0.25;
-                            ctx.fill();
-                            ctx.globalAlpha = 1.0;
-                        }
-                    }
-
-                    // Prominent Arrowhead Graphic
-                    ctx.save();
-                    ctx.translate(headProj.px, headProj.py);
-                    ctx.rotate(angle);
-
-                    ctx.beginPath();
-                    ctx.moveTo(11 * headProj.scale, 0);
-                    ctx.lineTo(-8 * headProj.scale, -6 * headProj.scale);
-                    ctx.lineTo(-4 * headProj.scale, 0);
-                    ctx.lineTo(-8 * headProj.scale, 6 * headProj.scale);
-                    ctx.closePath();
-
-                    ctx.fillStyle = '#6EE7B7';
-                    ctx.shadowColor = '#34D399';
-                    ctx.shadowBlur = 15;
-                    ctx.fill();
-                    ctx.shadowBlur = 0;
-                    ctx.restore();
-                }
-            } else {
-                arc.target.rippleRadius = 4;
-                arc.target.rippleAlpha = 1.0;
-                attackArcs.splice(i, 1);
-            }
-        }
-
-        // 6. Render City Threat Beacons & Impact Ripples
-        cities.forEach(c => {
-            if (c.proj && c.proj.visible) {
-                const proj = c.proj;
-
-                if (c.rippleRadius) {
-                    c.rippleRadius += 0.8;
-                    c.rippleAlpha -= 0.025;
-                    if (c.rippleAlpha <= 0) {
-                        c.rippleRadius = 0;
-                        c.rippleAlpha = 0;
-                    } else {
-                        ctx.beginPath();
-                        ctx.arc(proj.px, proj.py, (6 + c.rippleRadius) * proj.scale, 0, Math.PI * 2);
-                        ctx.strokeStyle = '#34D399';
-                        ctx.lineWidth = 1.5;
-                        ctx.globalAlpha = c.rippleAlpha;
-                        ctx.stroke();
-                        ctx.globalAlpha = 1.0;
-                    }
-                }
-
-                ctx.beginPath();
-                ctx.arc(proj.px, proj.py, 4.5 * proj.scale, 0, Math.PI * 2);
-                ctx.fillStyle = '#34D399';
-                ctx.fill();
-
-                if (proj.scale > 0.65) {
-                    ctx.font = `${Math.max(9, Math.round(10 * proj.scale))}px monospace`;
-                    ctx.fillStyle = 'rgba(230, 255, 240, 0.9)';
-                    ctx.textAlign = 'center';
-                    ctx.fillText(c.name, proj.px, proj.py + 10 * proj.scale);
-                }
-            }
-        });
-
-        requestAnimationFrame(render3DEarth);
     }
+
+    function onWindowResize() {
+        if (!container || !camera || !renderer) return;
+        const rw = container.clientWidth;
+        const rh = container.clientHeight;
+        camera.aspect = rw / rh;
+        camera.updateProjectionMatrix();
+        renderer.setSize(rw, rh);
+    }
+
+    // Fixed tick update
+    function animate() {
+        animId = requestAnimationFrame(animate);
+
+        const elapsed = clock.getElapsedTime();
+
+        // A. Globe Axial Spin - counterclockwise rotation in Y direction only
+        if (globeGroup && !isDragging) {
+            globeGroup.rotation.y += 0.0015;
+        }
+
+        // C. Update kinetic particle pulses (Packets)
+        attackArcs.forEach(arc => {
+            arc.packets.forEach(p => {
+                const u = (elapsed * p.speed + p.offset) % 1.0;
+                const pos = arc.curve.getPointAt(u);
+                p.mesh.position.copy(pos);
+
+                // Update tail trail delay lag positioning
+                for (let k = 0; k < p.trailNodes.length; k++) {
+                    const lag = (k + 1) * 0.024;
+                    const trailPos = arc.curve.getPointAt(Math.max(0.0, u - lag));
+                    p.trailNodes[k].position.copy(trailPos);
+                }
+
+                // If packet loops/hits close to start/end, emit impact ripples
+                const threshold = 0.015;
+                if (Math.abs(u - 0.99) < threshold && !p.hasImpacted) {
+                    triggerTargetImpactRipple(arc.targetPos);
+                    p.hasImpacted = true;
+                }
+                if (u < 0.5) {
+                    p.hasImpacted = false; // Reset ripple flag
+                }
+            });
+        });
+
+        // D. Update target impact ripples
+        for (let i = rippleEffects.length - 1; i >= 0; i--) {
+            const rip = rippleEffects[i];
+            rip.time += 0.016; // Simulated delta
+            const progress = rip.time / rip.duration;
+
+            if (progress >= 1.0) {
+                globeGroup.remove(rip.mesh);
+                rip.geom.dispose();
+                rip.mat.dispose();
+                rippleEffects.splice(i, 1);
+            } else {
+                const scale = 0.1 + progress * 1.5; // Scale 0.1 to 1.6
+                rip.mesh.scale.setScalar(scale);
+                rip.mesh.material.opacity = Math.max(0.0, 0.9 * (1.0 - progress)); // Fade 0.9 to 0.0
+            }
+        }
+
+        if (renderer && scene && camera) {
+            renderer.render(scene, camera);
+        }
+    }
+
+    // Clean up lifecycle component unmount hook (safety protection)
+    window.addEventListener('beforeunload', () => {
+        if (animId) {
+            cancelAnimationFrame(animId);
+        }
+        window.removeEventListener('beforeunload', onWindowResize);
+        
+        // Traverse and dispose materials/geometries
+        scene.traverse(object => {
+            if (object.geometry) object.geometry.dispose();
+            if (object.material) {
+                if (Array.isArray(object.material)) {
+                    object.material.forEach(mat => mat.dispose());
+                } else {
+                    object.material.dispose();
+                }
+            }
+        });
+    });
 </script>
 {% endblock %}
