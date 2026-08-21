@@ -816,3 +816,34 @@ def download_project_scan_report(project_id, scan_id):
     report_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "reports"))
     return send_from_directory(report_dir, filename, as_attachment=True)
 
+
+@api_bp.route("/projects/<int:project_id>/scans", methods=["DELETE"])
+def clear_project_scans_history(project_id):
+    db = get_db()
+    try:
+        project = db.get(Project, project_id)
+        if not project:
+            return jsonify({"success": False, "error": "Project not found"}), 404
+
+        deleted_count = db.query(Scan).filter_by(project_id=project_id).delete()
+        db.commit()
+
+        ProjectService.log_activity(
+            db,
+            project_id,
+            "Scan History Cleared",
+            f"Cleared {deleted_count} scan records from project history"
+        )
+
+        return jsonify({
+            "success": True,
+            "message": f"Successfully cleared {deleted_count} scan record(s) from project history.",
+            "deleted_count": deleted_count
+        })
+    except Exception as e:
+        db.rollback()
+        return jsonify({"success": False, "error": str(e)}), 500
+    finally:
+        db.close()
+
+

@@ -463,9 +463,9 @@ async function loadProjectDashboard(projectId) {
             const badge = document.getElementById('projStatusBadge');
             if (badge) {
                 if (p.status === 'ARCHIVED') {
-                    badge.style.cssText = 'display: inline-flex; align-items: center; height: 28px; background: rgba(251, 191, 36, 0.15); color: #FBBF24; border: 1px solid rgba(251, 191, 36, 0.35); padding: 0 14px; border-radius: 30px; font-weight: 600; font-family: var(--font-mono); font-size: 0.75rem; line-height: 1;';
+                    badge.style.cssText = 'display: inline-flex; align-items: center; justify-content: center; height: 30px; background: rgba(251, 191, 36, 0.18); color: #FBBF24; border: 1px solid rgba(251, 191, 36, 0.4); padding: 0 16px; border-radius: 30px; font-weight: 700; font-family: var(--font-mono); font-size: 0.78rem; line-height: 1; box-sizing: border-box; flex-shrink: 0; margin: 0 !important; vertical-align: middle;';
                 } else {
-                    badge.style.cssText = 'display: inline-flex; align-items: center; height: 28px; background: rgba(74, 222, 128, 0.15); color: #4ADE80; border: 1px solid rgba(74, 222, 128, 0.3); padding: 0 14px; border-radius: 30px; font-weight: 600; font-family: var(--font-mono); font-size: 0.75rem; line-height: 1;';
+                    badge.style.cssText = 'display: inline-flex; align-items: center; justify-content: center; height: 30px; background: rgba(74, 222, 128, 0.18); color: #4ADE80; border: 1px solid rgba(74, 222, 128, 0.35); padding: 0 16px; border-radius: 30px; font-weight: 700; font-family: var(--font-mono); font-size: 0.78rem; line-height: 1; box-sizing: border-box; flex-shrink: 0; margin: 0 !important; vertical-align: middle;';
                 }
             }
 
@@ -579,6 +579,39 @@ async function handleAddTargetSubmit(event) {
         }
     } catch (err) {
         showToast('Error adding target: ' + err.message, 'error');
+    }
+}
+
+// CLEAR SCAN HISTORY CONTROLLERS
+function confirmClearScanHistory() {
+    const modal = document.getElementById('clearScanHistoryModal');
+    if (modal) modal.classList.add('active');
+}
+
+function closeClearScanHistoryModal() {
+    const modal = document.getElementById('clearScanHistoryModal');
+    if (modal) modal.classList.remove('active');
+}
+
+async function executeClearScanHistory() {
+    const projId = document.getElementById('currentProjectId')?.value;
+    if (!projId) return;
+
+    try {
+        const res = await fetch(`/api/v1/projects/${projId}/scans`, {
+            method: 'DELETE'
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            showToast(data.message || 'Scan history cleared.');
+            closeClearScanHistoryModal();
+            loadProjectDashboard(projId);
+        } else {
+            showToast(data.error || 'Failed to clear scan history', 'error');
+        }
+    } catch (err) {
+        showToast('Error clearing scan history: ' + err.message, 'error');
     }
 }
 

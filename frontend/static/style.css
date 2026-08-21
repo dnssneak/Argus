@@ -1320,7 +1320,7 @@ body.no-transition .navbar {
     color: var(--accent-purple);
     font-size: 0.8rem;
     font-weight: 600;
-    margin-bottom: 0.75rem;
+    margin-bottom: 0;
 }
 
 .page-title {
