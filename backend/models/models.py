@@ -12,6 +12,15 @@ def utc_now():
     return datetime.now(timezone.utc)
 
 
+def format_utc_iso(dt):
+    if not dt:
+        return None
+    iso = dt.isoformat()
+    if not iso.endswith("Z") and "+" not in iso:
+        iso += "Z"
+    return iso
+
+
 class Project(Base):
     """Project entity representing a target scope or assessment campaign."""
     __tablename__ = "projects"
@@ -35,7 +44,7 @@ class Project(Base):
         if self.scans:
             sorted_scans = sorted(self.scans, key=lambda s: s.start_time or datetime.min, reverse=True)
             if sorted_scans and sorted_scans[0].start_time:
-                last_scan_time = sorted_scans[0].start_time.isoformat()
+                last_scan_time = format_utc_iso(sorted_scans[0].start_time)
 
         return {
             "id": self.id,
@@ -48,8 +57,8 @@ class Project(Base):
             "scan_count": len(self.scans),
             "finding_count": sum(len(a.findings) for a in self.assets),
             "last_scan": last_scan_time,
-            "created_at": self.created_at.isoformat() if self.created_at else None,
-            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+            "created_at": format_utc_iso(self.created_at),
+            "updated_at": format_utc_iso(self.updated_at),
         }
 
 
@@ -73,7 +82,7 @@ class Target(Base):
             "target": self.target,
             "target_type": self.target_type,
             "status": self.status,
-            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "created_at": format_utc_iso(self.created_at),
         }
 
 
@@ -95,7 +104,7 @@ class Activity(Base):
             "project_id": self.project_id,
             "action": self.action,
             "details": self.details,
-            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "created_at": format_utc_iso(self.created_at),
         }
 
 
@@ -173,8 +182,8 @@ class Asset(Base):
             "endpoint_count": len(self.endpoints),
             "note_count": len(self.notes),
             "history_count": len(self.history),
-            "first_seen": self.first_seen.isoformat() if self.first_seen else None,
-            "last_seen": self.last_seen.isoformat() if self.last_seen else None,
+            "first_seen": format_utc_iso(self.first_seen),
+            "last_seen": format_utc_iso(self.last_seen),
             # Argus 2.0 Asset Feature additions
             "exposure": self.exposure or "Unknown",
             "discovery_sources": to_list(self.discovery_sources or "DNS"),
@@ -186,8 +195,8 @@ class Asset(Base):
             "web_server": self.web_server,
             "web_security_headers": self.web_security_headers,
             "cert_issuer": self.cert_issuer,
-            "cert_valid_from": self.cert_valid_from.isoformat() if self.cert_valid_from else None,
-            "cert_expires": self.cert_expires.isoformat() if self.cert_expires else None,
+            "cert_valid_from": format_utc_iso(self.cert_valid_from),
+            "cert_expires": format_utc_iso(self.cert_expires),
             "cert_sans": to_list(self.cert_sans)
         }
 
@@ -220,7 +229,7 @@ class Service(Base):
             "version": self.version,
             "state": self.state,
             "discovery_source": self.discovery_source,
-            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "created_at": format_utc_iso(self.created_at),
         }
 
 
@@ -285,7 +294,7 @@ class Finding(Base):
             "recommendation": self.recommendation,
             "cve_id": self.cve_id,
             "status": self.status,
-            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "created_at": format_utc_iso(self.created_at),
         }
 
 
@@ -310,7 +319,7 @@ class Relationship(Base):
             "target_asset_id": self.target_asset_id,
             "relationship_type": self.relationship_type,
             "confidence": self.confidence,
-            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "created_at": format_utc_iso(self.created_at),
         }
 
 
@@ -343,8 +352,8 @@ class Scan(Base):
             "current_stage": self.current_stage,
             "logs": self.logs,
             "results_summary": self.results_summary,
-            "start_time": self.start_time.isoformat() if self.start_time else None,
-            "end_time": self.end_time.isoformat() if self.end_time else None,
+            "start_time": format_utc_iso(self.start_time),
+            "end_time": format_utc_iso(self.end_time),
         }
 
 
@@ -370,7 +379,7 @@ class Endpoint(Base):
             "path": self.path,
             "status_code": self.status_code,
             "discovery_source": self.discovery_source,
-            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "created_at": format_utc_iso(self.created_at),
         }
 
 
@@ -392,7 +401,7 @@ class AssetHistory(Base):
             "asset_id": self.asset_id,
             "event_name": self.event_name,
             "event_details": self.event_details,
-            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "created_at": format_utc_iso(self.created_at),
         }
 
 
@@ -414,6 +423,6 @@ class AssetNote(Base):
             "asset_id": self.asset_id,
             "author": self.author,
             "content": self.content,
-            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "created_at": format_utc_iso(self.created_at),
         }
 

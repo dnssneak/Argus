@@ -31,6 +31,39 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(168, 85, 247, 0.4) #0a0a0f;
+}
+
+/* Custom Modern Cyber Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #0a0a0f;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(168, 85, 247, 0.35);
+    border-radius: 4px;
+    border: 1px solid rgba(168, 85, 247, 0.2);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(168, 85, 247, 0.75);
+    box-shadow: 0 0 10px rgba(168, 85, 247, 0.6);
+}
+
+::-webkit-scrollbar-button {
+    display: none;
+    width: 0;
+    height: 0;
+}
+
+::-webkit-scrollbar-corner {
+    background: #0a0a0f;
 }
 
 html {
@@ -1287,7 +1320,7 @@ body.no-transition .navbar {
     color: var(--accent-purple);
     font-size: 0.8rem;
     font-weight: 600;
-    margin-bottom: 0.75rem;
+    margin-bottom: 0;
 }
 
 .page-title {
@@ -2200,6 +2233,7 @@ body.no-transition .navbar {
     border-bottom: 1px solid var(--border);
     font-size: 0.75rem;
     font-family: var(--font-mono);
+    white-space: nowrap;
 }
 
 .data-table td {
@@ -2207,6 +2241,7 @@ body.no-transition .navbar {
     border-bottom: 1px solid var(--border);
     color: var(--text-primary);
     vertical-align: middle;
+    white-space: nowrap;
 }
 
 .data-table tbody tr {
@@ -2369,6 +2404,13 @@ body.no-transition .navbar {
     box-shadow: 0 0 12px rgba(251, 191, 36, 0.3) !important;
 }
 
+.btn-action-icon.btn-activate:hover {
+    background: rgba(74, 222, 128, 0.2) !important;
+    border-color: rgba(74, 222, 128, 0.5) !important;
+    color: #4ADE80 !important;
+    box-shadow: 0 0 12px rgba(74, 222, 128, 0.3) !important;
+}
+
 .btn-action-icon.btn-delete:hover {
     background: rgba(248, 113, 113, 0.2) !important;
     border-color: rgba(248, 113, 113, 0.5) !important;
@@ -2399,3 +2441,78 @@ body.no-transition .navbar {
     opacity: 1 !important;
     pointer-events: auto !important;
 }
+
+/* Modal Box & Inner Structure */
+.modal-box {
+    background: var(--bg-card);
+    border: 1px solid var(--border-accent);
+    border-radius: 16px;
+    padding: 1.75rem;
+    width: 90%;
+    max-width: 540px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+    position: relative;
+    color: var(--text-primary);
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.modal-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+/* Animated Cross / Close Buttons Across All Pages */
+.modal-close,
+.btn-close,
+.cross-btn,
+button.modal-close,
+button.close-btn {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    color: var(--text-muted, #94a3b8) !important;
+    font-size: 1.2rem !important;
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 50% !important;
+    cursor: pointer !important;
+    line-height: 1 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+    outline: none !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+    padding: 0 !important;
+}
+
+.modal-close:hover,
+.btn-close:hover,
+.cross-btn:hover,
+button.modal-close:hover,
+button.close-btn:hover {
+    color: #F87171 !important;
+    background: rgba(248, 113, 113, 0.18) !important;
+    border-color: rgba(248, 113, 113, 0.5) !important;
+    transform: rotate(90deg) scale(1.15) !important;
+    box-shadow: 0 0 14px rgba(248, 113, 113, 0.5), 0 0 24px rgba(248, 113, 113, 0.25) !important;
+}
+
+.modal-close:active,
+.btn-close:active,
+.cross-btn:active,
+button.modal-close:active,
+button.close-btn:active {
+    transform: rotate(90deg) scale(0.92) !important;
+    background: rgba(248, 113, 113, 0.3) !important;
+}

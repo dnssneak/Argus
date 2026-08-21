@@ -1,7 +1,7 @@
 # pyrefly: ignore [missing-import]
 from flask import Blueprint, jsonify, request
 from db.database import SessionLocal
-from models.models import Project, Asset, Service, Technology, Finding, Scan, Relationship, Endpoint, AssetHistory, AssetNote
+from models.models import Project, Target, Asset, Service, Technology, Finding, Scan, Relationship, Endpoint, AssetHistory, AssetNote
 from models.schemas import ProjectCreate, AssetCreate, FindingCreate
 
 api_bp = Blueprint("api_v1", __name__, url_prefix="/api/v1")
@@ -104,7 +104,8 @@ def archive_project(project_id):
     db = get_db()
     try:
         project = ProjectService.archive_project(db, project_id)
-        return jsonify({"success": True, "project": project.to_dict(), "message": f"Project '{project.name}' archived."})
+        action_str = "archived" if project.status == "ARCHIVED" else "activated"
+        return jsonify({"success": True, "project": project.to_dict(), "message": f"Project '{project.name}' {action_str}."})
     except ValueError as e:
         db.rollback()
         return jsonify({"success": False, "error": str(e)}), 400
@@ -558,3 +559,299 @@ def get_stats():
         })
     finally:
         db.close()
+
+
+# --- PROJECT-CENTRIC SCANS API ---
+
+import json
+from datetime import datetime, timezone
+
+@api_bp.route("/projects/<int:project_id>/scans", methods=["GET"])
+def list_project_scans(project_id):
+    db = get_db()
+    try:
+        project = db.get(Project, project_id)
+        if not project:
+            return jsonify({"success": False, "error": "Project not found"}), 404
+
+        scans = db.query(Scan).filter_by(project_id=project_id).order_by(Scan.start_time.desc()).all()
+        scan_list = []
+        for s in scans:
+            s_dict = s.to_dict()
+            if s.results_summary:
+                try:
+                    s_dict["results_parsed"] = json.loads(s.results_summary)
+                except Exception:
+                    s_dict["results_parsed"] = {}
+            else:
+                s_dict["results_parsed"] = {}
+            scan_list.append(s_dict)
+
+        return jsonify({"success": True, "count": len(scan_list), "scans": scan_list})
+    finally:
+        db.close()
+
+
+@api_bp.route("/projects/<int:project_id>/scans/<int:scan_id>", methods=["GET"])
+def get_project_scan_detail(project_id, scan_id):
+    db = get_db()
+    try:
+        scan = db.get(Scan, scan_id)
+        if not scan or scan.project_id != project_id:
+            return jsonify({"success": False, "error": "Scan not found"}), 404
+
+        s_dict = scan.to_dict()
+        if scan.results_summary:
+            try:
+                s_dict["results_parsed"] = json.loads(scan.results_summary)
+            except Exception:
+                s_dict["results_parsed"] = {}
+        else:
+            s_dict["results_parsed"] = {}
+
+        return jsonify({"success": True, "scan": s_dict})
+    finally:
+        db.close()
+
+
+@api_bp.route("/projects/<int:project_id>/scans", methods=["POST"])
+def execute_project_scan(project_id):
+    db = get_db()
+    try:
+        project = db.get(Project, project_id)
+        if not project:
+            return jsonify({"success": False, "error": "Project not found"}), 404
+
+        data = request.get_json() or {}
+        target_str = (data.get("target") or "").strip()
+        capabilities = data.get("capabilities") or ["subdomain", "ports", "recon", "web"]
+        config = data.get("config") or {}
+
+        if not target_str:
+            return jsonify({"success": False, "error": "Target is required for scanning"}), 400
+
+        # Ensure target is registered in Project scope
+        target_obj = db.query(Target).filter_by(project_id=project_id, target=target_str).first()
+        if not target_obj:
+            target_obj = ProjectService.add_target(db, project_id, target_str)
+
+        # Create Scan database entry
+        scan_types_str = ", ".join([c.capitalize() for c in capabilities])
+        new_scan = Scan(
+            project_id=project_id,
+            target=target_str,
+            scan_type=scan_types_str,
+            status="running",
+            progress=0,
+            current_stage="Initializing selected capabilities",
+            logs=f"Started scan for {target_str} with capabilities: {scan_types_str}\n"
+        )
+        db.add(new_scan)
+        db.commit()
+        db.refresh(new_scan)
+
+        # Execute existing services sequentially based on selected capabilities
+        results = {}
+        stage_logs = []
+        has_failure = False
+
+        from subdomain import SubdomainFinder
+        from scanner import NetworkScanner
+        from recon import TargetRecon
+        from fingerprint import WebsiteFingerprinter
+
+        if "subdomain" in capabilities:
+            new_scan.current_stage = "Subdomain Discovery"
+            new_scan.progress = 20
+            db.commit()
+            stage_logs.append("Executing Subdomain Discovery...")
+            try:
+                finder = SubdomainFinder(target_str)
+                sub_res = finder.collect()
+                results["subdomain"] = sub_res
+                stage_logs.append("Subdomain Discovery completed.")
+            except Exception as e:
+                results["subdomain"] = {"error": str(e), "subdomains": []}
+                stage_logs.append(f"Subdomain Discovery failed: {str(e)}")
+                has_failure = True
+
+        if "ports" in capabilities:
+            new_scan.current_stage = "Port Scanning"
+            new_scan.progress = 50
+            db.commit()
+            stage_logs.append("Executing Port Scan...")
+            try:
+                port_type = config.get("port_scan_type", "full")
+                scanner = NetworkScanner(target_str, port_type)
+                port_res = scanner.collect()
+                results["ports"] = port_res
+                stage_logs.append("Port Scan completed.")
+            except Exception as e:
+                results["ports"] = {"error": str(e), "open_ports": [], "services": []}
+                stage_logs.append(f"Port Scan failed: {str(e)}")
+                has_failure = True
+
+        if "recon" in capabilities:
+            new_scan.current_stage = "Reconnaissance"
+            new_scan.progress = 75
+            db.commit()
+            stage_logs.append("Executing Reconnaissance...")
+            try:
+                recon_obj = TargetRecon(target_str)
+                recon_res = recon_obj.collect()
+                results["recon"] = recon_res
+                stage_logs.append("Reconnaissance completed.")
+            except Exception as e:
+                results["recon"] = {"error": str(e)}
+                stage_logs.append(f"Reconnaissance failed: {str(e)}")
+                has_failure = True
+
+        if "web" in capabilities:
+            new_scan.current_stage = "Web Footprinting"
+            new_scan.progress = 90
+            db.commit()
+            stage_logs.append("Executing Web Footprinting...")
+            try:
+                web_url = target_str if target_str.startswith("http://") or target_str.startswith("https://") else f"http://{target_str}"
+                printer = WebsiteFingerprinter(web_url)
+                web_res = printer.collect()
+                results["web"] = web_res
+                stage_logs.append("Web Footprinting completed.")
+            except Exception as e:
+                results["web"] = {"error": str(e)}
+                stage_logs.append(f"Web Footprinting failed: {str(e)}")
+                has_failure = True
+
+        # Finalize scan execution record
+        new_scan.status = "completed" if not has_failure else "failed"
+        new_scan.progress = 100
+        new_scan.current_stage = "Completed" if not has_failure else "Completed with errors"
+        new_scan.logs = "\n".join(stage_logs)
+        new_scan.results_summary = json.dumps(results)
+        new_scan.end_time = datetime.now(timezone.utc)
+
+        # Update target status
+        target_obj.status = "scanned"
+        db.commit()
+
+        # Automatically resolve and ingest scan results into Asset Inventory
+        try:
+            from services.asset_processor import AssetProcessor
+            AssetProcessor.process_scan_results(db, project_id, target_str, new_scan.id, results)
+        except Exception as ae:
+            print(f"Asset ingestion warning: {str(ae)}")
+
+        # Log project activity
+        ProjectService.log_activity(
+            db,
+            project_id,
+            "Target Scanned",
+            f"Executed pipeline scan ({scan_types_str}) against '{target_str}'"
+        )
+
+        scan_dict = new_scan.to_dict()
+        scan_dict["results_parsed"] = results
+
+        return jsonify({
+            "success": True,
+            "message": "Project scan completed successfully.",
+            "scan": scan_dict
+        }), 201
+    except Exception as e:
+        db.rollback()
+        return jsonify({"success": False, "error": str(e)}), 500
+    finally:
+        db.close()
+
+
+@api_bp.route("/projects/<int:project_id>/scans/<int:scan_id>/report", methods=["POST"])
+def generate_project_scan_report(project_id, scan_id):
+    db = get_db()
+    try:
+        scan = db.get(Scan, scan_id)
+        if not scan or scan.project_id != project_id:
+            return jsonify({"success": False, "error": "Scan record not found"}), 404
+
+        data = request.get_json() or {}
+        report_type = data.get("report_type", "html").lower()
+
+        results = {}
+        if scan.results_summary:
+            try:
+                results = json.loads(scan.results_summary)
+            except Exception:
+                results = {}
+
+        from report import ReportGenerator
+        from recon import SystemInfo
+
+        sys_info = SystemInfo().collect()
+        recon_data = results.get("recon")
+        scan_data = results.get("ports")
+        fingerprint_data = results.get("web")
+        subdomain_data = results.get("subdomain")
+
+        generator = ReportGenerator(
+            system_info=sys_info,
+            recon_data=recon_data,
+            scan_data=scan_data,
+            fingerprint_data=fingerprint_data,
+            subdomain_data=subdomain_data
+        )
+
+        if report_type == "txt":
+            filepath, filename = generator.generate_txt()
+        else:
+            filepath, filename = generator.generate_html()
+
+        return jsonify({
+            "success": True,
+            "download_url": f"/api/v1/projects/{project_id}/scans/{scan_id}/download-report?filename={filename}"
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+    finally:
+        db.close()
+
+
+@api_bp.route("/projects/<int:project_id>/scans/<int:scan_id>/download-report", methods=["GET"])
+def download_project_scan_report(project_id, scan_id):
+    filename = request.args.get("filename")
+    if not filename:
+        return jsonify({"success": False, "error": "Filename required"}), 400
+
+    from report import ReportGenerator
+    report_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "reports"))
+    return send_from_directory(report_dir, filename, as_attachment=True)
+
+
+@api_bp.route("/projects/<int:project_id>/scans", methods=["DELETE"])
+def clear_project_scans_history(project_id):
+    db = get_db()
+    try:
+        project = db.get(Project, project_id)
+        if not project:
+            return jsonify({"success": False, "error": "Project not found"}), 404
+
+        deleted_count = db.query(Scan).filter_by(project_id=project_id).delete()
+        db.commit()
+
+        ProjectService.log_activity(
+            db,
+            project_id,
+            "Scan History Cleared",
+            f"Cleared {deleted_count} scan records from project history"
+        )
+
+        return jsonify({
+            "success": True,
+            "message": f"Successfully cleared {deleted_count} scan record(s) from project history.",
+            "deleted_count": deleted_count
+        })
+    except Exception as e:
+        db.rollback()
+        return jsonify({"success": False, "error": str(e)}), 500
+    finally:
+        db.close()
+
+

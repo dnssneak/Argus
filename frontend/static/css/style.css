@@ -473,16 +473,49 @@ body {
     font-weight: 700;
 }
 
-.modal-close {
-    background: none;
-    border: none;
-    color: var(--text-muted);
-    font-size: 20px;
-    cursor: pointer;
+/* Animated Cross / Close Buttons Across All Pages */
+.modal-close,
+.btn-close,
+.cross-btn,
+button.modal-close,
+button.close-btn {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    color: var(--text-muted, #94a3b8) !important;
+    font-size: 1.2rem !important;
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 50% !important;
+    cursor: pointer !important;
+    line-height: 1 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+    outline: none !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+    padding: 0 !important;
 }
 
-.modal-close:hover {
-    color: var(--text-primary);
+.modal-close:hover,
+.btn-close:hover,
+.cross-btn:hover,
+button.modal-close:hover,
+button.close-btn:hover {
+    color: #F87171 !important;
+    background: rgba(248, 113, 113, 0.18) !important;
+    border-color: rgba(248, 113, 113, 0.5) !important;
+    transform: rotate(90deg) scale(1.15) !important;
+    box-shadow: 0 0 14px rgba(248, 113, 113, 0.5), 0 0 24px rgba(248, 113, 113, 0.25) !important;
+}
+
+.modal-close:active,
+.btn-close:active,
+.cross-btn:active,
+button.modal-close:active,
+button.close-btn:active {
+    transform: rotate(90deg) scale(0.92) !important;
+    background: rgba(248, 113, 113, 0.3) !important;
 }
 
 /* Toast notifications */
