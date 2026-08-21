@@ -442,6 +442,9 @@ async function loadAssetsPage() {
 }
 
 // --- DEDICATED PROJECT DASHBOARD CONTROLLER ---
+let currentActiveScanId = null;
+
+// --- DEDICATED PROJECT DASHBOARD CONTROLLER ---
 async function loadProjectDashboard(projectId) {
     try {
         const res = await fetch(`/api/v1/projects/${projectId}/dashboard`);
@@ -451,92 +454,92 @@ async function loadProjectDashboard(projectId) {
             const p = data.data.project;
             const stats = data.data.stats;
             const targets = data.data.targets;
-            const scans = data.data.scans;
             const activities = data.data.activities;
 
-            document.getElementById('projNameText').textContent = p.name;
-            document.getElementById('projDescText').textContent = p.description || 'No description provided.';
-            document.getElementById('projStatusBadge').textContent = p.status;
+            if (document.getElementById('projNameText')) document.getElementById('projNameText').textContent = p.name;
+            if (document.getElementById('projDescText')) document.getElementById('projDescText').textContent = p.description || 'No description provided.';
+            if (document.getElementById('projStatusBadge')) document.getElementById('projStatusBadge').textContent = p.status;
 
             const badge = document.getElementById('projStatusBadge');
-            if (p.status === 'ARCHIVED') {
-                badge.style.cssText = 'display: inline-flex; align-items: center; height: 28px; background: rgba(251, 191, 36, 0.15); color: #FBBF24; border: 1px solid rgba(251, 191, 36, 0.35); padding: 0 14px; border-radius: 30px; font-weight: 600; font-family: var(--font-mono); font-size: 0.75rem; line-height: 1; box-sizing: border-box;';
-            } else {
-                badge.style.cssText = 'display: inline-flex; align-items: center; height: 28px; background: rgba(74, 222, 128, 0.15); color: #4ADE80; border: 1px solid rgba(74, 222, 128, 0.3); padding: 0 14px; border-radius: 30px; font-weight: 600; font-family: var(--font-mono); font-size: 0.75rem; line-height: 1; box-sizing: border-box;';
+            if (badge) {
+                if (p.status === 'ARCHIVED') {
+                    badge.style.cssText = 'display: inline-flex; align-items: center; height: 28px; background: rgba(251, 191, 36, 0.15); color: #FBBF24; border: 1px solid rgba(251, 191, 36, 0.35); padding: 0 14px; border-radius: 30px; font-weight: 600; font-family: var(--font-mono); font-size: 0.75rem; line-height: 1;';
+                } else {
+                    badge.style.cssText = 'display: inline-flex; align-items: center; height: 28px; background: rgba(74, 222, 128, 0.15); color: #4ADE80; border: 1px solid rgba(74, 222, 128, 0.3); padding: 0 14px; border-radius: 30px; font-weight: 600; font-family: var(--font-mono); font-size: 0.75rem; line-height: 1;';
+                }
             }
 
             // Real Statistics Cards
-            document.getElementById('statTargetsCount').textContent = stats.targets;
-            document.getElementById('statAssetsCount').textContent = stats.assets;
-            document.getElementById('statFindingsCount').textContent = stats.findings;
-            document.getElementById('statScansCount').textContent = stats.scans;
+            if (document.getElementById('statTargetsCount')) document.getElementById('statTargetsCount').textContent = stats.targets;
+            if (document.getElementById('statAssetsCount')) document.getElementById('statAssetsCount').textContent = stats.assets;
+            if (document.getElementById('statFindingsCount')) document.getElementById('statFindingsCount').textContent = stats.findings;
+            if (document.getElementById('statScansCount')) document.getElementById('statScansCount').textContent = stats.scans;
 
             // Targets Container
             const targetsBox = document.getElementById('targetsContainer');
-            if (targets.length === 0) {
-                targetsBox.innerHTML = `
-                    <div style="background: rgba(0,0,0,0.3); border: 1px dashed var(--border); border-radius: 12px; padding: 3rem 1.5rem; text-align: center;">
-                        <div style="font-size: 2rem; color: var(--accent-purple); margin-bottom: 0.5rem;"><i class="fa-solid fa-bullseye"></i></div>
-                        <h4 style="font-size: 1.1rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.25rem;">No Targets Added Yet</h4>
-                        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">Add a domain, IP, CIDR range, or URL to begin discovering the attack surface.</p>
-                        <button onclick="openAddTargetModal()" style="background: rgba(168, 85, 247, 0.15); border: 1px solid var(--border-accent); color: var(--accent-purple); padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer;">+ Add Target</button>
-                    </div>
-                `;
-            } else {
-                targetsBox.innerHTML = `
-                    <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
-                        ${targets.map(t => `
-                            <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); padding: 12px 18px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; width: 100%; box-sizing: border-box;">
-                                <div style="font-family: var(--font-mono); font-weight: 600; color: var(--accent-purple); font-size: 0.95rem;">${escapeHtml(t.target)}</div>
-                                <div style="display: flex; gap: 10px; align-items: center;">
-                                    <span class="badge" style="background: rgba(168,85,247,0.1); border: 1px solid var(--border-accent); color: var(--accent-purple); font-size: 0.75rem; padding: 3px 10px; border-radius: 20px;">${t.target_type}</span>
-                                    <span style="font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono);">${new Date(t.created_at).toLocaleDateString()}</span>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                `;
-            }
-
-            // Scans Container
-            const scansBox = document.getElementById('scansContainer');
-            if (scans.length === 0) {
-                scansBox.innerHTML = `
-                    <div style="background: rgba(0,0,0,0.3); border: 1px dashed var(--border); border-radius: 12px; padding: 2.5rem 1.5rem; text-align: center; color: var(--text-muted); font-size: 0.9rem;">
-                        No scans executed for this project yet. Add a target to begin pipeline execution.
-                    </div>
-                `;
-            } else {
-                scansBox.innerHTML = scans.map(s => `
-                    <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); padding: 12px 16px; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                            <span style="font-family: var(--font-mono); font-weight: 600; color: var(--text-primary);">${escapeHtml(s.target)}</span>
-                            <span style="font-size: 0.75rem; color: var(--text-muted); margin-left: 8px;">(${s.scan_type})</span>
+            if (targetsBox) {
+                if (targets.length === 0) {
+                    targetsBox.innerHTML = `
+                        <div style="background: rgba(0,0,0,0.3); border: 1px dashed var(--border); border-radius: 12px; padding: 3rem 1.5rem; text-align: center;">
+                            <div style="font-size: 2rem; color: var(--accent-purple); margin-bottom: 0.5rem;"><i class="fa-solid fa-bullseye"></i></div>
+                            <h4 style="font-size: 1.1rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.25rem;">No Targets Added Yet</h4>
+                            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">Add a domain, IP, CIDR range, or URL to begin discovering the attack surface.</p>
+                            <button onclick="openAddTargetModal()" style="background: rgba(168, 85, 247, 0.15); border: 1px solid var(--border-accent); color: var(--accent-purple); padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer;">+ Add Target</button>
                         </div>
-                        <span class="badge" style="background: rgba(74, 222, 128, 0.15); color: #4ADE80; font-size: 0.75rem; padding: 2px 8px; border-radius: 4px;">${s.status}</span>
-                    </div>
-                `).join('');
+                    `;
+                } else {
+                    targetsBox.innerHTML = `
+                        <div style="display: flex; flex-direction: column; gap: 10px; width: 100%;">
+                            ${targets.map(t => `
+                                <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); padding: 14px 18px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; width: 100%; box-sizing: border-box; flex-wrap: wrap; gap: 10px;">
+                                    <div>
+                                        <div style="font-family: var(--font-mono); font-weight: 700; color: var(--accent-purple); font-size: 1rem;">${escapeHtml(t.target)}</div>
+                                        <div style="display: flex; gap: 10px; align-items: center; margin-top: 4px;">
+                                            <span class="badge" style="background: rgba(168,85,247,0.1); border: 1px solid var(--border-accent); color: var(--accent-purple); font-size: 0.72rem; padding: 2px 8px; border-radius: 20px;">${t.target_type}</span>
+                                            <span style="font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono);">Added: ${new Date(t.created_at).toLocaleDateString()}</span>
+                                            <span style="font-size: 0.75rem; color: var(--text-secondary); font-family: var(--font-mono);">Status: ${escapeHtml(t.status || 'active')}</span>
+                                        </div>
+                                    </div>
+                                    <div style="display: flex; gap: 8px;">
+                                        <button onclick="openScanConfigModal('${escapeHtml(t.target)}')" style="background: linear-gradient(135deg, var(--accent-purple), var(--accent-magenta)); color: #fff; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; font-size: 0.82rem; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                                            <i class="fa-solid fa-play"></i> Scan Target
+                                        </button>
+                                        <button onclick="viewTargetHistory('${escapeHtml(t.target)}')" style="background: rgba(0,0,0,0.4); color: var(--text-secondary); border: 1px solid var(--border); padding: 8px 12px; border-radius: 6px; font-size: 0.8rem; cursor: pointer;" title="View Target History">
+                                            <i class="fa-solid fa-clock-rotate-left"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                }
             }
 
             // Activity Timeline
             const actBox = document.getElementById('activitiesTimeline');
-            if (activities.length === 0) {
-                actBox.innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem;">No recent activities logged.</div>';
-            } else {
-                actBox.innerHTML = activities.map(act => `
-                    <div style="font-size: 0.85rem; border-left: 2px solid var(--border-accent); padding-left: 12px;">
-                        <div style="color: var(--accent-purple); font-weight: 600;">● ${escapeHtml(act.action)}</div>
-                        <div style="color: var(--text-secondary); font-size: 0.8rem;">${escapeHtml(act.details || '')}</div>
-                        <div style="color: var(--text-muted); font-size: 0.75rem; font-family: var(--font-mono); margin-top: 2px;">${new Date(act.created_at).toLocaleString()}</div>
-                    </div>
-                `).join('');
+            if (actBox) {
+                if (activities.length === 0) {
+                    actBox.innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem;">No recent activities logged.</div>';
+                } else {
+                    actBox.innerHTML = activities.map(act => `
+                        <div style="font-size: 0.85rem; border-left: 2px solid var(--border-accent); padding-left: 12px;">
+                            <div style="color: var(--accent-purple); font-weight: 600;">● ${escapeHtml(act.action)}</div>
+                            <div style="color: var(--text-secondary); font-size: 0.8rem;">${escapeHtml(act.details || '')}</div>
+                            <div style="color: var(--text-muted); font-size: 0.75rem; font-family: var(--font-mono); margin-top: 2px;">${new Date(act.created_at).toLocaleString()}</div>
+                        </div>
+                    `).join('');
+                }
             }
+
+            // Load Scan History for Project
+            loadProjectScansHistory(projectId);
         }
     } catch (err) {
         showToast('Error loading project dashboard: ' + err.message, 'error');
     }
 }
 
+// ADD TARGET MODAL CONTROLLERS
 function openAddTargetModal() {
     const modal = document.getElementById('addTargetModal');
     if (modal) modal.classList.add('active');
@@ -550,8 +553,13 @@ function closeAddTargetModal() {
 async function handleAddTargetSubmit(event) {
     event.preventDefault();
     const projId = document.getElementById('currentProjectId')?.value;
-    const target = document.getElementById('targetInput').value;
-    const target_type = document.getElementById('targetTypeSelect').value;
+    const target = document.getElementById('targetInput')?.value;
+    const target_type = document.getElementById('targetTypeSelect')?.value;
+
+    if (!projId || !target) {
+        showToast('Please enter a valid target.', 'error');
+        return;
+    }
 
     try {
         const res = await fetch(`/api/v1/projects/${projId}/targets`, {
@@ -564,7 +572,7 @@ async function handleAddTargetSubmit(event) {
         if (data.success) {
             showToast(`Target '${target}' added to project.`);
             closeAddTargetModal();
-            document.getElementById('addTargetForm').reset();
+            document.getElementById('addTargetForm')?.reset();
             loadProjectDashboard(projId);
         } else {
             showToast(data.error || 'Failed to add target', 'error');
@@ -574,64 +582,433 @@ async function handleAddTargetSubmit(event) {
     }
 }
 
-function triggerProjectScan() {
-    const projId = document.getElementById('currentProjectId')?.value;
-    if (!projId) return;
+async function loadProjectScansHistory(projectId) {
+    const box = document.getElementById('scansHistoryContainer');
+    if (!box) return;
 
-    fetch(`/api/v1/projects/${projId}`)
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                const targets = (data.project ? data.project.targets : (data.data ? data.data.targets : [])) || [];
-                if (targets.length === 0) {
-                    showToast('No targets in project scope yet! Please click "+ Add Target" first.', 'error');
-                    openAddTargetModal();
-                    return;
-                }
+    try {
+        const res = await fetch(`/api/v1/projects/${projectId}/scans`);
+        const data = await res.json();
 
-                // Populate target select dropdown in startScanModal
-                const select = document.getElementById('scanTargetSelect');
-                if (select) {
-                    select.innerHTML = targets.map(t => `<option value="${escapeHtml(t.target)}">${escapeHtml(t.target)} (${t.target_type})</option>`).join('');
-                }
-
-                // Show Launch Scan modal
-                const modal = document.getElementById('startScanModal');
-                if (modal) modal.classList.add('active');
+        if (data.success) {
+            const scans = data.scans || [];
+            if (scans.length === 0) {
+                box.innerHTML = `
+                    <div style="background: rgba(0,0,0,0.3); border: 1px dashed var(--border); border-radius: 12px; padding: 2.5rem 1.5rem; text-align: center; color: var(--text-muted); font-size: 0.9rem;">
+                        No scans executed for this project yet. Click "Scan Target" on a target above to start a scan.
+                    </div>
+                `;
             } else {
-                showToast(data.error || 'Failed to load project targets', 'error');
+                box.innerHTML = scans.map(s => {
+                    const statusClass = s.status === 'completed'
+                        ? 'background: rgba(74, 222, 128, 0.15); color: #4ADE80; border: 1px solid rgba(74, 222, 128, 0.3);'
+                        : 'background: rgba(248, 113, 113, 0.15); color: #F87171; border: 1px solid rgba(248, 113, 113, 0.3);';
+
+                    const dateStr = s.start_time ? new Date(s.start_time).toLocaleString() : 'N/A';
+
+                    return `
+                        <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); padding: 12px 16px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                            <div>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span style="font-family: var(--font-mono); font-weight: 700; color: var(--text-primary); font-size: 0.95rem;">#${s.id} — ${escapeHtml(s.target)}</span>
+                                    <span class="badge" style="${statusClass} font-size: 0.72rem; padding: 2px 8px; border-radius: 12px; text-transform: uppercase;">${s.status}</span>
+                                </div>
+                                <div style="font-size: 0.78rem; color: var(--text-muted); font-family: var(--font-mono); margin-top: 3px;">
+                                    Capabilities: <span style="color: var(--accent-purple);">${escapeHtml(s.scan_type)}</span> | Date: ${dateStr}
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 8px;">
+                                <button onclick="viewHistoricalScan(${s.id})" style="background: rgba(168, 85, 247, 0.15); border: 1px solid var(--border-accent); color: var(--accent-purple); padding: 6px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                                    <i class="fa-solid fa-eye"></i> View
+                                </button>
+                                <button onclick="rerunScan(${s.id})" style="background: rgba(0,0,0,0.4); border: 1px solid var(--border); color: var(--text-primary); padding: 6px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                                    <i class="fa-solid fa-rotate-right"></i> Re-run
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
             }
-        })
-        .catch(err => {
-            showToast('Error loading project targets: ' + err.message, 'error');
-        });
+        }
+    } catch (err) {
+        console.error('Error loading scan history:', err);
+    }
 }
 
-function closeStartScanModal() {
-    const modal = document.getElementById('startScanModal');
+// SCAN CONFIGURATION & EXECUTION MODAL CONTROLLERS
+function openScanConfigModal(targetName = '', preselectedCaps = null) {
+    const modal = document.getElementById('scanConfigModal');
+    if (!modal) return;
+
+    if (targetName) {
+        document.getElementById('scanConfigTargetText').textContent = targetName;
+        document.getElementById('scanConfigTargetInput').value = targetName;
+    }
+
+    if (preselectedCaps && Array.isArray(preselectedCaps)) {
+        document.getElementById('capSubdomain').checked = preselectedCaps.includes('subdomain');
+        document.getElementById('capPorts').checked = preselectedCaps.includes('ports');
+        document.getElementById('capRecon').checked = preselectedCaps.includes('recon');
+        document.getElementById('capWeb').checked = preselectedCaps.includes('web');
+    } else {
+        document.getElementById('capSubdomain').checked = true;
+        document.getElementById('capPorts').checked = true;
+        document.getElementById('capRecon').checked = true;
+        document.getElementById('capWeb').checked = true;
+    }
+
+    togglePortConfigDisplay();
+
+    document.getElementById('scanConfigStep').style.display = 'block';
+    document.getElementById('scanProgressStep').style.display = 'none';
+    modal.classList.add('active');
+}
+
+function closeScanConfigModal() {
+    const modal = document.getElementById('scanConfigModal');
     if (modal) modal.classList.remove('active');
 }
 
-function handleStartScanSubmit(event) {
-    event.preventDefault();
-    const target = document.getElementById('scanTargetSelect')?.value;
-    const engine = document.getElementById('scanEngineSelect')?.value || 'recon';
-    const projId = document.getElementById('currentProjectId')?.value;
+function togglePortConfigDisplay() {
+    const cb = document.getElementById('capPorts');
+    const opts = document.getElementById('portConfigOptions');
+    if (cb && opts) {
+        opts.style.display = cb.checked ? 'block' : 'none';
+    }
+}
 
-    if (!target) {
-        showToast('Please select a target to scan.', 'error');
+async function handleExecuteProjectScanSubmit(event) {
+    event.preventDefault();
+    const projId = document.getElementById('currentProjectId')?.value;
+    const target = document.getElementById('scanConfigTargetInput')?.value;
+
+    if (!projId || !target) {
+        showToast('Invalid project or target selected for scan.', 'error');
         return;
     }
 
-    showToast(`Launching ${engine.toUpperCase()} engine scan for '${target}'...`);
-    closeStartScanModal();
+    const capabilities = [];
+    if (document.getElementById('capSubdomain')?.checked) capabilities.push('subdomain');
+    if (document.getElementById('capPorts')?.checked) capabilities.push('ports');
+    if (document.getElementById('capRecon')?.checked) capabilities.push('recon');
+    if (document.getElementById('capWeb')?.checked) capabilities.push('web');
 
-    setTimeout(() => {
-        let route = `/recon?target=${encodeURIComponent(target)}&project_id=${projId}`;
-        if (engine === 'fingerprint') route = `/fingerprint?target=${encodeURIComponent(target)}&project_id=${projId}`;
-        if (engine === 'subdomain') route = `/subdomain?target=${encodeURIComponent(target)}&project_id=${projId}`;
-        window.location.href = route;
-    }, 600);
+    if (capabilities.length === 0) {
+        showToast('Please select at least one scan capability to run.', 'error');
+        return;
+    }
+
+    const config = {
+        port_scan_type: document.getElementById('portScanTypeSelect')?.value || 'full'
+    };
+
+    // Transition modal view to Progress step
+    document.getElementById('scanConfigStep').style.display = 'none';
+    document.getElementById('scanProgressStep').style.display = 'block';
+    document.getElementById('progressTargetText').textContent = `Target: ${target}`;
+    document.getElementById('viewResultsBtn').style.display = 'none';
+
+    // Build progress items
+    const progressContainer = document.getElementById('progressItemsContainer');
+    const capNames = {
+        'subdomain': 'Subdomain Discovery',
+        'ports': 'Port Scanning',
+        'recon': 'Reconnaissance',
+        'web': 'Web Footprinting'
+    };
+
+    progressContainer.innerHTML = capabilities.map(cap => `
+        <div id="progItem-${cap}" style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-weight: 500; color: var(--text-primary); font-size: 0.9rem;">${capNames[cap]}</span>
+            <span class="prog-status-badge badge" style="background: rgba(251, 191, 36, 0.15); color: #FBBF24; font-size: 0.75rem;">Waiting...</span>
+        </div>
+    `).join('');
+
+    try {
+        const res = await fetch(`/api/v1/projects/${projId}/scans`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ target, capabilities, config })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            const scan = data.scan;
+            currentActiveScanId = scan.id;
+
+            // Mark all selected items as completed
+            capabilities.forEach(cap => {
+                const badge = document.querySelector(`#progItem-${cap} .prog-status-badge`);
+                if (badge) {
+                    badge.textContent = '✓ Completed';
+                    badge.style.cssText = 'background: rgba(74, 222, 128, 0.15); color: #4ADE80; font-size: 0.75rem; border: 1px solid rgba(74, 222, 128, 0.3);';
+                }
+            });
+
+            document.getElementById('overallStatusBadge').textContent = 'Overall Status: Completed';
+            document.getElementById('overallStatusBadge').style.cssText = 'background: rgba(74, 222, 128, 0.15); color: #4ADE80; border: 1px solid rgba(74, 222, 128, 0.3);';
+            document.getElementById('viewResultsBtn').style.display = 'inline-flex';
+
+            showToast(`Scan #${scan.id} completed successfully for '${target}'.`);
+            loadProjectDashboard(projId);
+        } else {
+            document.getElementById('overallStatusBadge').textContent = 'Overall Status: Failed';
+            document.getElementById('overallStatusBadge').style.cssText = 'background: rgba(248, 113, 113, 0.15); color: #F87171; border: 1px solid rgba(248, 113, 113, 0.3);';
+            showToast(data.error || 'Scan execution failed.', 'error');
+        }
+    } catch (err) {
+        showToast('Error executing project scan: ' + err.message, 'error');
+    }
+}
+
+function openScanResultsFromProgress() {
+    closeScanConfigModal();
+    if (currentActiveScanId) {
+        viewHistoricalScan(currentActiveScanId);
+    }
+}
+
+async function viewHistoricalScan(scanId) {
+    const projId = document.getElementById('currentProjectId')?.value;
+    if (!projId) return;
+
+    try {
+        const res = await fetch(`/api/v1/projects/${projId}/scans/${scanId}`);
+        const data = await res.json();
+
+        if (data.success) {
+            const scan = data.scan;
+            currentActiveScanId = scan.id;
+
+            document.getElementById('resHeaderTarget').textContent = `Target: ${scan.target} | Scan #${scan.id} (${scan.scan_type})`;
+
+            const container = document.getElementById('scanResultsContent');
+            const results = scan.results_parsed || {};
+
+            let html = '';
+
+            // Subdomains Result Section
+            if (results.subdomain) {
+                const sub = results.subdomain;
+                const list = sub.subdomains || [];
+                html += `
+                    <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem; margin-bottom: 1rem;">
+                        <h4 style="color: var(--accent-purple); font-size: 1.05rem; font-weight: 700; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-sitemap"></i> Subdomain Discovery (${sub.total_found || list.length} Found)
+                        </h4>
+                        ${list.length === 0 ? '<p style="color: var(--text-muted); font-size: 0.85rem;">No subdomains discovered.</p>' : `
+                            <div style="overflow-x: auto;">
+                                <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                                    <thead><tr style="text-align: left; border-bottom: 1px solid var(--border); color: var(--text-muted); font-family: var(--font-mono);"><th style="padding: 8px;">Subdomain</th><th style="padding: 8px;">Status</th><th style="padding: 8px;">IP Address</th></tr></thead>
+                                    <tbody>
+                                        ${list.map(s => `
+                                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                                <td style="padding: 8px; font-family: var(--font-mono); color: var(--accent-purple); font-weight: 600;">${escapeHtml(s.subdomain)}</td>
+                                                <td style="padding: 8px;"><span class="badge" style="background: rgba(74, 222, 128, 0.15); color: #4ADE80; font-size: 0.72rem;">${s.status}</span></td>
+                                                <td style="padding: 8px; font-family: var(--font-mono);">${escapeHtml(s.ip_address)}</td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        `}
+                    </div>
+                `;
+            }
+
+            // Port Scan Result Section
+            if (results.ports) {
+                const p = results.ports;
+                const openPorts = p.open_ports || [];
+                const services = p.services || [];
+                html += `
+                    <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem; margin-bottom: 1rem;">
+                        <h4 style="color: var(--accent-purple); font-size: 1.05rem; font-weight: 700; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-network-wired"></i> Port Scanning & Services (${openPorts.length} Open Ports)
+                        </h4>
+                        <div style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 10px; font-family: var(--font-mono);">
+                            Host Status: <strong style="color: #4ADE80;">${escapeHtml(p.host_status || 'Up')}</strong> | Scan Status: ${escapeHtml(p.scan_status || 'Completed')}
+                        </div>
+                        ${services.length === 0 ? '<p style="color: var(--text-muted); font-size: 0.85rem;">No open network services detected.</p>' : `
+                            <div style="overflow-x: auto;">
+                                <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                                    <thead><tr style="text-align: left; border-bottom: 1px solid var(--border); color: var(--text-muted); font-family: var(--font-mono);"><th style="padding: 8px;">Port/Proto</th><th style="padding: 8px;">Service Name</th><th style="padding: 8px;">Detected Version</th></tr></thead>
+                                    <tbody>
+                                        ${services.map(s => `
+                                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                                <td style="padding: 8px; font-family: var(--font-mono); color: var(--accent-purple); font-weight: 600;">${s.port}/${s.protocol}</td>
+                                                <td style="padding: 8px; font-weight: 600;">${escapeHtml(s.name)}</td>
+                                                <td style="padding: 8px; font-family: var(--font-mono); color: var(--text-secondary);">${escapeHtml(s.version || '—')}</td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        `}
+                    </div>
+                `;
+            }
+
+            // Web Footprinting Result Section
+            if (results.web) {
+                const w = results.web;
+                const ts = w.tech_stack || {};
+                const meta = w.metadata || {};
+                html += `
+                    <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem; margin-bottom: 1rem;">
+                        <h4 style="color: var(--accent-purple); font-size: 1.05rem; font-weight: 700; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-globe"></i> Web Footprinting & Tech Stack
+                        </h4>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 0.85rem;">
+                            <div>
+                                <strong style="color: var(--text-muted); font-size: 0.75rem; font-family: var(--font-mono); text-transform: uppercase;">TECHNOLOGY FINGERPRINT</strong>
+                                <div style="margin-top: 6px;">Web Server: <strong>${escapeHtml(ts.web_server || w.web_server || 'Unknown')}</strong></div>
+                                <div>Backend Stack: <strong>${escapeHtml(ts.backend || w.backend || 'Unknown')}</strong></div>
+                                <div>CMS: <strong>${escapeHtml(ts.cms || w.cms || 'None Detected')}</strong></div>
+                                <div>Frontend Frameworks: <strong>${escapeHtml(ts.frontend_frameworks || w.frontend || 'None')}</strong></div>
+                            </div>
+                            <div>
+                                <strong style="color: var(--text-muted); font-size: 0.75rem; font-family: var(--font-mono); text-transform: uppercase;">SCRAPED METADATA</strong>
+                                <div style="margin-top: 6px;">Page Title: <strong>${escapeHtml(meta.title || 'N/A')}</strong></div>
+                                <div>HTTP Status: <strong>${w.http_status || '200 OK'}</strong></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Recon Result Section
+            if (results.recon) {
+                const r = results.recon;
+                const whois = r.whois || {};
+                const geo = r.ip_geolocation || {};
+                html += `
+                    <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem; margin-bottom: 1rem;">
+                        <h4 style="color: var(--accent-purple); font-size: 1.05rem; font-weight: 700; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-magnifying-glass"></i> Reconnaissance & OSINT
+                        </h4>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 0.85rem;">
+                            <div>
+                                <strong style="color: var(--text-muted); font-size: 0.75rem; font-family: var(--font-mono); text-transform: uppercase;">WHOIS INFO</strong>
+                                <div style="margin-top: 6px;">Registrar: <strong>${escapeHtml(whois.registrar || 'N/A')}</strong></div>
+                                <div>Created: <strong>${escapeHtml(whois.creation_date || 'N/A')}</strong></div>
+                            </div>
+                            <div>
+                                <strong style="color: var(--text-muted); font-size: 0.75rem; font-family: var(--font-mono); text-transform: uppercase;">IP GEOLOCATION</strong>
+                                <div style="margin-top: 6px;">IP Address: <strong>${escapeHtml(geo.ip_address || 'N/A')}</strong></div>
+                                <div>Location: <strong>${escapeHtml((geo.city || '') + ' ' + (geo.country || '')) || 'N/A'}</strong></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = html || '<p style="color: var(--text-muted);">No scan results recorded.</p>';
+
+            const modal = document.getElementById('scanResultsModal');
+            if (modal) modal.classList.add('active');
+        }
+    } catch (err) {
+        showToast('Error loading scan details: ' + err.message, 'error');
+    }
+}
+
+function closeScanResultsModal() {
+    const modal = document.getElementById('scanResultsModal');
+    if (modal) modal.classList.remove('active');
+}
+
+async function rerunScan(scanId) {
+    const projId = document.getElementById('currentProjectId')?.value;
+    if (!projId) return;
+
+    try {
+        const res = await fetch(`/api/v1/projects/${projId}/scans/${scanId}`);
+        const data = await res.json();
+
+        if (data.success) {
+            const scan = data.scan;
+            const scanTypeStr = (scan.scan_type || '').toLowerCase();
+            const selectedCaps = [];
+            if (scanTypeStr.includes('subdomain')) selectedCaps.push('subdomain');
+            if (scanTypeStr.includes('port')) selectedCaps.push('ports');
+            if (scanTypeStr.includes('recon')) selectedCaps.push('recon');
+            if (scanTypeStr.includes('web')) selectedCaps.push('web');
+
+            openScanConfigModal(scan.target, selectedCaps);
+        }
+    } catch (err) {
+        showToast('Error populating re-run configuration: ' + err.message, 'error');
+    }
+}
+
+async function generateReportForCurrentScan(reportType = 'html') {
+    const projId = document.getElementById('currentProjectId')?.value;
+    if (!projId || !currentActiveScanId) {
+        showToast('No active scan selected for report generation.', 'error');
+        return;
+    }
+
+    try {
+        const res = await fetch(`/api/v1/projects/${projId}/scans/${currentActiveScanId}/report`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ report_type: reportType })
+        });
+        const data = await res.json();
+
+        if (data.success && data.download_url) {
+            showToast('Generating report file...');
+            window.location.href = data.download_url;
+        } else {
+            showToast(data.error || 'Failed to generate report', 'error');
+        }
+    } catch (err) {
+        showToast('Error generating report: ' + err.message, 'error');
+    }
+}
+
+async function viewTargetHistory(targetName) {
+    const projId = document.getElementById('currentProjectId')?.value;
+    if (!projId) return;
+
+    try {
+        const res = await fetch(`/api/v1/projects/${projId}/scans`);
+        const data = await res.json();
+
+        if (data.success) {
+            const scans = (data.scans || []).filter(s => s.target === targetName);
+            document.getElementById('targetHistoryTitle').textContent = `Scan History — ${targetName}`;
+
+            const box = document.getElementById('targetHistoryContent');
+            if (scans.length === 0) {
+                box.innerHTML = `<p style="color: var(--text-muted); font-size: 0.9rem;">No scans recorded yet for '${escapeHtml(targetName)}'.</p>`;
+            } else {
+                box.innerHTML = scans.map(s => `
+                    <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); padding: 12px 16px; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <span style="font-family: var(--font-mono); font-weight: 700; color: var(--accent-purple);">Scan #${s.id}</span>
+                            <span style="font-size: 0.8rem; color: var(--text-secondary); margin-left: 8px;">${s.scan_type}</span>
+                            <div style="font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono); margin-top: 2px;">${new Date(s.start_time).toLocaleString()}</div>
+                        </div>
+                        <button onclick="closeTargetHistoryModal(); viewHistoricalScan(${s.id});" style="background: rgba(168, 85, 247, 0.15); border: 1px solid var(--border-accent); color: var(--accent-purple); padding: 4px 10px; border-radius: 4px; font-size: 0.78rem; cursor: pointer;">
+                            View Results
+                        </button>
+                    </div>
+                `).join('');
+            }
+
+            const modal = document.getElementById('targetHistoryModal');
+            if (modal) modal.classList.add('active');
+        }
+    } catch (err) {
+        showToast('Error fetching target history: ' + err.message, 'error');
+    }
+}
+
+function closeTargetHistoryModal() {
+    const modal = document.getElementById('targetHistoryModal');
+    if (modal) modal.classList.remove('active');
 }
 
 function renderAssetTable(assets) {

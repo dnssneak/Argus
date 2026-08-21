@@ -1,98 +1,91 @@
 {% extends "base.html" %}
 
-{% block title %}Project Dashboard — Argus 2.0{% endblock %}
+{% block title %}Project Workspace — Argus 2.0{% endblock %}
 
 {% block content %}
 <input type="hidden" id="currentProjectId" value="{{ project_id }}">
 
 <!-- Dedicated Project Header -->
 <section class="page-header" style="margin-bottom: 1.25rem;">
-    <div
-        style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 1.5rem;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 1.5rem;">
         <div>
             <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px;">
-                <span class="page-tag" style="display: inline-flex; align-items: center; height: 28px; font-family: var(--font-mono); font-size: 0.75rem; color: var(--accent-purple); text-transform: uppercase; letter-spacing: 0.1em; background: rgba(168, 85, 247, 0.1); padding: 0 16px; border-radius: 30px; border: 1px solid var(--border-accent); line-height: 1; box-sizing: border-box; margin: 0 !important;">Project Container</span>
-                <span id="projStatusBadge" class="badge" style="display: inline-flex; align-items: center; height: 28px; font-family: var(--font-mono); font-size: 0.75rem; padding: 0 14px; border-radius: 30px; font-weight: 600; line-height: 1; box-sizing: border-box; margin: 0 !important;">ACTIVE</span>
-                <span style="display: inline-flex; align-items: center; height: 28px; font-family: var(--font-mono); font-size: 0.75rem; color: var(--accent-purple); background: rgba(168, 85, 247, 0.1); border: 1px solid var(--border); padding: 0 14px; border-radius: 30px; line-height: 1; box-sizing: border-box; margin: 0 !important;">ID: #<span id="projIdText">{{ project_id }}</span></span>
+                <span class="page-tag" style="display: inline-flex; align-items: center; height: 28px; font-family: var(--font-mono); font-size: 0.75rem; color: var(--accent-purple); text-transform: uppercase; letter-spacing: 0.1em; background: rgba(168, 85, 247, 0.1); padding: 0 16px; border-radius: 30px; border: 1px solid var(--border-accent); line-height: 1;">Project Workspace</span>
+                <span id="projStatusBadge" class="badge" style="display: inline-flex; align-items: center; height: 28px; font-family: var(--font-mono); font-size: 0.75rem; padding: 0 14px; border-radius: 30px; font-weight: 600; line-height: 1;">ACTIVE</span>
+                <span style="display: inline-flex; align-items: center; height: 28px; font-family: var(--font-mono); font-size: 0.75rem; color: var(--accent-purple); background: rgba(168, 85, 247, 0.1); border: 1px solid var(--border); padding: 0 14px; border-radius: 30px; line-height: 1;">ID: #<span id="projIdText">{{ project_id }}</span></span>
             </div>
-            <h1 id="projNameText" class="page-title"
-                style="font-size: 2.2rem; font-weight: 700; background: linear-gradient(90deg, #ffffff, var(--accent-purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-                Loading Project...</h1>
-            <p id="projDescText" class="page-desc"
-                style="color: var(--text-secondary); font-size: 1.05rem; margin-top: 4px;">Fetching project details...
+            <h1 id="projNameText" class="page-title" style="font-size: 2.2rem; font-weight: 700; background: linear-gradient(90deg, #ffffff, var(--accent-purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                Loading Project...
+            </h1>
+            <p id="projDescText" class="page-desc" style="color: var(--text-secondary); font-size: 1.05rem; margin-top: 4px;">
+                Fetching project scope and target details...
             </p>
         </div>
 
         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <button class="btn" onclick="openAddTargetModal()"
-                style="background: rgba(168, 85, 247, 0.15); color: var(--accent-purple); border: 1px solid var(--border-accent); padding: 10px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+            <button class="btn" onclick="openAddTargetModal()" style="background: rgba(168, 85, 247, 0.15); color: var(--accent-purple); border: 1px solid var(--border-accent); padding: 10px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;">
                 <i class="fa-solid fa-plus"></i> Add Target
             </button>
-            <button class="btn btn-primary" onclick="triggerProjectScan()"
-                style="background: linear-gradient(135deg, var(--accent-purple), var(--accent-magenta)); color: #fff; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;">
-                <i class="fa-solid fa-crosshairs"></i> Start Scan
-            </button>
         </div>
     </div>
 </section>
 
-<!-- Real Statistics Cards (Argus 1.0 Centered 4-Box Grid with minimal gap) -->
+<!-- Real Statistics Cards (4-Box Grid) -->
 <section style="margin-bottom: 1.25rem;">
     <div class="stats-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.85rem; width: 100%;">
-        <div class="stat-card" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem 1rem; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 10px; transition: var(--transition);">
-            <div class="stat-icon" style="color: var(--accent-purple); font-size: 1.6rem;">
-                <i class="fa-solid fa-bullseye"></i>
-            </div>
+        <div class="stat-card" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem 1rem; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 8px;">
+            <div class="stat-icon" style="color: var(--accent-purple); font-size: 1.5rem;"><i class="fa-solid fa-bullseye"></i></div>
             <div class="stat-number" id="statTargetsCount" style="font-family: var(--font-mono); font-size: 2.2rem; font-weight: 700; color: var(--accent-purple); line-height: 1;">0</div>
-            <div class="stat-label" style="color: var(--text-secondary); font-size: 0.88rem; font-weight: 500;">Assessment Targets</div>
+            <div class="stat-label" style="color: var(--text-secondary); font-size: 0.85rem; font-weight: 500;">Project Targets</div>
         </div>
 
-        <div class="stat-card" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem 1rem; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 10px; transition: var(--transition);">
-            <div class="stat-icon" style="color: var(--accent-purple); font-size: 1.6rem;">
-                <i class="fa-solid fa-cubes"></i>
-            </div>
-            <div class="stat-number" id="statAssetsCount" style="font-family: var(--font-mono); font-size: 2.2rem; font-weight: 700; color: var(--text-primary); line-height: 1;">0</div>
-            <div class="stat-label" style="color: var(--text-secondary); font-size: 0.88rem; font-weight: 500;">Discovered Assets</div>
-        </div>
-
-        <div class="stat-card" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem 1rem; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 10px; transition: var(--transition);">
-            <div class="stat-icon" style="color: var(--accent-magenta); font-size: 1.6rem;">
-                <i class="fa-solid fa-triangle-exclamation"></i>
-            </div>
-            <div class="stat-number" id="statFindingsCount" style="font-family: var(--font-mono); font-size: 2.2rem; font-weight: 700; color: var(--accent-magenta); line-height: 1;">0</div>
-            <div class="stat-label" style="color: var(--text-secondary); font-size: 0.88rem; font-weight: 500;">Total Findings</div>
-        </div>
-
-        <div class="stat-card" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem 1rem; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 10px; transition: var(--transition);">
-            <div class="stat-icon" style="color: var(--accent-green); font-size: 1.6rem;">
-                <i class="fa-solid fa-rotate"></i>
-            </div>
+        <div class="stat-card" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem 1rem; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 8px;">
+            <div class="stat-icon" style="color: var(--accent-green); font-size: 1.5rem;"><i class="fa-solid fa-rotate"></i></div>
             <div class="stat-number" id="statScansCount" style="font-family: var(--font-mono); font-size: 2.2rem; font-weight: 700; color: var(--accent-green); line-height: 1;">0</div>
-            <div class="stat-label" style="color: var(--text-secondary); font-size: 0.88rem; font-weight: 500;">Scans</div>
+            <div class="stat-label" style="color: var(--text-secondary); font-size: 0.85rem; font-weight: 500;">Scans Executed</div>
+        </div>
+
+        <div class="stat-card" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem 1rem; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 8px;">
+            <div class="stat-icon" style="color: var(--text-primary); font-size: 1.5rem;"><i class="fa-solid fa-cubes"></i></div>
+            <div class="stat-number" id="statAssetsCount" style="font-family: var(--font-mono); font-size: 2.2rem; font-weight: 700; color: var(--text-primary); line-height: 1;">0</div>
+            <div class="stat-label" style="color: var(--text-secondary); font-size: 0.85rem; font-weight: 500;">Discovered Assets</div>
+        </div>
+
+        <div class="stat-card" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem 1rem; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 8px;">
+            <div class="stat-icon" style="color: var(--accent-magenta); font-size: 1.5rem;"><i class="fa-solid fa-triangle-exclamation"></i></div>
+            <div class="stat-number" id="statFindingsCount" style="font-family: var(--font-mono); font-size: 2.2rem; font-weight: 700; color: var(--accent-magenta); line-height: 1;">0</div>
+            <div class="stat-label" style="color: var(--text-secondary); font-size: 0.85rem; font-weight: 500;">Security Findings</div>
         </div>
     </div>
 </section>
 
-<!-- Content Grid: Targets & Recent Activity -->
+<!-- Content Grid: Targets & Recent Scans History -->
 <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1rem; align-items: start; width: 100%;">
-    <!-- Left Column: Targets & Scans -->
+    <!-- Left Column: Targets & Pipeline Scans -->
     <div style="display: flex; flex-direction: column; gap: 1rem; width: 100%;">
-        <!-- Targets Card -->
+        <!-- TARGETS CARD -->
         <div class="card" style="width: 100%; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; box-sizing: border-box;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; width: 100%;">
-                <h3 style="font-size: 1.15rem; font-weight: 600;">Project Scope Targets</h3>
+                <h3 style="font-size: 1.15rem; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-bullseye" style="color: var(--accent-purple);"></i> Project Scope Targets
+                </h3>
+                <button onclick="openAddTargetModal()" style="background: rgba(168, 85, 247, 0.15); border: 1px solid var(--border-accent); color: var(--accent-purple); padding: 6px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer;">
+                    + Add Target
+                </button>
             </div>
 
             <div id="targetsContainer" style="width: 100%;">
-                <!-- Dynamically rendered -->
+                <!-- Dynamically rendered target rows -->
             </div>
         </div>
 
-        <!-- Scans Card -->
+        <!-- RECENT SCANS HISTORY CARD -->
         <div class="card" style="width: 100%; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; box-sizing: border-box;">
-            <h3 style="font-size: 1.15rem; font-weight: 600; margin-bottom: 1.25rem;">Recent Assessment Scans</h3>
-            <div id="scansContainer" style="width: 100%;">
-                <!-- Dynamically rendered -->
+            <h3 style="font-size: 1.15rem; font-weight: 600; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-clock-rotate-left" style="color: var(--accent-purple);"></i> Scan History
+            </h3>
+            <div id="scansHistoryContainer" style="width: 100%;">
+                <!-- Dynamically rendered scan history -->
             </div>
         </div>
     </div>
@@ -100,7 +93,7 @@
     <!-- Right Column: Recent Activity Feed Timeline -->
     <div style="width: 100%;">
         <div class="card" style="width: 100%; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; box-sizing: border-box;">
-            <h3 style="font-size: 1.15rem; font-weight: 600; margin-bottom: 1.25rem;">Recent Activity</h3>
+            <h3 style="font-size: 1.15rem; font-weight: 600; margin-bottom: 1.25rem;">Project Activity Log</h3>
             <div id="activitiesTimeline" style="display: flex; flex-direction: column; gap: 12px; width: 100%;">
                 <!-- Dynamically rendered -->
             </div>
@@ -108,28 +101,21 @@
     </div>
 </div>
 
-<!-- Modal: Add Target -->
+<!-- MODAL: ADD TARGET -->
 <div id="addTargetModal" class="modal-overlay">
-    <div class="modal-box">
+    <div class="modal-box" style="max-width: 480px;">
         <div class="modal-header">
-            <h3 class="modal-title">Add Target to Project</h3>
+            <h3 class="modal-title">Add Target to Project Scope</h3>
             <button class="modal-close" onclick="closeAddTargetModal()">&times;</button>
         </div>
         <form id="addTargetForm" onsubmit="handleAddTargetSubmit(event)">
             <div style="margin-bottom: 1.25rem;">
-                <label
-                    style="display: block; font-size: 0.8rem; font-family: var(--font-mono); color: var(--text-muted); uppercase; margin-bottom: 6px;">Target
-                    Domain / IP / CIDR / URL *</label>
-                <input type="text" id="targetInput" required
-                    placeholder="e.g. example.com, api.example.com, 192.168.10.0/24"
-                    style="width: 100%; background: rgba(0,0,0,0.4); border: 1px solid var(--border); color: var(--text-primary); padding: 10px 14px; border-radius: 8px; outline: none; font-family: var(--font-sans);">
+                <label style="display: block; font-size: 0.8rem; font-family: var(--font-mono); color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;">Target Domain / IP / CIDR / URL *</label>
+                <input type="text" id="targetInput" required placeholder="e.g. example.com, api.example.com, 192.168.1.10" style="width: 100%; background: rgba(0,0,0,0.4); border: 1px solid var(--border); color: var(--text-primary); padding: 10px 14px; border-radius: 8px; outline: none; font-family: var(--font-sans);">
             </div>
             <div style="margin-bottom: 1.5rem;">
-                <label
-                    style="display: block; font-size: 0.8rem; font-family: var(--font-mono); color: var(--text-muted); uppercase; margin-bottom: 6px;">Target
-                    Type</label>
-                <select id="targetTypeSelect"
-                    style="width: 100%; background: rgba(0,0,0,0.4); border: 1px solid var(--border); color: var(--text-primary); padding: 10px 14px; border-radius: 8px; outline: none; font-family: var(--font-sans);">
+                <label style="display: block; font-size: 0.8rem; font-family: var(--font-mono); color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;">Target Type</label>
+                <select id="targetTypeSelect" style="width: 100%; background: rgba(0,0,0,0.4); border: 1px solid var(--border); color: var(--text-primary); padding: 10px 14px; border-radius: 8px; outline: none; font-family: var(--font-sans);">
                     <option value="Domain">Domain</option>
                     <option value="Subdomain">Subdomain</option>
                     <option value="IP">IP Address</option>
@@ -145,37 +131,147 @@
     </div>
 </div>
 
-<!-- Modal: Launch Assessment Scan -->
-<div id="startScanModal" class="modal-overlay">
-    <div class="modal-box">
+<!-- DEDICATED SCAN CONFIGURATION & EXECUTION CARD (MODAL) -->
+<div id="scanConfigModal" class="modal-overlay">
+    <div class="modal-box" style="max-width: 650px; width: 90%;">
         <div class="modal-header">
-            <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px;">
-                <i class="fa-solid fa-crosshairs" style="color: var(--accent-magenta);"></i> Launch Assessment Scan
+            <h3 class="modal-title" style="display: flex; align-items: center; gap: 10px;">
+                <i class="fa-solid fa-crosshairs" style="color: var(--accent-magenta);"></i> New Target Scan
             </h3>
-            <button class="modal-close" onclick="closeStartScanModal()">&times;</button>
+            <button class="modal-close" onclick="closeScanConfigModal()">&times;</button>
         </div>
-        <form id="startScanForm" onsubmit="handleStartScanSubmit(event)">
-            <div style="margin-bottom: 1.25rem;">
-                <label style="display: block; font-size: 0.8rem; font-family: var(--font-mono); color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;">Select In-Scope Target *</label>
-                <select id="scanTargetSelect" required style="width: 100%; background: rgba(0,0,0,0.4); border: 1px solid var(--border); color: var(--text-primary); padding: 10px 14px; border-radius: 8px; outline: none; font-family: var(--font-sans);">
-                    <!-- Dynamically populated with project targets -->
-                </select>
+
+        <div id="scanConfigStep" style="display: block;">
+            <form id="scanConfigForm" onsubmit="handleExecuteProjectScanSubmit(event)">
+                <!-- Target Header -->
+                <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; margin-bottom: 1.25rem;">
+                    <span style="font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono); text-transform: uppercase; display: block; margin-bottom: 2px;">Selected Target</span>
+                    <div id="scanConfigTargetText" style="font-family: var(--font-mono); font-size: 1.1rem; font-weight: 700; color: var(--accent-purple);">example.com</div>
+                    <input type="hidden" id="scanConfigTargetInput" value="">
+                </div>
+
+                <!-- Select Capabilities -->
+                <div style="margin-bottom: 1.25rem;">
+                    <label style="display: block; font-size: 0.82rem; font-family: var(--font-mono); color: var(--text-muted); text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.05em;">Select Scans to Run</label>
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                        
+                        <!-- Capability: Subdomain Discovery -->
+                        <div class="scan-capability-item" style="background: rgba(0,0,0,0.25); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; display: flex; align-items: flex-start; gap: 12px;">
+                            <input type="checkbox" id="capSubdomain" checked style="margin-top: 4px; accent-color: var(--accent-purple); transform: scale(1.2);">
+                            <div>
+                                <label for="capSubdomain" style="font-weight: 600; color: var(--text-primary); cursor: pointer;">Subdomain Discovery</label>
+                                <p style="font-size: 0.8rem; color: var(--text-muted); margin: 2px 0 0 0;">Enumerates active subdomains and resolves target IP addresses via public DNS.</p>
+                            </div>
+                        </div>
+
+                        <!-- Capability: Port Scanning -->
+                        <div class="scan-capability-item" style="background: rgba(0,0,0,0.25); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px;">
+                            <div style="display: flex; align-items: flex-start; gap: 12px;">
+                                <input type="checkbox" id="capPorts" checked style="margin-top: 4px; accent-color: var(--accent-purple); transform: scale(1.2);" onchange="togglePortConfigDisplay()">
+                                <div style="flex: 1;">
+                                    <label for="capPorts" style="font-weight: 600; color: var(--text-primary); cursor: pointer;">Port Scanning</label>
+                                    <p style="font-size: 0.8rem; color: var(--text-muted); margin: 2px 0 0 0;">Executes network port discovery and service version detection using Nmap.</p>
+                                </div>
+                            </div>
+                            <!-- Port Scan Configuration -->
+                            <div id="portConfigOptions" style="margin-top: 10px; padding-left: 28px;">
+                                <label style="font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono);">NMAP SCAN PRESET</label>
+                                <select id="portScanTypeSelect" style="width: 100%; background: rgba(0,0,0,0.4); border: 1px solid var(--border); color: var(--text-primary); padding: 8px 12px; border-radius: 6px; font-size: 0.85rem; margin-top: 4px;">
+                                    <option value="full">Full Port & Service Version Scan (-sV open ports)</option>
+                                    <option value="ping">Ping Host Status Probe (-sn)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Capability: Reconnaissance -->
+                        <div class="scan-capability-item" style="background: rgba(0,0,0,0.25); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; display: flex; align-items: flex-start; gap: 12px;">
+                            <input type="checkbox" id="capRecon" checked style="margin-top: 4px; accent-color: var(--accent-purple); transform: scale(1.2);">
+                            <div>
+                                <label for="capRecon" style="font-weight: 600; color: var(--text-primary); cursor: pointer;">Reconnaissance</label>
+                                <p style="font-size: 0.8rem; color: var(--text-muted); margin: 2px 0 0 0;">Performs WHOIS lookups, DNS record harvesting, IP Geolocation, and HTTP header checks.</p>
+                            </div>
+                        </div>
+
+                        <!-- Capability: Web Footprinting -->
+                        <div class="scan-capability-item" style="background: rgba(0,0,0,0.25); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; display: flex; align-items: flex-start; gap: 12px;">
+                            <input type="checkbox" id="capWeb" checked style="margin-top: 4px; accent-color: var(--accent-purple); transform: scale(1.2);">
+                            <div>
+                                <label for="capWeb" style="font-weight: 600; color: var(--text-primary); cursor: pointer;">Web Footprinting</label>
+                                <p style="font-size: 0.8rem; color: var(--text-muted); margin: 2px 0 0 0;">Fingerprints web server, backend stack, CMS, frameworks, metadata, and security headers.</p>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid var(--border); padding-top: 1.25rem;">
+                    <button type="button" class="btn btn-secondary" onclick="closeScanConfigModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" style="display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-play"></i> Start Scan
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- SCAN LIVE PROGRESS & STATUS CARD -->
+        <div id="scanProgressStep" style="display: none;">
+            <div style="text-align: center; margin-bottom: 1.5rem;">
+                <h4 style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">Scan in Progress</h4>
+                <div style="font-family: var(--font-mono); color: var(--accent-purple); font-size: 0.9rem;" id="progressTargetText">Target: example.com</div>
             </div>
-            <div style="margin-bottom: 1.5rem;">
-                <label style="display: block; font-size: 0.8rem; font-family: var(--font-mono); color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;">Scan Engine Profile</label>
-                <select id="scanEngineSelect" style="width: 100%; background: rgba(0,0,0,0.4); border: 1px solid var(--border); color: var(--text-primary); padding: 10px 14px; border-radius: 8px; outline: none; font-family: var(--font-sans);">
-                    <option value="recon">Full Reconnaissance Pipeline (OSINT + Ports)</option>
-                    <option value="fingerprint">Website Fingerprint & Tech Stack Scan</option>
-                    <option value="subdomain">Subdomain Enumeration Engine</option>
-                </select>
+
+            <!-- Progress Items List -->
+            <div id="progressItemsContainer" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 1.5rem;">
+                <!-- Populated dynamically during execution -->
             </div>
-            <div style="display: flex; justify-content: flex-end; gap: 12px;">
-                <button type="button" class="btn btn-secondary" onclick="closeStartScanModal()">Cancel</button>
-                <button type="submit" class="btn btn-primary" style="display: flex; align-items: center; gap: 6px;">
-                    <i class="fa-solid fa-play"></i> Launch Scan
+
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 1.25rem;">
+                <span id="overallStatusBadge" class="badge" style="background: rgba(168,85,247,0.15); color: var(--accent-purple); border: 1px solid var(--border-accent);">Overall Status: Running...</span>
+                <button id="viewResultsBtn" class="btn btn-primary" style="display: none;" onclick="openScanResultsFromProgress()">
+                    <i class="fa-solid fa-eye"></i> View Results
                 </button>
             </div>
-        </form>
+        </div>
+    </div>
+</div>
+
+<!-- DEDICATED SCAN RESULTS VIEW (MODAL) -->
+<div id="scanResultsModal" class="modal-overlay">
+    <div class="modal-box" style="max-width: 900px; width: 95%; max-height: 90vh; overflow-y: auto;">
+        <div class="modal-header" style="position: sticky; top: 0; background: var(--bg-card); z-index: 10; padding-bottom: 1rem; border-bottom: 1px solid var(--border);">
+            <div>
+                <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-square-poll-vertical" style="color: var(--accent-purple);"></i> Scan Results
+                </h3>
+                <div style="font-family: var(--font-mono); font-size: 0.85rem; color: var(--text-muted);" id="resHeaderTarget">Target: example.com</div>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <button class="btn btn-secondary" onclick="generateReportForCurrentScan('html')" style="font-size: 0.8rem; padding: 6px 12px;">
+                    <i class="fa-solid fa-file-arrow-down"></i> HTML Report
+                </button>
+                <button class="btn btn-secondary" onclick="generateReportForCurrentScan('txt')" style="font-size: 0.8rem; padding: 6px 12px;">
+                    <i class="fa-solid fa-file-lines"></i> TXT Report
+                </button>
+                <button class="modal-close" onclick="closeScanResultsModal()">&times;</button>
+            </div>
+        </div>
+
+        <div id="scanResultsContent" style="padding-top: 1rem;">
+            <!-- Rendered dynamically -->
+        </div>
+    </div>
+</div>
+
+<!-- TARGET HISTORY DETAIL MODAL -->
+<div id="targetHistoryModal" class="modal-overlay">
+    <div class="modal-box" style="max-width: 600px;">
+        <div class="modal-header">
+            <h3 class="modal-title" id="targetHistoryTitle">Target Scan History</h3>
+            <button class="modal-close" onclick="closeTargetHistoryModal()">&times;</button>
+        </div>
+        <div id="targetHistoryContent" style="padding-top: 1rem;">
+            <!-- Rendered dynamically -->
+        </div>
     </div>
 </div>
 {% endblock %}

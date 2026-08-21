@@ -75,13 +75,8 @@
         <div class="nav-links">
             <a href="/" class="nav-link {% if request.path == '/' %}active{% endif %}">Home</a>
             <a href="/dashboard" class="nav-link {% if request.path == '/dashboard' %}active{% endif %}">Dashboard</a>
-            <a href="/projects-page" class="nav-link {% if request.path == '/projects-page' %}active{% endif %}">Projects</a>
+            <a href="/projects-page" class="nav-link {% if request.path.startswith('/projects') %}active{% endif %}">Projects</a>
             <a href="/assets-page" class="nav-link {% if request.path == '/assets-page' %}active{% endif %}">Assets</a>
-            <a href="/recon" class="nav-link {% if request.path == '/recon' %}active{% endif %}">Recon</a>
-            <a href="/scan" class="nav-link {% if request.path == '/scan' %}active{% endif %}">Scan</a>
-            <a href="/fingerprint" class="nav-link {% if request.path == '/fingerprint' %}active{% endif %}">Fingerprint</a>
-            <a href="/subdomain" class="nav-link {% if request.path == '/subdomain' %}active{% endif %}">Subdomains</a>
-            <a href="/report" class="nav-link {% if request.path == '/report' %}active{% endif %}">Report</a>
         </div>
         <div class="nav-toggle" onclick="toggleMenu()">
             <span></span>
