@@ -104,7 +104,8 @@ def archive_project(project_id):
     db = get_db()
     try:
         project = ProjectService.archive_project(db, project_id)
-        return jsonify({"success": True, "project": project.to_dict(), "message": f"Project '{project.name}' archived."})
+        action_str = "archived" if project.status == "ARCHIVED" else "activated"
+        return jsonify({"success": True, "project": project.to_dict(), "message": f"Project '{project.name}' {action_str}."})
     except ValueError as e:
         db.rollback()
         return jsonify({"success": False, "error": str(e)}), 400

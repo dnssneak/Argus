@@ -159,10 +159,17 @@ function renderProjectsGrid(projects) {
     }
 
     grid.innerHTML = projects.map(p => {
-        const isArchived = p.status === 'ARCHIVED';
+        const isArchived = (p.status || '').toUpperCase() === 'ARCHIVED';
         const badgeStyle = isArchived
             ? 'background: rgba(251, 191, 36, 0.15); color: #FBBF24; border: 1px solid rgba(251, 191, 36, 0.35);'
             : 'background: rgba(74, 222, 128, 0.15); color: #4ADE80; border: 1px solid rgba(74, 222, 128, 0.3);';
+
+        const archiveBtnClass = isArchived ? 'btn-activate' : 'btn-archive';
+        const archiveBtnTitle = isArchived ? 'Activate Project' : 'Archive Project';
+        const archiveBtnIcon = isArchived ? 'fa-box-open' : 'fa-box-archive';
+        const archiveBtnStyle = isArchived
+            ? 'color: #4ADE80 !important; border-color: rgba(74, 222, 128, 0.4) !important; background: rgba(74, 222, 128, 0.12) !important;'
+            : 'color: #FBBF24 !important; border-color: rgba(251, 191, 36, 0.4) !important; background: rgba(251, 191, 36, 0.12) !important;';
 
         const lastScanText = p.last_scan ? new Date(p.last_scan).toLocaleDateString() : 'No scans yet';
 
@@ -221,10 +228,10 @@ function renderProjectsGrid(projects) {
                             <button type="button" onclick="openEditProjectModalById(${p.id}, event)" class="btn-action-icon" title="Edit Project">
                                 <i class="fa-solid fa-pen" style="font-size: 0.75rem;"></i>
                             </button>
-                            <button type="button" onclick="archiveProject(${p.id}, event)" class="btn-action-icon btn-archive" title="Archive Project">
-                                <i class="fa-solid fa-box-archive" style="font-size: 0.75rem;"></i>
+                            <button type="button" onclick="archiveProject(${p.id}, event)" class="btn-action-icon ${archiveBtnClass}" title="${archiveBtnTitle}" style="${archiveBtnStyle}">
+                                <i class="fa-solid ${archiveBtnIcon}" style="font-size: 0.75rem;"></i>
                             </button>
-                            <button type="button" onclick="deleteProject(${p.id}, false, event)" class="btn-action-icon btn-delete" title="Delete Project">
+                            <button type="button" onclick="confirmDeleteProject(${p.id}, '${escapeHtml(p.name)}', event)" class="btn-action-icon btn-delete" title="Delete Project">
                                 <i class="fa-solid fa-trash" style="font-size: 0.75rem;"></i>
                             </button>
                         </div>
@@ -343,11 +350,52 @@ async function archiveProject(id, event = null) {
             showToast(data.message);
             loadProjectsPage();
             loadProjectSelector();
+            if (document.getElementById('currentProjectId')?.value == id) {
+                loadProjectDashboard(id);
+            }
         } else {
             showToast(data.error || 'Failed to archive project', 'error');
         }
     } catch (err) {
         showToast('Error archiving project: ' + err.message, 'error');
+    }
+}
+
+function closeDeleteProtectionModal() {
+    const modal = document.getElementById('deleteProtectionModal');
+    if (modal) {
+        modal.classList.remove('active');
+        modal.style.display = 'none';
+    }
+}
+
+let targetDeleteProjectId = null;
+
+function confirmDeleteProject(id, projectName = 'Project', event = null) {
+    if (event) event.stopPropagation();
+    targetDeleteProjectId = id;
+    const nameElem = document.getElementById('confirmDeleteProjectName');
+    if (nameElem) nameElem.textContent = projectName;
+    const modal = document.getElementById('confirmDeleteProjectModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        modal.classList.add('active');
+    }
+}
+
+function closeConfirmDeleteProjectModal() {
+    const modal = document.getElementById('confirmDeleteProjectModal');
+    if (modal) {
+        modal.classList.remove('active');
+        modal.style.display = 'none';
+    }
+}
+
+function proceedDeleteProject() {
+    if (targetDeleteProjectId) {
+        const idToDelete = targetDeleteProjectId;
+        closeConfirmDeleteProjectModal();
+        deleteProject(idToDelete, false);
     }
 }
 
