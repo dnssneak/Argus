@@ -172,7 +172,7 @@
 
 <script>
     let container, scene, camera, renderer;
-    let globeGroup;
+    let globeGroup, stars;
     let clock = new THREE.Clock();
     let animId = null;
 
@@ -426,13 +426,13 @@
         const glowMesh = new THREE.Mesh(glowGeom, glowMat);
         globeGroup.add(glowMesh);
 
-        // E. Cohesive Stars Field in Background (Green Stars: 0x0f5844)
+        // E. Cohesive Stars Field in Background (Crisp Tiny White Twinkling Stars: 0xffffff)
         const starGeom = new THREE.BufferGeometry();
-        const starCount = 350;
+        const starCount = 500;
         const starPositions = new Float32Array(starCount * 3);
         for (let i = 0; i < starCount * 3; i += 3) {
             // Distribute stars on a wide spherical shell behind the camera's focus
-            const r = 30 + Math.random() * 30;
+            const r = 25 + Math.random() * 35;
             const theta = Math.random() * Math.PI * 2;
             const phi = Math.acos(2 * Math.random() - 1);
             starPositions[i] = r * Math.sin(phi) * Math.cos(theta);
@@ -441,14 +441,14 @@
         }
         starGeom.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
         const starMat = new THREE.PointsMaterial({
-            color: 0x0f5844,
-            size: 0.12,
+            color: 0xffffff, // White
+            size: 0.07, // Crisp tiny particles
             transparent: true,
-            opacity: 0.5,
+            opacity: 0.8,
             blending: THREE.AdditiveBlending,
             depthWrite: false
         });
-        const stars = new THREE.Points(starGeom, starMat);
+        stars = new THREE.Points(starGeom, starMat);
         scene.add(stars); // Fixed in scene space, doesn't rotate with globeGroup
     }
 
@@ -651,6 +651,12 @@
         // A. Globe Axial Spin - counterclockwise rotation in Y direction only
         if (globeGroup && !isDragging) {
             globeGroup.rotation.y += 0.0015;
+        }
+
+        // B. Slowly rotate the background stars field to create a soft twinkling/glowing glint
+        if (stars) {
+            stars.rotation.y = elapsed * 0.008;
+            stars.rotation.x = elapsed * 0.003;
         }
 
         // C. Update kinetic particle pulses (Packets)
