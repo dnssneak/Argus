@@ -15,6 +15,7 @@ from fingerprint import WebsiteFingerprinter
 from subdomain import SubdomainFinder
 
 app = Flask(__name__, template_folder='../frontend/templates', static_folder='../frontend/static')
+app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 
 # Initialize DB tables on startup
 init_db()

@@ -734,6 +734,13 @@ def execute_project_scan(project_id):
         target_obj.status = "scanned"
         db.commit()
 
+        # Automatically resolve and ingest scan results into Asset Inventory
+        try:
+            from services.asset_processor import AssetProcessor
+            AssetProcessor.process_scan_results(db, project_id, target_str, new_scan.id, results)
+        except Exception as ae:
+            print(f"Asset ingestion warning: {str(ae)}")
+
         # Log project activity
         ProjectService.log_activity(
             db,

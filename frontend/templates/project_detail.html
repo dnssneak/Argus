@@ -79,6 +79,21 @@
             </div>
         </div>
 
+        <!-- DISCOVERED ASSETS CARD -->
+        <div class="card" style="width: 100%; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; box-sizing: border-box;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; width: 100%;">
+                <h3 style="font-size: 1.15rem; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-cubes" style="color: var(--accent-purple);"></i> Project Discovered Assets
+                </h3>
+                <a href="/assets-page" onclick="if (document.getElementById('currentProjectId')) localStorage.setItem('currentProjectId', document.getElementById('currentProjectId').value)" style="color: var(--accent-purple); font-size: 0.8rem; font-weight: 600; text-decoration: none;">
+                    Manage All Assets <i class="fa-solid fa-arrow-right" style="font-size: 0.7rem;"></i>
+                </a>
+            </div>
+            <div id="projectAssetsContainer" style="width: 100%;">
+                <!-- Dynamically rendered project assets list -->
+            </div>
+        </div>
+
         <!-- RECENT SCANS HISTORY CARD -->
         <div class="card" style="width: 100%; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; box-sizing: border-box;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; width: 100%;">
