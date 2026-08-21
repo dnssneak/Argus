@@ -120,8 +120,16 @@
     <div id="toastContainer" class="toast-container" style="position: fixed; bottom: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 10px;"></div>
 
     <!-- Footer -->
-    <footer class="footer" style="text-align: center; padding: 2rem; border-top: 1px solid var(--border); margin-top: 4rem; color: var(--text-muted); font-size: 0.85rem; font-family: var(--font-mono);">
-        <p>Argus v2.0 | Attack Surface Discovery & Assessment Platform</p>
+    <footer class="footer">
+        <div class="footer-top">
+            <span class="footer-copyright">© 2026 Argus Platform</span>
+            <div class="footer-links">
+                <a href="#">Terms</a>
+                <a href="#">Privacy</a>
+                <a href="#">Support</a>
+            </div>
+        </div>
+        <div class="footer-wordmark">Argus</div>
     </footer>
 
     <script src="{{ url_for('static', filename='script.js') }}"></script>
