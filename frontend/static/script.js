@@ -2,9 +2,9 @@
 // ARGUS - INTERACTIONS & ANIMATIONS (v2.0)
 // ============================================
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // Mobile menu toggle
-    window.toggleMenu = function() {
+    window.toggleMenu = function () {
         const navLinks = document.querySelector('.nav-links');
         navLinks.classList.toggle('active');
     };
@@ -16,49 +16,65 @@ document.addEventListener('DOMContentLoaded', function() {
     initWorkflowSteps();
     initScrollReveal();
     initFaqAccordion();
+    initMicroInteractions();
 });
 
-// 1. Terminal Simulator Typewriter Sequence
+// 1. Terminal Simulator Typewriter Sequence & Micro-Presets
 function initTerminalSimulator() {
     const cmdEl = document.getElementById('terminal-cmd');
     const outputsEl = document.getElementById('terminal-outputs');
     if (!cmdEl || !outputsEl) return;
 
-    const command = 'nmap -sV target.com';
-    const outputs = [
-        { text: 'Starting Nmap 7.95 ( https://nmap.org ) at 2026-08-22 01:46 UTC', delay: 400 },
-        { text: 'Nmap scan report for target.com (104.244.42.1)', delay: 600 },
-        { text: 'Host is up (0.042s latency).', delay: 400 },
-        { text: 'rDNS record for 104.244.42.1: dns.target.com', delay: 500 },
-        { text: 'Not shown: 997 closed tcp ports (reset)', delay: 400 },
-        { text: 'PORT     STATE SERVICE VERSION', delay: 600, class: 'highlight' },
-        { text: '22/tcp   open  ssh     OpenSSH 8.9p1 Ubuntu 3ubuntu0.1', delay: 400, class: 'output-line' },
-        { text: '80/tcp   open  http    nginx 1.18.0', delay: 300, class: 'output-line' },
-        { text: '443/tcp  open  https   nginx 1.18.0', delay: 300, class: 'output-line' },
-        { text: 'Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel', delay: 500 },
-        { text: 'Nmap done: 1 IP address (1 host up) scanned in 3.42 seconds', delay: 800, class: 'success' }
-    ];
+    const presetCommands = {
+        'nmap -sV target.com': [
+            { text: 'Starting Nmap 7.95 ( https://nmap.org ) at 2026-08-22 01:46 UTC', delay: 350 },
+            { text: 'Nmap scan report for target.com (104.244.42.1)', delay: 450 },
+            { text: 'Host is up (0.042s latency).', delay: 350 },
+            { text: 'PORT     STATE SERVICE VERSION', delay: 500, class: 'highlight' },
+            { text: '22/tcp   open  ssh     OpenSSH 8.9p1 Ubuntu 3ubuntu0.1', delay: 350, class: 'output-line' },
+            { text: '80/tcp   open  http    nginx 1.18.0', delay: 300, class: 'output-line' },
+            { text: '443/tcp  open  https   nginx 1.18.0', delay: 300, class: 'output-line' },
+            { text: 'Nmap done: 1 IP address (1 host up) scanned in 2.84 seconds', delay: 600, class: 'success' }
+        ],
+        'argus --recon target.com': [
+            { text: 'ARGUS RECON ENGINE v2.0 - Passive Target Discovery', delay: 350 },
+            { text: 'Querying CT Logs & DNS Archives...', delay: 450, class: 'highlight' },
+            { text: '[+] Subdomain: api.target.com (104.244.42.5) [ACTIVE]', delay: 350, class: 'output-line' },
+            { text: '[+] Subdomain: dev.target.com (104.244.42.9) [ACTIVE]', delay: 300, class: 'output-line' },
+            { text: '[+] Subdomain: mail.target.com (104.244.42.12) [ACTIVE]', delay: 300, class: 'output-line' },
+            { text: 'Reconnaissance complete: 3 active subdomains identified.', delay: 600, class: 'success' }
+        ],
+        'argus --export-pdf': [
+            { text: 'Compiling project scope: "Network Security Audit"', delay: 350 },
+            { text: 'Generating compliance matrix report & host advisories...', delay: 450, class: 'highlight' },
+            { text: '[✓] Asset Inventory Snapshot attached.', delay: 350, class: 'output-line' },
+            { text: '[✓] Executive PDF generated: /api/v1/projects/report.pdf', delay: 500, class: 'success' }
+        ]
+    };
 
+    let currentCmdKey = 'nmap -sV target.com';
     let cmdIdx = 0;
-    
+    let timerId = null;
+
     function typeCommand() {
-        if (cmdIdx < command.length) {
-            cmdEl.textContent += command.charAt(cmdIdx);
+        const commandText = currentCmdKey;
+        if (cmdIdx < commandText.length) {
+            cmdEl.textContent += commandText.charAt(cmdIdx);
             cmdIdx++;
-            setTimeout(typeCommand, 50 + Math.random() * 100); // realistic typing rhythm
+            timerId = setTimeout(typeCommand, 40 + Math.random() * 60);
         } else {
-            setTimeout(renderOutputs, 500);
+            timerId = setTimeout(renderOutputs, 400);
         }
     }
 
     let outputIdx = 0;
     function renderOutputs() {
+        const outputs = presetCommands[currentCmdKey] || presetCommands['nmap -sV target.com'];
         if (outputIdx < outputs.length) {
             const line = outputs[outputIdx];
             const div = document.createElement('div');
             div.className = 'terminal-line ' + (line.class || 'output-line');
-            
-            // Faint purple glow pulse border on output change
+
             const terminalWindow = document.querySelector('.terminal-window');
             if (terminalWindow) {
                 terminalWindow.style.borderColor = 'rgba(168, 85, 247, 0.45)';
@@ -69,18 +85,19 @@ function initTerminalSimulator() {
 
             div.textContent = line.text;
             outputsEl.appendChild(div);
-            
+
             const body = document.getElementById('terminal-body');
             if (body) body.scrollTop = body.scrollHeight;
 
             outputIdx++;
-            setTimeout(renderOutputs, line.delay);
+            timerId = setTimeout(renderOutputs, line.delay);
         } else {
-            setTimeout(resetTerminal, 5000); // Wait 5s before loop restart
+            timerId = setTimeout(resetTerminal, 6000);
         }
     }
 
     function resetTerminal() {
+        if (timerId) clearTimeout(timerId);
         cmdEl.textContent = '';
         outputsEl.innerHTML = '';
         cmdIdx = 0;
@@ -88,32 +105,94 @@ function initTerminalSimulator() {
         typeCommand();
     }
 
+    // Micro-Preset Buttons Listener
+    const presetBtns = document.querySelectorAll('.term-preset-btn');
+    presetBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            presetBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            const cmdKey = btn.getAttribute('data-cmd');
+            if (cmdKey && presetCommands[cmdKey]) {
+                currentCmdKey = cmdKey;
+                resetTerminal();
+            }
+        });
+    });
+
     typeCommand();
 }
 
+// Interactive Micro-Element Handlers (Hero Badge Ping & Card Status Toggles)
+function initMicroInteractions() {
+    // 1. Hero Badge Telemetry Ping
+    const badgeBtn = document.getElementById('hero-badge-click');
+    const badgeText = document.getElementById('hero-badge-text');
+    if (badgeBtn && badgeText) {
+        badgeBtn.addEventListener('click', () => {
+            badgeText.textContent = 'Telemetry Ping 14ms • Operational';
+            badgeBtn.style.borderColor = '#4ade80';
+            badgeBtn.style.boxShadow = '0 0 20px rgba(74, 222, 128, 0.4)';
+            setTimeout(() => {
+                badgeText.textContent = 'v2.0 Active • Click to Ping';
+                badgeBtn.style.borderColor = '';
+                badgeBtn.style.boxShadow = '';
+            }, 3000);
+        });
+    }
+
+    // 2. Minimalist Card Status Pill Toggles
+    const statusPills = document.querySelectorAll('.card-status-pill');
+    statusPills.forEach(pill => {
+        let state = 0;
+        const states = [
+            { text: 'ENFORCED', class: '' },
+            { text: 'ACTIVE SCAN', class: 'state-scanning' },
+            { text: 'VERIFIED', class: 'state-verified' }
+        ];
+        pill.addEventListener('click', (e) => {
+            e.stopPropagation();
+            state = (state + 1) % states.length;
+            const cur = states[state];
+            pill.innerHTML = `<span class="status-dot"></span> ${cur.text}`;
+            pill.className = `card-status-pill ${cur.class}`;
+        });
+    });
+}
+
 // 2. Canvas-based Particles Network Background
+// 2. High-DPI Retina Canvas Particles Background
 function initBackgroundCanvas() {
     const canvas = document.getElementById('bg-network-canvas');
     if (!canvas) return;
 
     const ctx = canvas.getContext('2d');
-    let width = canvas.width = window.innerWidth;
-    let height = canvas.height = window.innerHeight;
+    let width = window.innerWidth;
+    let height = window.innerHeight;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+    function resizeCanvas() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
+        canvas.style.width = width + 'px';
+        canvas.style.height = height + 'px';
+        ctx.scale(dpr, dpr);
+    }
+
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
 
     let particles = [];
-    const maxParticles = 60;
-    const maxDistance = 120;
-
-    let mouse = { x: null, y: null, radius: 150 };
-
-    window.addEventListener('resize', () => {
-        width = canvas.width = window.innerWidth;
-        height = canvas.height = window.innerHeight;
-    });
+    const maxParticles = 65;
+    const maxDistance = 140;
+    let mouse = { x: null, y: null, radius: 180 };
 
     window.addEventListener('mousemove', (e) => {
-        mouse.x = e.clientX;
-        mouse.y = e.clientY;
+        const rect = canvas.getBoundingClientRect();
+        mouse.x = e.clientX - rect.left;
+        mouse.y = e.clientY - rect.top;
     });
 
     window.addEventListener('mouseleave', () => {
@@ -125,20 +204,28 @@ function initBackgroundCanvas() {
         constructor() {
             this.x = Math.random() * width;
             this.y = Math.random() * height;
-            this.vx = (Math.random() - 0.5) * 0.3; // slow moving
-            this.vy = (Math.random() - 0.5) * 0.3;
-            this.radius = Math.random() * 2 + 1;
-            this.alpha = Math.random() * 0.4 + 0.1;
+            this.vx = (Math.random() - 0.5) * 0.25;
+            this.vy = (Math.random() - 0.5) * 0.25;
+            this.baseRadius = Math.random() * 2 + 1.2;
+            this.radius = this.baseRadius;
+            this.pulseSpeed = 0.02 + Math.random() * 0.02;
+            this.pulseAngle = Math.random() * Math.PI * 2;
         }
 
         update() {
             this.x += this.vx;
             this.y += this.vy;
 
-            if (this.x < 0 || this.x > width) this.vx *= -1;
-            if (this.y < 0 || this.y > height) this.vy *= -1;
+            if (this.x < 0) this.x = width;
+            if (this.x > width) this.x = 0;
+            if (this.y < 0) this.y = height;
+            if (this.y > height) this.y = 0;
 
-            // Mouse parallax push/interaction
+            // Organic pulse
+            this.pulseAngle += this.pulseSpeed;
+            this.radius = this.baseRadius + Math.sin(this.pulseAngle) * 0.5;
+
+            // Mouse repulsion & interaction
             if (mouse.x !== null && mouse.y !== null) {
                 const dx = this.x - mouse.x;
                 const dy = this.y - mouse.y;
@@ -146,17 +233,31 @@ function initBackgroundCanvas() {
                 if (dist < mouse.radius) {
                     const force = (mouse.radius - dist) / mouse.radius;
                     const angle = Math.atan2(dy, dx);
-                    this.x += Math.cos(angle) * force * 0.8;
-                    this.y += Math.sin(angle) * force * 0.8;
+                    this.x += Math.cos(angle) * force * 1.2;
+                    this.y += Math.sin(angle) * force * 1.2;
                 }
             }
         }
 
         draw() {
+            // Anti-aliased glowing radial node
+            ctx.save();
+            const grad = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius * 2.5);
+            grad.addColorStop(0, 'rgba(233, 213, 255, 0.95)');
+            grad.addColorStop(0.4, 'rgba(168, 85, 247, 0.6)');
+            grad.addColorStop(1, 'rgba(168, 85, 247, 0)');
+
             ctx.beginPath();
-            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-            ctx.fillStyle = `rgba(168, 85, 247, ${this.alpha})`;
+            ctx.arc(this.x, this.y, this.radius * 2.5, 0, Math.PI * 2);
+            ctx.fillStyle = grad;
             ctx.fill();
+
+            // Core point
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius * 0.7, 0, Math.PI * 2);
+            ctx.fillStyle = '#ffffff';
+            ctx.fill();
+            ctx.restore();
         }
     }
 
@@ -167,6 +268,7 @@ function initBackgroundCanvas() {
     function animate() {
         ctx.clearRect(0, 0, width, height);
 
+        // Draw smooth constellation lines
         for (let i = 0; i < particles.length; i++) {
             for (let j = i + 1; j < particles.length; j++) {
                 const p1 = particles[i];
@@ -176,12 +278,12 @@ function initBackgroundCanvas() {
                 const dist = Math.hypot(dx, dy);
 
                 if (dist < maxDistance) {
-                    const alpha = (1 - dist / maxDistance) * 0.08;
+                    const alpha = (1 - dist / maxDistance) * 0.18;
                     ctx.beginPath();
                     ctx.moveTo(p1.x, p1.y);
                     ctx.lineTo(p2.x, p2.y);
                     ctx.strokeStyle = `rgba(168, 85, 247, ${alpha})`;
-                    ctx.lineWidth = 0.8;
+                    ctx.lineWidth = 1;
                     ctx.stroke();
                 }
             }
@@ -237,70 +339,54 @@ function initWorkflowSteps() {
         '1': {
             filename: 'target_scope.yaml',
             code: `# Target Scope Configuration
-project:
-  name: "Internal Network Security Audit"
-  id: "proj_92a1_recon"
+project: "Network Security Audit"
+id: "proj_92a1_recon"
 targets:
   - domain: "target.com"
     ips: ["104.244.42.1"]
-    scan_policy: "stealth"
-    interval: "daily"`
+    policy: "stealth"`
         },
         '2': {
             filename: 'passive_discovery.json',
             code: `{
   "domain": "target.com",
-  "dns_servers": ["8.8.8.8", "1.1.1.1"],
   "subdomains_found": [
-    {"host": "api.target.com", "source": "CT Logs", "ip": "104.244.42.5"},
-    {"host": "dev.target.com", "source": "DNS Lookup", "ip": "104.244.42.9"},
-    {"host": "mail.target.com", "source": "MX Query", "ip": "104.244.42.12"}
+    {"host": "api.target.com", "ip": "104.244.42.5"},
+    {"host": "dev.target.com", "ip": "104.244.42.9"},
+    {"host": "mail.target.com", "ip": "104.244.42.12"}
   ]
 }`
         },
         '3': {
             filename: 'active_scan_results.xml',
-            code: `<!-- Nmap 7.95 Scan XML Output excerpt -->
-<host starttime="1787345502">
-  <address addr="104.244.42.1" addrtype="ipv4"/>
+            code: `<!-- Nmap 7.95 Scan Output -->
+<host addr="104.244.42.1">
   <ports>
-    <port protocol="tcp" portid="22">
-      <state state="open"/>
-      <service name="ssh" product="OpenSSH" version="8.9p1"/>
-    </port>
-    <port protocol="tcp" portid="80">
-      <state state="open"/>
-      <service name="http" product="nginx" version="1.18.0"/>
-    </port>
+    <port protocol="tcp" portid="22" state="open" service="ssh"/>
+    <port protocol="tcp" portid="80" state="open" service="http"/>
+    <port protocol="tcp" portid="443" state="open" service="https"/>
   </ports>
 </host>`
         },
         '4': {
             filename: 'web_fingerprint.json',
             code: `{
-  "url": "https://target.com",
-  "http_version": "1.1",
+  "target": "https://target.com",
   "server": "nginx/1.18.0",
   "powered_by": "PHP/8.1.2",
   "cms": "WordPress 6.4",
-  "security_headers": {
-    "Strict-Transport-Security": "max-age=31536000",
-    "X-Content-Type-Options": "nosniff",
-    "Content-Security-Policy": "missing"
-  }
+  "security_headers": {"HSTS": true, "CSP": false}
 }`
         },
         '5': {
             filename: 'audit_summary.txt',
             code: `===========================================
-ARGUS SECURITY AUDIT REPORT SUMMARY
+ARGUS AUDIT REPORT SUMMARY
 ===========================================
-Project Scope : Internal Network Security Audit
 Target Domain : target.com (104.244.42.1)
-Open Ports    : 22/tcp (ssh), 80/tcp (http), 443/tcp (https)
-Risk Rating   : LOW (2 warning advisories)
-Download URL  : /api/v1/projects/proj_92a1/report.pdf
-===========================================`
+Open Ports    : 22/tcp, 80/tcp, 443/tcp
+Risk Rating   : LOW (2 advisories)
+Report PDF    : /api/v1/projects/report.pdf`
         }
     };
 
@@ -314,15 +400,29 @@ Download URL  : /api/v1/projects/proj_92a1/report.pdf
                 filenameEl.textContent = data[stepId].filename;
                 codeEl.textContent = data[stepId].code;
 
-                // Faint purple glow pulse on inspector border
+                // Move code inspector panel vertically to align with clicked step item, clamped inside section
+                const workflowVisual = document.querySelector('.workflow-visual');
+                const stepsContainer = document.querySelector('.workflow-steps');
                 const panel = document.querySelector('.inspector-panel');
+
+                if (workflowVisual && stepsContainer) {
+                    const stepTop = step.offsetTop;
+                    const containerHeight = stepsContainer.offsetHeight;
+                    const panelHeight = panel ? panel.offsetHeight : 320;
+                    const maxTranslate = Math.max(0, containerHeight - panelHeight);
+                    const targetY = Math.min(stepTop, maxTranslate);
+
+                    workflowVisual.style.transform = `translateY(${targetY}px)`;
+                }
+
+                // Faint purple glow pulse on inspector border
                 if (panel) {
-                    panel.style.borderColor = 'rgba(168, 85, 247, 0.45)';
-                    panel.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.5), 0 0 25px rgba(168, 85, 247, 0.15)';
+                    panel.style.borderColor = 'rgba(168, 85, 247, 0.65)';
+                    panel.style.boxShadow = '0 25px 50px rgba(0, 0, 0, 0.6), 0 0 35px rgba(168, 85, 247, 0.3)';
                     setTimeout(() => {
-                        panel.style.borderColor = 'rgba(168, 85, 247, 0.15)';
-                        panel.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.5)';
-                    }, 250);
+                        panel.style.borderColor = 'rgba(168, 85, 247, 0.3)';
+                        panel.style.boxShadow = '0 25px 50px rgba(0, 0, 0, 0.6), 0 0 20px rgba(168, 85, 247, 0.15)';
+                    }, 400);
                 }
             }
         });
@@ -332,7 +432,7 @@ Download URL  : /api/v1/projects/proj_92a1/report.pdf
 // 5. Scroll reveal animation for section elements
 function initScrollReveal() {
     const elements = document.querySelectorAll('.step-item, .section-header, .tech-ribbon, .target-mode-card, .faq-item');
-    
+
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
@@ -341,7 +441,7 @@ function initScrollReveal() {
                 observer.unobserve(entry.target);
             }
         });
-    }, { 
+    }, {
         threshold: 0.1,
         rootMargin: '0px 0px -50px 0px'
     });
@@ -364,7 +464,7 @@ function initFaqAccordion() {
 
         question.addEventListener('click', () => {
             const isActive = item.classList.contains('active');
-            
+
             // Close all active items
             faqItems.forEach(otherItem => {
                 otherItem.classList.remove('active');
@@ -381,7 +481,7 @@ function initFaqAccordion() {
 
 // Smooth scroll for anchor links
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-    anchor.addEventListener('click', function(e) {
+    anchor.addEventListener('click', function (e) {
         e.preventDefault();
         const target = document.querySelector(this.getAttribute('href'));
         if (target) {
