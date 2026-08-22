@@ -1,62 +1,438 @@
 // ============================================
-// ARGUS - INTERACTIONS & ANIMATIONS
+// ARGUS - INTERACTIONS & ANIMATIONS (v2.0)
 // ============================================
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // Mobile menu toggle
-    window.toggleMenu = function() {
+    window.toggleMenu = function () {
         const navLinks = document.querySelector('.nav-links');
         navLinks.classList.toggle('active');
     };
 
-    // Animate stats counters
-    animateCounters();
-
-    // Intersection Observer for scroll animations
-    initScrollAnimations();
-
-    // Module card hover effects
-    initModuleCards();
+    // Initialize all custom animations & widgets
+    initTerminalSimulator();
+    initBackgroundCanvas();
+    initHeroParallax();
+    initWorkflowSteps();
+    initScrollReveal();
+    initFaqAccordion();
+    initMicroInteractions();
 });
 
-// Counter Animation
-function animateCounters() {
-    const counters = document.querySelectorAll('.stat-number[data-target]');
-    
-    counters.forEach(counter => {
-        const target = parseInt(counter.getAttribute('data-target'));
-        const duration = 2000;
-        const step = target / (duration / 16);
-        let current = 0;
+// 1. Terminal Simulator Typewriter Sequence & Micro-Presets
+function initTerminalSimulator() {
+    const cmdEl = document.getElementById('terminal-cmd');
+    const outputsEl = document.getElementById('terminal-outputs');
+    if (!cmdEl || !outputsEl) return;
 
-        const updateCounter = () => {
-            current += step;
-            if (current < target) {
-                counter.textContent = Math.floor(current);
-                requestAnimationFrame(updateCounter);
-            } else {
-                counter.textContent = target;
+    const presetCommands = {
+        'nmap -sV target.com': [
+            { text: 'Starting Nmap 7.95 ( https://nmap.org ) at 2026-08-22 01:46 UTC', delay: 350 },
+            { text: 'Nmap scan report for target.com (104.244.42.1)', delay: 450 },
+            { text: 'Host is up (0.042s latency).', delay: 350 },
+            { text: 'PORT     STATE SERVICE VERSION', delay: 500, class: 'highlight' },
+            { text: '22/tcp   open  ssh     OpenSSH 8.9p1 Ubuntu 3ubuntu0.1', delay: 350, class: 'output-line' },
+            { text: '80/tcp   open  http    nginx 1.18.0', delay: 300, class: 'output-line' },
+            { text: '443/tcp  open  https   nginx 1.18.0', delay: 300, class: 'output-line' },
+            { text: 'Nmap done: 1 IP address (1 host up) scanned in 2.84 seconds', delay: 600, class: 'success' }
+        ],
+        'argus --recon target.com': [
+            { text: 'ARGUS RECON ENGINE v2.0 - Passive Target Discovery', delay: 350 },
+            { text: 'Querying CT Logs & DNS Archives...', delay: 450, class: 'highlight' },
+            { text: '[+] Subdomain: api.target.com (104.244.42.5) [ACTIVE]', delay: 350, class: 'output-line' },
+            { text: '[+] Subdomain: dev.target.com (104.244.42.9) [ACTIVE]', delay: 300, class: 'output-line' },
+            { text: '[+] Subdomain: mail.target.com (104.244.42.12) [ACTIVE]', delay: 300, class: 'output-line' },
+            { text: 'Reconnaissance complete: 3 active subdomains identified.', delay: 600, class: 'success' }
+        ],
+        'argus --export-pdf': [
+            { text: 'Compiling project scope: "Network Security Audit"', delay: 350 },
+            { text: 'Generating compliance matrix report & host advisories...', delay: 450, class: 'highlight' },
+            { text: '[✓] Asset Inventory Snapshot attached.', delay: 350, class: 'output-line' },
+            { text: '[✓] Executive PDF generated: /api/v1/projects/report.pdf', delay: 500, class: 'success' }
+        ]
+    };
+
+    let currentCmdKey = 'nmap -sV target.com';
+    let cmdIdx = 0;
+    let timerId = null;
+
+    function typeCommand() {
+        const commandText = currentCmdKey;
+        if (cmdIdx < commandText.length) {
+            cmdEl.textContent += commandText.charAt(cmdIdx);
+            cmdIdx++;
+            timerId = setTimeout(typeCommand, 40 + Math.random() * 60);
+        } else {
+            timerId = setTimeout(renderOutputs, 400);
+        }
+    }
+
+    let outputIdx = 0;
+    function renderOutputs() {
+        const outputs = presetCommands[currentCmdKey] || presetCommands['nmap -sV target.com'];
+        if (outputIdx < outputs.length) {
+            const line = outputs[outputIdx];
+            const div = document.createElement('div');
+            div.className = 'terminal-line ' + (line.class || 'output-line');
+
+            const terminalWindow = document.querySelector('.terminal-window');
+            if (terminalWindow) {
+                terminalWindow.style.borderColor = 'rgba(168, 85, 247, 0.45)';
+                setTimeout(() => {
+                    terminalWindow.style.borderColor = 'rgba(168, 85, 247, 0.15)';
+                }, 150);
             }
-        };
 
-        // Start when visible
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    updateCounter();
-                    observer.unobserve(counter);
-                }
-            });
-        }, { threshold: 0.5 });
+            div.textContent = line.text;
+            outputsEl.appendChild(div);
 
-        observer.observe(counter);
+            const body = document.getElementById('terminal-body');
+            if (body) body.scrollTop = body.scrollHeight;
+
+            outputIdx++;
+            timerId = setTimeout(renderOutputs, line.delay);
+        } else {
+            timerId = setTimeout(resetTerminal, 6000);
+        }
+    }
+
+    function resetTerminal() {
+        if (timerId) clearTimeout(timerId);
+        cmdEl.textContent = '';
+        outputsEl.innerHTML = '';
+        cmdIdx = 0;
+        outputIdx = 0;
+        typeCommand();
+    }
+
+    // Micro-Preset Buttons Listener
+    const presetBtns = document.querySelectorAll('.term-preset-btn');
+    presetBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            presetBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            const cmdKey = btn.getAttribute('data-cmd');
+            if (cmdKey && presetCommands[cmdKey]) {
+                currentCmdKey = cmdKey;
+                resetTerminal();
+            }
+        });
+    });
+
+    typeCommand();
+}
+
+// Interactive Micro-Element Handlers (Hero Badge Ping & Card Status Toggles)
+function initMicroInteractions() {
+    // 1. Hero Badge Telemetry Ping
+    const badgeBtn = document.getElementById('hero-badge-click');
+    const badgeText = document.getElementById('hero-badge-text');
+    if (badgeBtn && badgeText) {
+        badgeBtn.addEventListener('click', () => {
+            badgeText.textContent = 'Telemetry Ping 14ms • Operational';
+            badgeBtn.style.borderColor = '#4ade80';
+            badgeBtn.style.boxShadow = '0 0 20px rgba(74, 222, 128, 0.4)';
+            setTimeout(() => {
+                badgeText.textContent = 'v2.0 Active • Click to Ping';
+                badgeBtn.style.borderColor = '';
+                badgeBtn.style.boxShadow = '';
+            }, 3000);
+        });
+    }
+
+    // 2. Minimalist Card Status Pill Toggles
+    const statusPills = document.querySelectorAll('.card-status-pill');
+    statusPills.forEach(pill => {
+        let state = 0;
+        const states = [
+            { text: 'ENFORCED', class: '' },
+            { text: 'ACTIVE SCAN', class: 'state-scanning' },
+            { text: 'VERIFIED', class: 'state-verified' }
+        ];
+        pill.addEventListener('click', (e) => {
+            e.stopPropagation();
+            state = (state + 1) % states.length;
+            const cur = states[state];
+            pill.innerHTML = `<span class="status-dot"></span> ${cur.text}`;
+            pill.className = `card-status-pill ${cur.class}`;
+        });
     });
 }
 
-// Scroll Animations
-function initScrollAnimations() {
-    const animatedElements = document.querySelectorAll('.module-card, .stat-card, .card');
-    
+// 2. Canvas-based Particles Network Background
+// 2. High-DPI Retina Canvas Particles Background
+function initBackgroundCanvas() {
+    const canvas = document.getElementById('bg-network-canvas');
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    let width = window.innerWidth;
+    let height = window.innerHeight;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+    function resizeCanvas() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
+        canvas.style.width = width + 'px';
+        canvas.style.height = height + 'px';
+        ctx.scale(dpr, dpr);
+    }
+
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    let particles = [];
+    const maxParticles = 65;
+    const maxDistance = 140;
+    let mouse = { x: null, y: null, radius: 180 };
+
+    window.addEventListener('mousemove', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        mouse.x = e.clientX - rect.left;
+        mouse.y = e.clientY - rect.top;
+    });
+
+    window.addEventListener('mouseleave', () => {
+        mouse.x = null;
+        mouse.y = null;
+    });
+
+    class Particle {
+        constructor() {
+            this.x = Math.random() * width;
+            this.y = Math.random() * height;
+            this.vx = (Math.random() - 0.5) * 0.25;
+            this.vy = (Math.random() - 0.5) * 0.25;
+            this.baseRadius = Math.random() * 2 + 1.2;
+            this.radius = this.baseRadius;
+            this.pulseSpeed = 0.02 + Math.random() * 0.02;
+            this.pulseAngle = Math.random() * Math.PI * 2;
+        }
+
+        update() {
+            this.x += this.vx;
+            this.y += this.vy;
+
+            if (this.x < 0) this.x = width;
+            if (this.x > width) this.x = 0;
+            if (this.y < 0) this.y = height;
+            if (this.y > height) this.y = 0;
+
+            // Organic pulse
+            this.pulseAngle += this.pulseSpeed;
+            this.radius = this.baseRadius + Math.sin(this.pulseAngle) * 0.5;
+
+            // Mouse repulsion & interaction
+            if (mouse.x !== null && mouse.y !== null) {
+                const dx = this.x - mouse.x;
+                const dy = this.y - mouse.y;
+                const dist = Math.hypot(dx, dy);
+                if (dist < mouse.radius) {
+                    const force = (mouse.radius - dist) / mouse.radius;
+                    const angle = Math.atan2(dy, dx);
+                    this.x += Math.cos(angle) * force * 1.2;
+                    this.y += Math.sin(angle) * force * 1.2;
+                }
+            }
+        }
+
+        draw() {
+            // Anti-aliased glowing radial node
+            ctx.save();
+            const grad = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius * 2.5);
+            grad.addColorStop(0, 'rgba(233, 213, 255, 0.95)');
+            grad.addColorStop(0.4, 'rgba(168, 85, 247, 0.6)');
+            grad.addColorStop(1, 'rgba(168, 85, 247, 0)');
+
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius * 2.5, 0, Math.PI * 2);
+            ctx.fillStyle = grad;
+            ctx.fill();
+
+            // Core point
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius * 0.7, 0, Math.PI * 2);
+            ctx.fillStyle = '#ffffff';
+            ctx.fill();
+            ctx.restore();
+        }
+    }
+
+    for (let i = 0; i < maxParticles; i++) {
+        particles.push(new Particle());
+    }
+
+    function animate() {
+        ctx.clearRect(0, 0, width, height);
+
+        // Draw smooth constellation lines
+        for (let i = 0; i < particles.length; i++) {
+            for (let j = i + 1; j < particles.length; j++) {
+                const p1 = particles[i];
+                const p2 = particles[j];
+                const dx = p1.x - p2.x;
+                const dy = p1.y - p2.y;
+                const dist = Math.hypot(dx, dy);
+
+                if (dist < maxDistance) {
+                    const alpha = (1 - dist / maxDistance) * 0.18;
+                    ctx.beginPath();
+                    ctx.moveTo(p1.x, p1.y);
+                    ctx.lineTo(p2.x, p2.y);
+                    ctx.strokeStyle = `rgba(168, 85, 247, ${alpha})`;
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                }
+            }
+        }
+
+        particles.forEach(p => {
+            p.update();
+            p.draw();
+        });
+
+        requestAnimationFrame(animate);
+    }
+
+    animate();
+}
+
+// 3. Subtle Hero Mouse Parallax
+function initHeroParallax() {
+    const hero = document.querySelector('.hero');
+    const heroContent = document.querySelector('.hero-content');
+    const heroVisual = document.querySelector('.hero-visual');
+    if (!hero || !heroContent || !heroVisual) return;
+
+    hero.addEventListener('mousemove', (e) => {
+        const cx = window.innerWidth / 2;
+        const cy = window.innerHeight / 2;
+        const dx = e.clientX - cx;
+        const dy = e.clientY - cy;
+
+        const mx1 = (dx / cx) * 5;
+        const my1 = (dy / cy) * 5;
+        const mx2 = (dx / cx) * -3;
+        const my2 = (dy / cy) * -3;
+
+        heroContent.style.transform = `translate(${mx1}px, ${my1}px)`;
+        heroVisual.style.transform = `translate(${mx2}px, ${my2}px)`;
+    });
+
+    hero.addEventListener('mouseleave', () => {
+        heroContent.style.transform = 'translate(0px, 0px)';
+        heroVisual.style.transform = 'translate(0px, 0px)';
+    });
+}
+
+// 4. Interactive Workflow Steps Switching
+function initWorkflowSteps() {
+    const steps = document.querySelectorAll('.step-item');
+    const filenameEl = document.getElementById('inspector-filename');
+    const codeEl = document.getElementById('inspector-code');
+    if (steps.length === 0 || !filenameEl || !codeEl) return;
+
+    const data = {
+        '1': {
+            filename: 'target_scope.yaml',
+            code: `# Target Scope Configuration
+project: "Network Security Audit"
+id: "proj_92a1_recon"
+targets:
+  - domain: "target.com"
+    ips: ["104.244.42.1"]
+    policy: "stealth"`
+        },
+        '2': {
+            filename: 'passive_discovery.json',
+            code: `{
+  "domain": "target.com",
+  "subdomains_found": [
+    {"host": "api.target.com", "ip": "104.244.42.5"},
+    {"host": "dev.target.com", "ip": "104.244.42.9"},
+    {"host": "mail.target.com", "ip": "104.244.42.12"}
+  ]
+}`
+        },
+        '3': {
+            filename: 'active_scan_results.xml',
+            code: `<!-- Nmap 7.95 Scan Output -->
+<host addr="104.244.42.1">
+  <ports>
+    <port protocol="tcp" portid="22" state="open" service="ssh"/>
+    <port protocol="tcp" portid="80" state="open" service="http"/>
+    <port protocol="tcp" portid="443" state="open" service="https"/>
+  </ports>
+</host>`
+        },
+        '4': {
+            filename: 'web_fingerprint.json',
+            code: `{
+  "target": "https://target.com",
+  "server": "nginx/1.18.0",
+  "powered_by": "PHP/8.1.2",
+  "cms": "WordPress 6.4",
+  "security_headers": {"HSTS": true, "CSP": false}
+}`
+        },
+        '5': {
+            filename: 'audit_summary.txt',
+            code: `===========================================
+ARGUS AUDIT REPORT SUMMARY
+===========================================
+Target Domain : target.com (104.244.42.1)
+Open Ports    : 22/tcp, 80/tcp, 443/tcp
+Risk Rating   : LOW (2 advisories)
+Report PDF    : /api/v1/projects/report.pdf`
+        }
+    };
+
+    steps.forEach(step => {
+        step.addEventListener('click', () => {
+            steps.forEach(s => s.classList.remove('active'));
+            step.classList.add('active');
+
+            const stepId = step.getAttribute('data-step');
+            if (data[stepId]) {
+                filenameEl.textContent = data[stepId].filename;
+                codeEl.textContent = data[stepId].code;
+
+                // Move code inspector panel vertically to align with clicked step item, clamped inside section
+                const workflowVisual = document.querySelector('.workflow-visual');
+                const stepsContainer = document.querySelector('.workflow-steps');
+                const panel = document.querySelector('.inspector-panel');
+
+                if (workflowVisual && stepsContainer) {
+                    const stepTop = step.offsetTop;
+                    const containerHeight = stepsContainer.offsetHeight;
+                    const panelHeight = panel ? panel.offsetHeight : 320;
+                    const maxTranslate = Math.max(0, containerHeight - panelHeight);
+                    const targetY = Math.min(stepTop, maxTranslate);
+
+                    workflowVisual.style.transform = `translateY(${targetY}px)`;
+                }
+
+                // Faint purple glow pulse on inspector border
+                if (panel) {
+                    panel.style.borderColor = 'rgba(168, 85, 247, 0.65)';
+                    panel.style.boxShadow = '0 25px 50px rgba(0, 0, 0, 0.6), 0 0 35px rgba(168, 85, 247, 0.3)';
+                    setTimeout(() => {
+                        panel.style.borderColor = 'rgba(168, 85, 247, 0.3)';
+                        panel.style.boxShadow = '0 25px 50px rgba(0, 0, 0, 0.6), 0 0 20px rgba(168, 85, 247, 0.15)';
+                    }, 400);
+                }
+            }
+        });
+    });
+}
+
+// 5. Scroll reveal animation for section elements
+function initScrollReveal() {
+    const elements = document.querySelectorAll('.step-item, .section-header, .tech-ribbon, .target-mode-card, .faq-item');
+
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
@@ -65,33 +441,39 @@ function initScrollAnimations() {
                 observer.unobserve(entry.target);
             }
         });
-    }, { 
+    }, {
         threshold: 0.1,
         rootMargin: '0px 0px -50px 0px'
     });
 
-    animatedElements.forEach(el => {
+    elements.forEach(el => {
         el.style.opacity = '0';
-        el.style.transform = 'translateY(20px)';
-        el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+        el.style.transform = 'translateY(25px)';
+        el.style.transition = 'opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1)';
         observer.observe(el);
     });
 }
 
-// Module Card Effects
-function initModuleCards() {
-    const cards = document.querySelectorAll('.module-card');
-    
-    cards.forEach(card => {
-        card.addEventListener('mousemove', (e) => {
-            const rect = card.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-            
-            const glow = card.querySelector('.module-glow');
-            if (glow) {
-                glow.style.left = (x - rect.width) + 'px';
-                glow.style.top = (y - rect.height) + 'px';
+// 6. FAQ Accordion Logic
+function initFaqAccordion() {
+    const faqItems = document.querySelectorAll('.faq-item');
+    faqItems.forEach(item => {
+        const question = item.querySelector('.faq-question');
+        const answer = item.querySelector('.faq-answer');
+        if (!question || !answer) return;
+
+        question.addEventListener('click', () => {
+            const isActive = item.classList.contains('active');
+
+            // Close all active items
+            faqItems.forEach(otherItem => {
+                otherItem.classList.remove('active');
+                otherItem.querySelector('.faq-answer').style.maxHeight = null;
+            });
+
+            if (!isActive) {
+                item.classList.add('active');
+                answer.style.maxHeight = answer.scrollHeight + 'px';
             }
         });
     });
@@ -99,7 +481,7 @@ function initModuleCards() {
 
 // Smooth scroll for anchor links
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-    anchor.addEventListener('click', function(e) {
+    anchor.addEventListener('click', function (e) {
         e.preventDefault();
         const target = document.querySelector(this.getAttribute('href'));
         if (target) {

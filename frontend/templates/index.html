@@ -3,217 +3,521 @@
 {% block title %}Argus - Home{% endblock %}
 
 {% block content %}
+<!-- Particle Background Canvas for landing page only -->
+<canvas id="bg-network-canvas" class="bg-network-canvas"></canvas>
+
 <!-- Hero Section -->
 <section class="hero">
     <div class="hero-content">
-        <div class="hero-badge">
+        <div class="hero-badge" id="hero-badge-click" style="cursor: pointer;" title="Click to ping security telemetry">
             <span class="pulse-dot"></span>
-            <span>v1.0 Active</span>
+            <span id="hero-badge-text">v2.0 Active • Click to Ping</span>
         </div>
-        <h1 class="hero-title">
-            <span class="glitch" data-text="Argus">Argus</span>
-        </h1>
+        <h1 class="hero-title">Argus</h1>
         <p class="hero-subtitle">Advanced Reconnaissance & Network Scanning Platform</p>
         <p class="hero-desc">Automated information gathering and network scanning for cybersecurity education. Built for
             students, enthusiasts, and professionals.</p>
         <div class="hero-actions">
-            <a href="/dashboard" class="btn btn-primary">
+            <a href="/dashboard" class="btn btn-primary btn-launch">
                 <span>Launch Dashboard</span>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg class="btn-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2">
                     <path d="M5 12h14M12 5l7 7-7 7" />
                 </svg>
             </a>
-            <a href="#modules" class="btn btn-secondary">Explore Modules</a>
         </div>
     </div>
     <div class="hero-visual">
         <div class="terminal-window">
             <div class="terminal-header">
                 <div class="terminal-dots">
-                    <span></span><span></span><span></span>
+                    <span class="dot-red"></span><span class="dot-yellow"></span><span class="dot-green"></span>
                 </div>
                 <span class="terminal-title">argus@recon:~</span>
-            </div>
-            <div class="terminal-body">
-                <div class="terminal-line"><span class="prompt">$</span> <span class="cmd">nmap -sV target.com</span>
+                <div class="terminal-presets">
+                    <button class="term-preset-btn active" data-cmd="nmap -sV target.com">$ nmap</button>
+                    <button class="term-preset-btn" data-cmd="argus --recon target.com">$ recon</button>
+                    <button class="term-preset-btn" data-cmd="argus --export-pdf">$ report</button>
                 </div>
-                <div class="terminal-line output">Starting Nmap 7.95...</div>
-                <div class="terminal-line output">PORT STATE SERVICE</div>
-                <div class="terminal-line output">22/tcp open ssh</div>
-                <div class="terminal-line output">80/tcp open http</div>
-                <div class="terminal-line"><span class="prompt">$</span> <span class="cursor">_</span></div>
+            </div>
+            <div class="terminal-body" id="terminal-body">
+                <div class="terminal-line">
+                    <span class="prompt">$</span> <span class="cmd" id="terminal-cmd"></span><span class="cursor"
+                        id="terminal-cursor">_</span>
+                </div>
+                <div class="terminal-outputs" id="terminal-outputs"></div>
             </div>
         </div>
     </div>
 </section>
 
-<!-- Stats Section -->
-<section class="stats-section">
-    <div class="stats-grid">
-        <div class="stat-card" data-count="5">
-            <div class="stat-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="2" y="3" width="20" height="14" rx="2" />
-                    <line x1="8" y1="21" x2="16" y2="21" />
-                    <line x1="12" y1="17" x2="12" y2="21" />
-                </svg>
+<!-- Tech Integration Marquee Ribbon -->
+<div class="tech-ribbon-container">
+    <div class="ribbon-header-section">
+        <h2 class="ribbon-big-title">
+            <span class="title-white">Engine Integrations</span>
+            <span class="title-gradient">& Powered Capabilities</span>
+        </h2>
+    </div>
+
+    <div class="marquee-wrapper">
+        <div class="marquee-track">
+            <!-- First Set of Cards -->
+            <div class="engine-card">
+                <div class="engine-card-header">
+                    <div class="engine-icon-wrapper">
+                        <i class="fa-solid fa-microchip"></i>
+                    </div>
+                    <span class="engine-status-badge active"><span class="badge-dot"></span> v7.95 Ready</span>
+                </div>
+                <div class="engine-card-body">
+                    <h4 class="engine-name">Nmap Recon Engine</h4>
+                    <p class="engine-desc">Active TCP SYN/Connect port scanning, banner grabbing, and OS detection.</p>
+                </div>
+                <div class="engine-card-footer">
+                    <span class="engine-meta">Speed: 1000 p/s</span>
+                    <span class="engine-tag">Core Engine</span>
+                </div>
             </div>
-            <div class="stat-number" data-target="5">0</div>
-            <div class="stat-label">Active Modules</div>
+
+            <div class="engine-card">
+                <div class="engine-card-header">
+                    <div class="engine-icon-wrapper">
+                        <i class="fa-solid fa-server"></i>
+                    </div>
+                    <span class="engine-status-badge active"><span class="badge-dot"></span> 12ms Query</span>
+                </div>
+                <div class="engine-card-body">
+                    <h4 class="engine-name">DNS Resolver Core</h4>
+                    <p class="engine-desc">A, AAAA, MX, TXT, NS record lookups and reverse PTR pointer queries.</p>
+                </div>
+                <div class="engine-card-footer">
+                    <span class="engine-meta">8.8.8.8 Resolver</span>
+                    <span class="engine-tag">DNS Pipeline</span>
+                </div>
+            </div>
+
+            <div class="engine-card">
+                <div class="engine-card-header">
+                    <div class="engine-icon-wrapper">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <span class="engine-status-badge passive"><span class="badge-dot"></span> Passive Stream</span>
+                </div>
+                <div class="engine-card-body">
+                    <h4 class="engine-name">CT Log Aggregator</h4>
+                    <p class="engine-desc">Certificate Transparency log indexing for stealth subdomain discovery.</p>
+                </div>
+                <div class="engine-card-footer">
+                    <span class="engine-meta">0 Packets Sent</span>
+                    <span class="engine-tag">Stealth Mode</span>
+                </div>
+            </div>
+
+            <div class="engine-card">
+                <div class="engine-card-header">
+                    <div class="engine-icon-wrapper">
+                        <i class="fa-solid fa-lock"></i>
+                    </div>
+                    <span class="engine-status-badge active"><span class="badge-dot"></span> TLS 1.3 Audit</span>
+                </div>
+                <div class="engine-card-body">
+                    <h4 class="engine-name">SSL/TLS Inspector</h4>
+                    <p class="engine-desc">Cipher suite verification, certificate chain validity, and SAN parser.</p>
+                </div>
+                <div class="engine-card-footer">
+                    <span class="engine-meta">256-bit AES</span>
+                    <span class="engine-tag">Security Audit</span>
+                </div>
+            </div>
+
+            <div class="engine-card">
+                <div class="engine-card-header">
+                    <div class="engine-icon-wrapper">
+                        <i class="fa-solid fa-code"></i>
+                    </div>
+                    <span class="engine-status-badge active"><span class="badge-dot"></span> CSP & HSTS</span>
+                </div>
+                <div class="engine-card-body">
+                    <h4 class="engine-name">HTTP Header Sentinel</h4>
+                    <p class="engine-desc">Security header assessment, server stack fingerprinting, and CMS detection.
+                    </p>
+                </div>
+                <div class="engine-card-footer">
+                    <span class="engine-meta">Score: A+</span>
+                    <span class="engine-tag">Stack Profiler</span>
+                </div>
+            </div>
+
+            <!-- Duplicated Set for Seamless Infinite Loop -->
+            <div class="engine-card">
+                <div class="engine-card-header">
+                    <div class="engine-icon-wrapper">
+                        <i class="fa-solid fa-microchip"></i>
+                    </div>
+                    <span class="engine-status-badge active"><span class="badge-dot"></span> v7.95 Ready</span>
+                </div>
+                <div class="engine-card-body">
+                    <h4 class="engine-name">Nmap Recon Engine</h4>
+                    <p class="engine-desc">Active TCP SYN/Connect port scanning, banner grabbing, and OS detection.</p>
+                </div>
+                <div class="engine-card-footer">
+                    <span class="engine-meta">Speed: 1000 p/s</span>
+                    <span class="engine-tag">Core Engine</span>
+                </div>
+            </div>
+
+            <div class="engine-card">
+                <div class="engine-card-header">
+                    <div class="engine-icon-wrapper">
+                        <i class="fa-solid fa-server"></i>
+                    </div>
+                    <span class="engine-status-badge active"><span class="badge-dot"></span> 12ms Query</span>
+                </div>
+                <div class="engine-card-body">
+                    <h4 class="engine-name">DNS Resolver Core</h4>
+                    <p class="engine-desc">A, AAAA, MX, TXT, NS record lookups and reverse PTR pointer queries.</p>
+                </div>
+                <div class="engine-card-footer">
+                    <span class="engine-meta">8.8.8.8 Resolver</span>
+                    <span class="engine-tag">DNS Pipeline</span>
+                </div>
+            </div>
+
+            <div class="engine-card">
+                <div class="engine-card-header">
+                    <div class="engine-icon-wrapper">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <span class="engine-status-badge passive"><span class="badge-dot"></span> Passive Stream</span>
+                </div>
+                <div class="engine-card-body">
+                    <h4 class="engine-name">CT Log Aggregator</h4>
+                    <p class="engine-desc">Certificate Transparency log indexing for stealth subdomain discovery.</p>
+                </div>
+                <div class="engine-card-footer">
+                    <span class="engine-meta">0 Packets Sent</span>
+                    <span class="engine-tag">Stealth Mode</span>
+                </div>
+            </div>
+
+            <div class="engine-card">
+                <div class="engine-card-header">
+                    <div class="engine-icon-wrapper">
+                        <i class="fa-solid fa-lock"></i>
+                    </div>
+                    <span class="engine-status-badge active"><span class="badge-dot"></span> TLS 1.3 Audit</span>
+                </div>
+                <div class="engine-card-body">
+                    <h4 class="engine-name">SSL/TLS Inspector</h4>
+                    <p class="engine-desc">Cipher suite verification, certificate chain validity, and SAN parser.</p>
+                </div>
+                <div class="engine-card-footer">
+                    <span class="engine-meta">256-bit AES</span>
+                    <span class="engine-tag">Security Audit</span>
+                </div>
+            </div>
+
+            <div class="engine-card">
+                <div class="engine-card-header">
+                    <div class="engine-icon-wrapper">
+                        <i class="fa-solid fa-code"></i>
+                    </div>
+                    <span class="engine-status-badge active"><span class="badge-dot"></span> CSP & HSTS</span>
+                </div>
+                <div class="engine-card-body">
+                    <h4 class="engine-name">HTTP Header Sentinel</h4>
+                    <p class="engine-desc">Security header assessment, server stack fingerprinting, and CMS detection.
+                    </p>
+                </div>
+                <div class="engine-card-footer">
+                    <span class="engine-meta">Score: A+</span>
+                    <span class="engine-tag">Stack Profiler</span>
+                </div>
+            </div>
         </div>
-        <div class="stat-card">
-            <div class="stat-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                </svg>
-            </div>
-            <div class="stat-number" data-target="100">0</div>
-            <div class="stat-label">% Secure</div>
+    </div>
+</div>
+
+<!-- Workflow Section (Full Bleed Light Contrast Section) -->
+<section class="workflow-section" id="workflow">
+    <div class="workflow-inner-wrapper">
+        <div class="section-header">
+            <span class="section-tag">Audit Pipeline</span>
+            <h2 class="section-title">
+                <span class="title-white">Surface Mapping</span><br>
+                <span class="title-gradient">Reconnaissance Workflow</span>
+            </h2>
+            <p class="section-desc">Argus coordinates multi-layered target profiling, passive subdomain harvesting, port
+                service verification, and PDF auditing.</p>
         </div>
-        <div class="stat-card">
-            <div class="stat-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10" />
-                    <polyline points="12 6 12 12 16 14" />
-                </svg>
+
+        <div class="workflow-container">
+            <!-- Left: Steps list -->
+            <div class="workflow-steps">
+                <div class="step-item active" data-step="1">
+                    <div class="step-num">01</div>
+                    <div class="step-content">
+                        <h3>Define Audit Scope</h3>
+                        <p>Register target domains or subnet ranges. Argus structures scope records into clean,
+                            organized projects to track vulnerabilities over time.</p>
+                    </div>
+                </div>
+                <div class="step-item" data-step="2">
+                    <div class="step-num">02</div>
+                    <div class="step-content">
+                        <h3>Passive Subdomain Mapping</h3>
+                        <p>Harvest active hostnames passively using Certificate Transparency (CT) log records and public
+                            WHOIS lookups without initiating connections.</p>
+                    </div>
+                </div>
+                <div class="step-item" data-step="3">
+                    <div class="step-num">03</div>
+                    <div class="step-content">
+                        <h3>Active Service Port Detection</h3>
+                        <p>Perform deep scans to discover open network ports and query active service banners to
+                            identify precise software versions and OS releases.</p>
+                    </div>
+                </div>
+                <div class="step-item" data-step="4">
+                    <div class="step-num">04</div>
+                    <div class="step-content">
+                        <h3>Web Stack Fingerprinting</h3>
+                        <p>Scan application layers to map HTTP server software, CDNs, content management frameworks,
+                            programming modules, and missing security flags.</p>
+                    </div>
+                </div>
+                <div class="step-item" data-step="5">
+                    <div class="step-num">05</div>
+                    <div class="step-content">
+                        <h3>Download Audit Reports</h3>
+                        <p>Compile assessment results and export structured, compliance-ready reports in PDF, HTML, or
+                            raw text for remediation.</p>
+                    </div>
+                </div>
             </div>
-            <div class="stat-number" data-target="2">0</div>
-            <div class="stat-label">Sec Response</div>
+
+            <!-- Right: Visual inspector panel -->
+            <div class="workflow-visual">
+                <div class="inspector-panel">
+                    <div class="inspector-header">
+                        <div class="inspector-controls">
+                            <span></span><span></span><span></span>
+                        </div>
+                        <span class="inspector-filename" id="inspector-filename">target_scope.yaml</span>
+                    </div>
+                    <div class="inspector-body">
+                        <pre><code id="inspector-code"># Target Scope Configuration
+project:
+  name: "Internal Network Security Audit"
+  id: "proj_92a1_recon"
+targets:
+  - domain: "target.com"
+    ips: ["104.244.42.1"]
+    scan_policy: "stealth"
+    interval: "daily"</code></pre>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </section>
 
-<!-- Modules Section -->
-<section class="modules-section" id="modules">
-    <div class="section-header">
-        <span class="section-tag">Core Features</span>
-        <h2 class="section-title">Reconnaissance Modules</h2>
-        <p class="section-desc">Five powerful modules designed for comprehensive target analysis</p>
+<!-- Targets / Operational Modes Section (Minimalist Brand Cards) -->
+<section class="targets-section" id="targets">
+    <div class="ribbon-header-section" style="margin-bottom: 3.5rem;">
+        <h2 class="ribbon-big-title">
+            <span class="title-white">Audit Configurations</span>
+            <span class="title-gradient">& Operational Modes</span>
+        </h2>
+        <p class="section-desc" style="margin: 1rem auto 0 auto; text-align: center; max-width: 620px;">Deploy Argus
+            across specialized defensive roles tailored for external surface mapping, stack profiling, and compliance
+            archiving.</p>
     </div>
 
-    <div class="modules-grid">
-        <!-- Module 1 -->
-        <div class="module-card" data-module="1">
-            <div class="module-glow"></div>
-            <div class="module-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="2" y="3" width="20" height="14" rx="2" />
-                    <line x1="8" y1="21" x2="16" y2="21" />
-                    <line x1="12" y1="17" x2="12" y2="21" />
-                </svg>
+    <div class="minimal-cards-grid">
+        <!-- Minimal Card 1 -->
+        <div class="minimal-card">
+            <div class="card-top">
+                <div class="card-top-left">
+                    <span class="card-num-tag">01</span>
+                    <span class="card-status-pill" title="Click to test engine status"><span class="status-dot"></span>
+                        ENFORCED</span>
+                </div>
+                <div class="card-icon-glow">
+                    <i class="fa-solid fa-globe"></i>
+                </div>
             </div>
-            <h3>System Information</h3>
-            <p>Discover your local machine's identity, OS, hostname, network interfaces, and IP addresses.</p>
-            <div class="module-features">
-                <span class="feature-tag">OS Detection</span>
-                <span class="feature-tag">Network Interfaces</span>
-                <span class="feature-tag">IP Addresses</span>
+            <div class="card-body-content">
+                <h3 class="card-title">External Attack Surface Recon</h3>
+                <p class="card-desc">Perform wide-area reconnaissance of exposed infrastructure. Enumerate public
+                    subdomains, identify cloud asset drift, and map third-party integrations.</p>
             </div>
-            <a href="/dashboard" class="module-btn">
-                <span>Access Module</span>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M5 12h14M12 5l7 7-7 7" />
-                </svg>
-            </a>
+            <div class="card-accent-line"></div>
         </div>
 
-        <!-- Module 2 -->
-        <div class="module-card" data-module="2">
-            <div class="module-glow"></div>
-            <div class="module-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10" />
-                    <line x1="2" y1="12" x2="22" y2="12" />
-                    <path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" />
-                </svg>
+        <!-- Minimal Card 2 -->
+        <div class="minimal-card">
+            <div class="card-top">
+                <div class="card-top-left">
+                    <span class="card-num-tag">02</span>
+                    <span class="card-status-pill" title="Click to test engine status"><span class="status-dot"></span>
+                        ENFORCED</span>
+                </div>
+                <div class="card-icon-glow">
+                    <i class="fa-solid fa-layer-group"></i>
+                </div>
             </div>
-            <h3>Information Gathering</h3>
-            <p>Collect publicly available data, WHOIS, DNS records, reverse DNS, and HTTP headers.</p>
-            <div class="module-features">
-                <span class="feature-tag">WHOIS Lookup</span>
-                <span class="feature-tag">DNS Records</span>
-                <span class="feature-tag">HTTP Headers</span>
+            <div class="card-body-content">
+                <h3 class="card-title">Application Stack Profiling</h3>
+                <p class="card-desc">Inspect active application layers. Detect outdated CMS frameworks, audit HTTP
+                    headers for security flags, and map server versions.</p>
             </div>
-            <a href="/recon" class="module-btn">
-                <span>Access Module</span>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M5 12h14M12 5l7 7-7 7" />
-                </svg>
-            </a>
+            <div class="card-accent-line"></div>
         </div>
 
-        <!-- Module 3 -->
-        <div class="module-card" data-module="3">
-            <div class="module-glow"></div>
-            <div class="module-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
-                </svg>
+        <!-- Minimal Card 3 -->
+        <div class="minimal-card">
+            <div class="card-top">
+                <div class="card-top-left">
+                    <span class="card-num-tag">03</span>
+                    <span class="card-status-pill" title="Click to test engine status"><span class="status-dot"></span>
+                        ENFORCED</span>
+                </div>
+                <div class="card-icon-glow">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
             </div>
-            <h3>Network Scanning</h3>
-            <p>Active reconnaissance with Nmap ping scans, port discovery, and service detection.</p>
-            <div class="module-features">
-                <span class="feature-tag">Ping Scan</span>
-                <span class="feature-tag">Port Discovery</span>
-                <span class="feature-tag">Service Detection</span>
+            <div class="card-body-content">
+                <h3 class="card-title">Asset Archiving & PDF Compliance</h3>
+                <p class="card-desc">Log target histories inside isolated project scopes. Compare scan variations over
+                    time and download audit logs for compliance reviews.</p>
             </div>
-            <a href="/scan" class="module-btn">
-                <span>Access Module</span>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M5 12h14M12 5l7 7-7 7" />
-                </svg>
-            </a>
-        </div>
-
-        <!-- Module 4 -->
-        <div class="module-card" data-module="4">
-            <div class="module-glow"></div>
-            <div class="module-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="16 18 22 12 16 6" />
-                    <polyline points="8 6 2 12 8 18" />
-                </svg>
-            </div>
-            <h3>Website Fingerprinting</h3>
-            <p>Identify the technology stack powering target web apps servers, languages, CMS, frameworks, and CDNs.
-            </p>
-            <div class="module-features">
-                <span class="feature-tag">Server & Language</span>
-                <span class="feature-tag">CMS Detection</span>
-                <span class="feature-tag">CDN & ALPN</span>
-            </div>
-            <a href="/fingerprint" class="module-btn">
-                <span>Access Module</span>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M5 12h14M12 5l7 7-7 7" />
-                </svg>
-            </a>
-        </div>
-
-        <!-- Module 5 -->
-        <div class="module-card" data-module="5">
-            <div class="module-glow"></div>
-            <div class="module-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
-                    <line x1="4" y1="22" x2="4" y2="15" />
-                </svg>
-            </div>
-            <h3>Subdomain Finder</h3>
-            <p>Enumerate target subdomains passively using Certificate Transparency logs and DNS resolution mapping.</p>
-            <div class="module-features">
-                <span class="feature-tag">Passive CT Logs</span>
-                <span class="feature-tag">DNS Resolution</span>
-                <span class="feature-tag">Active Checks</span>
-            </div>
-            <a href="/subdomain" class="module-btn">
-                <span>Access Module</span>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M5 12h14M12 5l7 7-7 7" />
-                </svg>
-            </a>
+            <div class="card-accent-line"></div>
         </div>
     </div>
 </section>
 
+<!-- FAQ Section (Full-Width Interactive Accordion) -->
+<section class="faq-section" id="faq">
+    <div class="ribbon-header-section" style="margin-bottom: 2.5rem;">
+        <h2 class="ribbon-big-title">
+            <span class="title-white">Technical Specifications</span>
+            <span class="title-gradient">& FAQ Knowledgebase</span>
+        </h2>
+        <p class="section-desc" style="margin: 1rem auto 0 auto; text-align: center;">Everything you need to know about
+            the Argus audit engine, scanning protocols, and API integration.</p>
+    </div>
+
+    <div class="faq-accordion full-width-accordion">
+        <!-- Question 1 -->
+        <div class="faq-item">
+            <button class="faq-question">
+                <div class="faq-question-title">
+                    <span class="faq-tag">Recon Protocol</span>
+                    <span>How does passive subdomain discovery work without alerting target servers?</span>
+                </div>
+                <div class="faq-icon-wrapper"><i class="fa-solid fa-plus"></i></div>
+            </button>
+            <div class="faq-answer">
+                <div class="faq-answer-inner">
+                    <p>Argus queries public Certificate Transparency (CT) logs and DNS record archives (A, AAAA, MX,
+                        TXT). Because data is harvested from third-party certificate providers and cached name servers,
+                        target infrastructure is never directly touched, preserving complete operational stealth.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Question 2 -->
+        <div class="faq-item">
+            <button class="faq-question">
+                <div class="faq-question-title">
+                    <span class="faq-tag">Safety & Controls</span>
+                    <span>Is active network port scanning safe for production infrastructure?</span>
+                </div>
+                <div class="faq-icon-wrapper"><i class="fa-solid fa-plus"></i></div>
+            </button>
+            <div class="faq-answer">
+                <div class="faq-answer-inner">
+                    <p>Yes. Active port scanning uses optimized TCP SYN and connect probes with configurable packet
+                        rates (default 1000 p/s). You can adjust scan intensity from stealthy single-thread queries to
+                        rapid parallel scans directly inside the dashboard control panel.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Question 3 -->
+        <div class="faq-item">
+            <button class="faq-question">
+                <div class="faq-question-title">
+                    <span class="faq-tag">REST API & SIEM</span>
+                    <span>Can I export structured scan logs into external SIEM platforms?</span>
+                </div>
+                <div class="faq-icon-wrapper"><i class="fa-solid fa-plus"></i></div>
+            </button>
+            <div class="faq-answer">
+                <div class="faq-answer-inner">
+                    <p>Yes. Argus exposes REST endpoints (<code>/api/v1/projects</code>, <code>/api/v1/assets</code>,
+                        <code>/api/v1/scans</code>) returning structured JSON payload responses ready for automated
+                        ingestion into Splunk, Elastic SIEM, Datadog, or custom SOC pipelines.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Question 4 -->
+        <div class="faq-item">
+            <button class="faq-question">
+                <div class="faq-question-title">
+                    <span class="faq-tag">Stack Profiler</span>
+                    <span>What technologies are detected during website fingerprinting?</span>
+                </div>
+                <div class="faq-icon-wrapper"><i class="fa-solid fa-plus"></i></div>
+            </button>
+            <div class="faq-answer">
+                <div class="faq-answer-inner">
+                    <p>The fingerprinting engine inspects HTTP response headers, server banners (Nginx, Apache, IIS),
+                        TLS cipher suites, ALPN protocols, CMS frameworks (WordPress, Drupal), programming stacks, CDN
+                        providers, and missing security headers (HSTS, CSP, X-Frame-Options).</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Question 5 -->
+        <div class="faq-item">
+            <button class="faq-question">
+                <div class="faq-question-title">
+                    <span class="faq-tag">PDF Compliance</span>
+                    <span>How are audit assessment reports generated and formatted?</span>
+                </div>
+                <div class="faq-icon-wrapper"><i class="fa-solid fa-plus"></i></div>
+            </button>
+            <div class="faq-answer">
+                <div class="faq-answer-inner">
+                    <p>When an audit scope completes, Argus compiles asset inventories, port status matrices,
+                        vulnerability advisories, and host profiles into compliance-ready PDF and HTML executive
+                        summaries ready for immediate client download.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Question 6 -->
+        <div class="faq-item">
+            <button class="faq-question">
+                <div class="faq-question-title">
+                    <span class="faq-tag">Scope Management</span>
+                    <span>How does Argus organize multiple target audit scopes?</span>
+                </div>
+                <div class="faq-icon-wrapper"><i class="fa-solid fa-plus"></i></div>
+            </button>
+            <div class="faq-answer">
+                <div class="faq-answer-inner">
+                    <p>Argus groups targets under isolated Project Scopes. Each project maintains its own dedicated
+                        asset inventory, historical scan delta comparisons, WHOIS snapshots, and vulnerability severity
+                        tracking over time.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
 {% endblock %}
