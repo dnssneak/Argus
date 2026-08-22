@@ -130,15 +130,22 @@ class ProjectService:
 
     @staticmethod
     def archive_project(db: Session, project_id: int) -> Project:
-        """Archive project (soft status change)."""
+        """Toggle project status between ACTIVE and ARCHIVED."""
         project = db.get(Project, project_id)
         if not project:
             raise ValueError("Project not found.")
 
-        project.status = "ARCHIVED"
+        if (project.status or "").upper() == "ARCHIVED":
+            project.status = "ACTIVE"
+            msg = f"Project '{project.name}' status set to ACTIVE."
+            ProjectService.log_activity(db, project.id, "Project Activated", msg)
+        else:
+            project.status = "ARCHIVED"
+            msg = f"Project '{project.name}' archived."
+            ProjectService.log_activity(db, project.id, "Project Archived", msg)
+
         db.commit()
         db.refresh(project)
-        ProjectService.log_activity(db, project.id, "Project Archived", f"Project '{project.name}' archived.")
         return project
 
     @staticmethod

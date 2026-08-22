@@ -1,13 +1,17 @@
 {% extends "base.html" %}
 
 {% block title %}Asset Inventory — Argus 2.0{% endblock %}
+{% block page_tag %}
+<div style="margin-bottom: 0.6rem;">
+    <span class="page-tag" style="display: inline-block; font-family: var(--font-mono); font-size: 0.78rem; color: var(--accent-purple); text-transform: uppercase; letter-spacing: 0.1em; background: rgba(168, 85, 247, 0.1); padding: 5px 16px; border-radius: 30px; border: 1px solid var(--border-accent);">
+        DISCOVERED ATTACK SURFACE
+    </span>
+</div>
+{% endblock %}
 {% block page_title %}Attack Surface Asset Inventory{% endblock %}
 {% block page_subtitle %}Centralized inventory of discovered domains, subdomains, IPs, and services{% endblock %}
 
 {% block top_actions %}
-<button class="btn btn-primary" onclick="openRegisterAssetModal()">
-    <i class="fa-solid fa-plus"></i> Register Asset
-</button>
 {% endblock %}
 
 {% block content %}
@@ -15,7 +19,10 @@
     <div class="panel-header" style="flex-wrap: wrap; gap: 20px 16px; margin-bottom: 1.75rem; align-items: center;">
         <h2 class="panel-title" style="font-size: 1.5rem; font-weight: 700; margin-bottom: 12px; min-width: 220px;">Asset Repository</h2>
         <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 4px;">
-            <input type="text" id="assetSearchInput" class="form-control" placeholder="Search target, IP, domain..." onkeyup="filterAssets()" style="width: 450px; max-width: 100%; border-radius: 30px; padding: 14px 24px;">
+            <input type="text" id="assetSearchInput" class="form-control" placeholder="Search target, IP, domain..." onkeyup="filterAssets()" style="width: 340px; max-width: 100%; border-radius: 30px; padding: 14px 24px;">
+            <select id="assetProjectFilter" class="form-control" onchange="handleAssetProjectFilterChange()" style="width: 220px; max-width: 100%; border-radius: 30px; padding: 14px 24px; appearance: none; -webkit-appearance: none; background-image: url('data:image/svg+xml;utf8,<svg fill=\'%23a8a5b8\' height=\'24\' viewBox=\'0 0 24 24\' width=\'24\' xmlns=\'http://www.w3.org/2000/svg\'><path d=\'M7 10l5 5 5-5z\'/></svg>'); background-repeat: no-repeat; background-position: right 16px center;">
+                <option value="">All Projects Scope</option>
+            </select>
             <select id="assetTypeFilter" class="form-control" onchange="filterAssets()" style="width: 180px; max-width: 100%; border-radius: 30px; padding: 14px 24px; appearance: none; -webkit-appearance: none; background-image: url('data:image/svg+xml;utf8,<svg fill=\'%23a8a5b8\' height=\'24\' viewBox=\'0 0 24 24\' width=\'24\' xmlns=\'http://www.w3.org/2000/svg\'><path d=\'M7 10l5 5 5-5z\'/></svg>'); background-repeat: no-repeat; background-position: right 16px center;">
                 <option value="">All Types</option>
                 <option value="Domain">Domain</option>
@@ -48,43 +55,7 @@
     </div>
 </div>
 
-<!-- Modal: Register Asset -->
-<div id="registerAssetModal" class="modal-overlay">
-    <div class="modal-box">
-        <div class="modal-header">
-            <h3 class="modal-title">Register Target Asset</h3>
-            <button class="modal-close" onclick="closeRegisterAssetModal()">&times;</button>
-        </div>
-        <form id="registerAssetForm" onsubmit="handleRegisterAsset(event)">
-            <div class="form-group">
-                <label for="assetName">Asset Name / Target *</label>
-                <input type="text" id="assetName" class="form-control" placeholder="e.g. api.example.com or 192.168.1.10" required>
-            </div>
-            <div class="form-group">
-                <label for="assetType">Asset Type</label>
-                <select id="assetType" class="form-control">
-                    <option value="Domain">Domain</option>
-                    <option value="Subdomain">Subdomain</option>
-                    <option value="IP">IP Address</option>
-                    <option value="Website">Website</option>
-                    <option value="API">API Endpoint</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="assetIp">IP Address (Optional)</label>
-                <input type="text" id="assetIp" class="form-control" placeholder="e.g. 104.21.55.2">
-            </div>
-            <div class="form-group">
-                <label for="assetRisk">Initial Risk Score (0 - 100)</label>
-                <input type="number" id="assetRisk" class="form-control" min="0" max="100" value="0">
-            </div>
-            <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px;">
-                <button type="button" class="btn btn-secondary" onclick="closeRegisterAssetModal()">Cancel</button>
-                <button type="submit" class="btn btn-primary">Save Asset</button>
-            </div>
-        </form>
-    </div>
-</div>
+
 
 <!-- Modal: Asset Detail Viewer -->
 <div id="assetDetailModal" class="modal-overlay">
