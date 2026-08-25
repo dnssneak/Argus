@@ -264,6 +264,14 @@ class AssetProcessor:
         except Exception as ce:
             print(f"Asset correlation warning: {str(ce)}")
 
+        # Recalculate risk score for processed assets using centralized RiskEngine
+        try:
+            from services.risk_engine import RiskEngine
+            for a in processed_assets:
+                RiskEngine.recalculate_and_update_asset_risk(db, a, trigger_reason=f"Scan #{scan_id} Ingestion")
+        except Exception as re:
+            print(f"Risk recalculation warning: {str(re)}")
+
         for a in processed_assets:
             db.refresh(a)
 

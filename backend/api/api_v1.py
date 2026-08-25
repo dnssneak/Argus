@@ -171,10 +171,16 @@ def get_project_dashboard_api(project_id):
 def list_assets():
     db = get_db()
     try:
+        from services.risk_engine import RiskEngine
+
         project_id = request.args.get("project_id", type=int)
         asset_type = request.args.get("type")
+        severity_filter = request.args.get("severity")
         search = request.args.get("search")
         min_risk = request.args.get("min_risk", type=int)
+        max_risk = request.args.get("max_risk", type=int)
+        sort_by = request.args.get("sort_by", "risk_score")  # risk_score, name, last_seen, first_seen
+        sort_order = request.args.get("sort_order", "desc")  # desc, asc
 
         query = db.query(Asset)
 
@@ -184,6 +190,8 @@ def list_assets():
             query = query.filter(Asset.asset_type == asset_type)
         if min_risk is not None:
             query = query.filter(Asset.risk_score >= min_risk)
+        if max_risk is not None:
+            query = query.filter(Asset.risk_score <= max_risk)
         if search:
             search_pattern = f"%{search}%"
             query = query.filter(
@@ -192,8 +200,31 @@ def list_assets():
                 (Asset.domain.like(search_pattern))
             )
 
-        assets = query.order_by(Asset.risk_score.desc(), Asset.last_seen.desc()).all()
-        return jsonify({"success": True, "count": len(assets), "assets": [a.to_dict() for a in assets]})
+        # Apply database sorting
+        if sort_by == "name":
+            order_col = Asset.name.asc() if sort_order == "asc" else Asset.name.desc()
+        elif sort_by == "last_seen":
+            order_col = Asset.last_seen.asc() if sort_order == "asc" else Asset.last_seen.desc()
+        elif sort_by == "first_seen":
+            order_col = Asset.first_seen.asc() if sort_order == "asc" else Asset.first_seen.desc()
+        else:
+            order_col = Asset.risk_score.asc() if sort_order == "asc" else Asset.risk_score.desc()
+
+        assets = query.order_by(order_col).all()
+
+        formatted_assets = []
+        for a in assets:
+            a_dict = a.to_dict()
+            sev = RiskEngine.get_severity_level(a.risk_score or 0)
+            a_dict["severity"] = sev
+
+            # Filter by severity tier if requested
+            if severity_filter and severity_filter.upper() != "ALL" and sev.upper() != severity_filter.upper():
+                continue
+
+            formatted_assets.append(a_dict)
+
+        return jsonify({"success": True, "count": len(formatted_assets), "assets": formatted_assets})
     finally:
         db.close()
 
@@ -202,6 +233,8 @@ def list_assets():
 def create_asset():
     db = get_db()
     try:
+        from services.risk_engine import RiskEngine
+
         data = request.get_json() or {}
         name = data.get("name", "").strip()
         project_id = data.get("project_id")
@@ -226,15 +259,18 @@ def create_asset():
         # Deduplicate asset within project
         existing = db.query(Asset).filter_by(project_id=project_id, name=name).first()
         if existing:
-            # Update last_seen
-            existing.risk_score = max(existing.risk_score, risk_score)
             if ip_address:
                 existing.ip_address = ip_address
             if domain:
                 existing.domain = domain
             db.commit()
+            
+            # Recalculate risk using RiskEngine
+            RiskEngine.recalculate_and_update_asset_risk(db, existing, trigger_reason="Manual Asset Update")
             db.refresh(existing)
-            return jsonify({"success": True, "asset": existing.to_dict(), "message": "Asset updated"}), 200
+            out_dict = existing.to_dict()
+            out_dict["severity"] = RiskEngine.get_severity_level(existing.risk_score)
+            return jsonify({"success": True, "asset": out_dict, "message": "Asset updated"}), 200
 
         asset = Asset(
             project_id=project_id,
@@ -246,9 +282,15 @@ def create_asset():
         )
         db.add(asset)
         db.commit()
+
+        # Recalculate risk score via RiskEngine
+        RiskEngine.recalculate_and_update_asset_risk(db, asset, trigger_reason="Manual Asset Registration")
         db.refresh(asset)
 
-        return jsonify({"success": True, "asset": asset.to_dict()}), 201
+        out_dict = asset.to_dict()
+        out_dict["severity"] = RiskEngine.get_severity_level(asset.risk_score)
+
+        return jsonify({"success": True, "asset": out_dict}), 201
     except Exception as e:
         db.rollback()
         return jsonify({"success": False, "error": str(e)}), 500
@@ -256,43 +298,22 @@ def create_asset():
         db.close()
 
 
-def compute_risk_factors(asset):
-    factors = []
-    if asset.exposure == "Internet-Facing":
-        factors.append("Internet-facing endpoint exposure")
-    if asset.risk_score >= 80:
-        factors.append("Critical risk priority threshold exceeded")
-    
-    # Open services
-    if asset.services:
-        factors.append(f"{len(asset.services)} open network services detected")
-        for s in asset.services:
-            if s.port in [22, 23, 21, 3389]:
-                factors.append(f"Exposed management service: {s.service_name} ({s.port}/{s.protocol})")
-                
-    # Security findings
-    if asset.findings:
-        criticals = sum(1 for f in asset.findings if f.severity.lower() == "critical")
-        highs = sum(1 for f in asset.findings if f.severity.lower() == "high")
-        if criticals:
-            factors.append(f"{criticals} unresolved Critical vulnerabilities")
-        if highs:
-            factors.append(f"{highs} unresolved High vulnerabilities")
-            
-    if not factors:
-        factors.append("Default security baseline risk criteria")
-    return factors
-
-
 @api_bp.route("/assets/<int:asset_id>", methods=["GET"])
 def get_asset_detail(asset_id):
     db = get_db()
     try:
+        from services.risk_engine import RiskEngine
+
         asset = db.get(Asset, asset_id)
         if not asset:
             return jsonify({"success": False, "error": "Asset not found"}), 404
 
+        # Compute full risk analysis
+        risk_analysis = RiskEngine.calculate_asset_risk(db, asset)
+
         data = asset.to_dict()
+        data["risk_score"] = risk_analysis["score"]
+        data["severity"] = risk_analysis["severity"]
         data["services"] = [s.to_dict() for s in asset.services]
         data["technologies"] = [t.to_dict() for t in asset.technologies]
         data["findings"] = [f.to_dict() for f in asset.findings]
@@ -301,7 +322,9 @@ def get_asset_detail(asset_id):
         data["notes"] = sorted([n.to_dict() for n in asset.notes], key=lambda x: x["created_at"] or "", reverse=True)
         data["outgoing_relationships"] = [r.to_dict() for r in asset.outgoing_relationships]
         data["incoming_relationships"] = [r.to_dict() for r in asset.incoming_relationships]
-        data["risk_factors"] = compute_risk_factors(asset)
+        data["risk_factors"] = risk_analysis["summary_factors"]
+        data["categorized_risk_factors"] = risk_analysis["contributing_factors"]
+        data["risk_explanation"] = risk_analysis
 
         return jsonify({"success": True, "asset": data})
     finally:
@@ -533,13 +556,12 @@ def scan_single_asset(asset_id):
         sources.add("Port Scan")
         asset.discovery_sources = ",".join(filter(None, sources))
 
-        # Adjust risk score based on open services and findings
-        new_score = min(100, 20 + len(asset.services) * 10 + len(asset.findings) * 20)
-        if asset.exposure == "Internet-Facing":
-            new_score = min(100, new_score + 15)
-        asset.risk_score = new_score
-
         db.commit()
+
+        # Recalculate risk score via RiskEngine
+        from services.risk_engine import RiskEngine
+        RiskEngine.recalculate_and_update_asset_risk(db, asset, trigger_reason="On-Demand Scan Completed")
+
         db.refresh(asset)
 
         return jsonify({"success": True, "message": "Scan completed successfully", "asset": asset.to_dict()})
