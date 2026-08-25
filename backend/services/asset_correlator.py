@@ -279,6 +279,15 @@ class AssetCorrelator:
                 rel.status = "active"
 
         db.commit()
+
+        # Recalculate risk for project assets based on updated relationship context
+        try:
+            from services.risk_engine import RiskEngine
+            for a in assets:
+                RiskEngine.recalculate_and_update_asset_risk(db, a, trigger_reason="Graph Correlation Pass")
+        except Exception as re:
+            print(f"Correlation risk recalculation warning: {str(re)}")
+
         return len(observed_rel_keys)
 
     @staticmethod

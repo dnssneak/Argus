@@ -9,23 +9,31 @@ from db.database import init_db, SessionLocal
 from models.models import Project, Asset, Finding
 
 
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+import db.database as db_module
+
 @pytest.fixture
 def client():
-    """Create Flask test client with fresh test database."""
+    """Create Flask test client with isolated in-memory test database."""
     app.config["TESTING"] = True
-    os.environ["DATABASE_URL"] = "sqlite:///:memory:"
-    init_db()
+    test_engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False})
+    db_module.Base.metadata.create_all(bind=test_engine)
+    
+    # Store original engine and SessionLocal
+    orig_engine = db_module.engine
+    orig_sessionmaker = db_module.SessionLocal
+
+    # Rebind db module to test engine
+    db_module.engine = test_engine
+    db_module.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_engine)
+
     with app.test_client() as client:
-        # Clear database tables before test
-        db = SessionLocal()
-        try:
-            db.query(Finding).delete()
-            db.query(Asset).delete()
-            db.query(Project).delete()
-            db.commit()
-        finally:
-            db.close()
         yield client
+
+    # Restore original engine
+    db_module.engine = orig_engine
+    db_module.SessionLocal = orig_sessionmaker
 
 
 def test_list_and_create_projects(client):
