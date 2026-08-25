@@ -299,14 +299,28 @@ class Finding(Base):
 
 
 class Relationship(Base):
-    """Directed connection between two assets in the attack graph."""
+    """Directed connection between assets and entities in the attack relationship graph."""
     __tablename__ = "relationships"
 
     id = Column(Integer, primary_key=True, index=True)
-    source_asset_id = Column(Integer, ForeignKey("assets.id", ondelete="CASCADE"), nullable=False, index=True)
-    target_asset_id = Column(Integer, ForeignKey("assets.id", ondelete="CASCADE"), nullable=False, index=True)
-    relationship_type = Column(String(64), nullable=False)  # RESOLVES_TO, SUBDOMAIN_OF, HOSTS_SERVICE, USES_TECH
+    project_id = Column(Integer, ForeignKey("projects.id", ondelete="CASCADE"), nullable=True, index=True)
+    source_id = Column(String(255), nullable=False, index=True)
+    source_type = Column(String(64), nullable=False, default="Asset")
+    source_label = Column(String(255), nullable=True)
+    source_asset_id = Column(Integer, ForeignKey("assets.id", ondelete="CASCADE"), nullable=True, index=True)
+    
+    target_id = Column(String(255), nullable=False, index=True)
+    target_type = Column(String(64), nullable=False, default="Entity")
+    target_label = Column(String(255), nullable=True)
+    target_asset_id = Column(Integer, ForeignKey("assets.id", ondelete="CASCADE"), nullable=True, index=True)
+    
+    relationship_type = Column(String(64), nullable=False)  # SUBDOMAIN_OF, RESOLVES_TO, HAS_PORT, RUNS_SERVICE, USES_TECH, HAS_ENDPOINT, HAS_CERTIFICATE, HAS_FINDING, DISCOVERED_IN_SCAN, BELONGS_TO_TARGET
     confidence = Column(Float, default=1.0)
+    source_scan_id = Column(Integer, ForeignKey("scans.id", ondelete="SET NULL"), nullable=True, index=True)
+    discovery_source = Column(String(128), nullable=True)
+    status = Column(String(32), default="active", nullable=False)  # active, stale
+    first_seen = Column(DateTime, default=utc_now)
+    last_seen = Column(DateTime, default=utc_now, onupdate=utc_now)
     created_at = Column(DateTime, default=utc_now)
 
     source_asset = relationship("Asset", foreign_keys=[source_asset_id], back_populates="outgoing_relationships")
@@ -315,12 +329,25 @@ class Relationship(Base):
     def to_dict(self):
         return {
             "id": self.id,
+            "project_id": self.project_id,
+            "source_id": self.source_id,
+            "source_type": self.source_type,
+            "source_label": self.source_label or self.source_id,
             "source_asset_id": self.source_asset_id,
+            "target_id": self.target_id,
+            "target_type": self.target_type,
+            "target_label": self.target_label or self.target_id,
             "target_asset_id": self.target_asset_id,
             "relationship_type": self.relationship_type,
             "confidence": self.confidence,
+            "source_scan_id": self.source_scan_id,
+            "discovery_source": self.discovery_source or "Scan Correlation",
+            "status": self.status or "active",
+            "first_seen": format_utc_iso(self.first_seen or self.created_at),
+            "last_seen": format_utc_iso(self.last_seen or self.created_at),
             "created_at": format_utc_iso(self.created_at),
         }
+
 
 
 class Scan(Base):
