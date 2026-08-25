@@ -807,6 +807,9 @@ async function loadProjectScansHistory(projectId) {
                                 </div>
                             </div>
                             <div style="display: flex; gap: 8px;">
+                                <button onclick="openScanChangeInspector(${s.id})" style="background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.35); color: #38BDF8; padding: 6px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                                    <i class="fa-solid fa-code-compare"></i> Changes
+                                </button>
                                 <button onclick="viewHistoricalScan(${s.id})" style="background: rgba(168, 85, 247, 0.15); border: 1px solid var(--border-accent); color: var(--accent-purple); padding: 6px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px;">
                                     <i class="fa-solid fa-eye"></i> View
                                 </button>
@@ -1416,6 +1419,8 @@ function switchAssetTab(tabId) {
 
     if (tabId === 'relationships' && currentActiveAssetId) {
         loadAssetRelationshipGraph(currentActiveAssetId);
+    } else if (tabId === 'changes' && currentActiveAssetId) {
+        loadAssetChanges(currentActiveAssetId);
     }
 }
 
@@ -2416,5 +2421,268 @@ function showFullscreenGraphNodeInspector(node) {
 
     contentEl.innerHTML = html;
 }
+
+
+// --- ASSET CHANGE DETECTION & MONITORING JS ---
+
+async function loadAssetChanges(assetId) {
+    if (!assetId) return;
+
+    const feedEl = document.getElementById('detailChangesFeed');
+    const statusEl = document.getElementById('detailMonitoringStatus');
+    const badgeEl = document.getElementById('detailTotalChangesBadge');
+    const metaEl = document.getElementById('detailMonitoringMeta');
+    const selectA = document.getElementById('compareScanA');
+    const selectB = document.getElementById('compareScanB');
+
+    if (feedEl) feedEl.innerHTML = '<div style="color: var(--text-muted); font-style: italic; padding: 10px;"><i class="fa-solid fa-spinner fa-spin"></i> Loading asset changes...</div>';
+
+    try {
+        const res = await fetch(`/api/v1/assets/${assetId}/changes`);
+        const data = await res.json();
+
+        if (data.success) {
+            const monitoring = data.monitoring || {};
+            const events = data.change_events || [];
+            const scans = data.available_scans || [];
+
+            // Update Monitoring Header
+            if (statusEl) {
+                statusEl.textContent = `Monitoring: ${monitoring.status || 'Active'}`;
+                statusEl.style.color = monitoring.has_recent_changes ? 'var(--accent-green)' : 'var(--text-primary)';
+            }
+            if (badgeEl) {
+                badgeEl.textContent = `${monitoring.total_change_events || 0} Change Event(s)`;
+            }
+            if (metaEl) {
+                metaEl.textContent = `Last active evaluation: ${monitoring.last_seen ? new Date(monitoring.last_seen).toLocaleString() : '—'} • ${monitoring.latest_summary}`;
+            }
+
+            // Populate Scan Comparison Dropdowns
+            if (selectA && selectB) {
+                const scanOpts = scans.map(s => `<option value="${s.id}">Scan #${s.id} (${s.scan_type}) - ${new Date(s.start_time).toLocaleDateString()}</option>`).join('');
+                selectA.innerHTML = '<option value="">Select Baseline Scan (A)...</option>' + scanOpts;
+                selectB.innerHTML = '<option value="">Select Comparison Scan (B)...</option>' + scanOpts;
+            }
+
+            // Populate Timeline Changes Feed
+            if (feedEl) {
+                if (events.length === 0) {
+                    feedEl.innerHTML = '<div style="color: var(--text-muted); font-style: italic; padding: 12px; text-align: center;">No significant changes detected across asset history.</div>';
+                } else {
+                    feedEl.innerHTML = events.map(e => {
+                        const lines = (e.event_details || '').split('\n');
+                        const titleLine = lines[0] || e.event_name;
+                        const detailLines = lines.slice(1).filter(l => l.strip ? l.strip() : l.trim());
+
+                        const formattedDetails = detailLines.map(line => {
+                            let badge = '<span class="badge badge-info" style="font-size: 0.65rem; margin-right: 6px;">INFO</span>';
+                            let lineClass = 'color: var(--text-secondary);';
+
+                            if (line.startsWith('+')) {
+                                badge = '<span class="badge" style="background: rgba(74, 222, 128, 0.15); color: #4ADE80; border: 1px solid rgba(74, 222, 128, 0.3); font-size: 0.65rem; margin-right: 6px;">+ ADDED</span>';
+                                lineClass = 'color: #4ADE80;';
+                            } else if (line.startsWith('-')) {
+                                badge = '<span class="badge" style="background: rgba(248, 113, 113, 0.15); color: #F87171; border: 1px solid rgba(248, 113, 113, 0.3); font-size: 0.65rem; margin-right: 6px;">- REMOVED</span>';
+                                lineClass = 'color: #F87171;';
+                            } else if (line.startsWith('~')) {
+                                badge = '<span class="badge" style="background: rgba(251, 191, 36, 0.15); color: #FBBF24; border: 1px solid rgba(251, 191, 36, 0.3); font-size: 0.65rem; margin-right: 6px;">~ CHANGED</span>';
+                                lineClass = 'color: #FBBF24;';
+                            }
+
+                            return `<div style="margin-top: 4px; font-family: var(--font-mono); font-size: 0.8rem; ${lineClass}">${badge}${escapeHtml(line.replace(/^[+\-~]\s*/, ''))}</div>`;
+                        }).join('');
+
+                        return `
+                            <div class="timeline-item">
+                                <div class="timeline-marker" style="background: var(--accent-purple);"></div>
+                                <div class="timeline-time">${new Date(e.created_at).toLocaleString()}</div>
+                                <div class="timeline-title" style="font-weight: 700; color: var(--text-primary);">${escapeHtml(e.event_name)} — ${escapeHtml(titleLine)}</div>
+                                <div class="timeline-details" style="margin-top: 6px;">${formattedDetails || escapeHtml(e.event_details)}</div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+            }
+        }
+    } catch (err) {
+        if (feedEl) feedEl.innerHTML = `<div style="color: var(--accent-red); padding: 10px;">Error loading changes: ${escapeHtml(err.message)}</div>`;
+    }
+}
+
+async function runScanComparison() {
+    const scanA = document.getElementById('compareScanA')?.value;
+    const scanB = document.getElementById('compareScanB')?.value;
+    const container = document.getElementById('compareResultsContainer');
+
+    if (!scanA || !scanB) {
+        showToast('Please select both Baseline Scan (A) and Comparison Scan (B)', 'warning');
+        return;
+    }
+
+    if (scanA === scanB) {
+        showToast('Baseline and Comparison scans must be different', 'warning');
+        return;
+    }
+
+    if (container) {
+        container.style.display = 'block';
+        container.innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem; padding: 10px;"><i class="fa-solid fa-spinner fa-spin"></i> Comparing scans...</div>';
+    }
+
+    try {
+        const res = await fetch(`/api/v1/assets/${currentActiveAssetId}/scans/compare?scan_a=${scanA}&scan_b=${scanB}`);
+        const data = await res.json();
+
+        if (data.success && container) {
+            const comp = data.comparison || {};
+            const ports = comp.ports_diff || [];
+            const techs = comp.tech_diff || [];
+            const subs = comp.subdomains_diff || [];
+
+            let html = `
+                <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-accent); border-radius: 8px; padding: 12px; margin-top: 10px;">
+                    <div style="font-weight: 700; font-family: var(--font-mono); color: var(--accent-purple); font-size: 0.85rem; margin-bottom: 8px;">
+                        COMPARISON: SCAN #${comp.scan_a_id} vs SCAN #${comp.scan_b_id}
+                    </div>
+            `;
+
+            if (ports.length > 0) {
+                html += `
+                    <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 4px;">Ports & Services:</div>
+                    <table class="data-table" style="font-size: 0.78rem; margin-bottom: 12px;">
+                        <thead><tr><th>Port/Protocol</th><th>Service</th><th>Scan #${comp.scan_a_id}</th><th>Scan #${comp.scan_b_id}</th><th>Diff</th></tr></thead>
+                        <tbody>
+                            ${ports.map(p => {
+                                let badge = '<span class="badge badge-info">UNCHANGED</span>';
+                                if (p.status === 'ADDED') badge = '<span class="badge" style="background: rgba(74, 222, 128, 0.15); color: #4ADE80; border: 1px solid rgba(74, 222, 128, 0.3);">+ ADDED</span>';
+                                else if (p.status === 'REMOVED') badge = '<span class="badge" style="background: rgba(248, 113, 113, 0.15); color: #F87171; border: 1px solid rgba(248, 113, 113, 0.3);">- REMOVED</span>';
+                                return `<tr><td class="font-mono">${p.item}</td><td>${escapeHtml(p.service)}</td><td>${p.in_scan_a ? 'Open' : '—'}</td><td>${p.in_scan_b ? 'Open' : '—'}</td><td>${badge}</td></tr>`;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                `;
+            }
+
+            if (techs.length > 0) {
+                html += `
+                    <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 4px;">Technology & Stack:</div>
+                    <table class="data-table" style="font-size: 0.78rem; margin-bottom: 12px;">
+                        <thead><tr><th>Component / Stack</th><th>Value (Scan A)</th><th>Value (Scan B)</th><th>Diff</th></tr></thead>
+                        <tbody>
+                            ${techs.map(t => {
+                                let badge = '<span class="badge badge-info">UNCHANGED</span>';
+                                if (t.status === 'ADDED') badge = '<span class="badge" style="background: rgba(74, 222, 128, 0.15); color: #4ADE80; border: 1px solid rgba(74, 222, 128, 0.3);">+ ADDED</span>';
+                                else if (t.status === 'REMOVED') badge = '<span class="badge" style="background: rgba(248, 113, 113, 0.15); color: #F87171; border: 1px solid rgba(248, 113, 113, 0.3);">- REMOVED</span>';
+                                else if (t.status === 'CHANGED') badge = '<span class="badge" style="background: rgba(251, 191, 36, 0.15); color: #FBBF24; border: 1px solid rgba(251, 191, 36, 0.3);">~ CHANGED</span>';
+                                return `<tr><td><strong>${escapeHtml(t.item)}</strong></td><td>${escapeHtml(t.version_a || '—')}</td><td>${escapeHtml(t.version_b || '—')}</td><td>${badge}</td></tr>`;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                `;
+            }
+
+            if (subs.length > 0) {
+                html += `
+                    <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 4px;">Subdomains Discovered:</div>
+                    <table class="data-table" style="font-size: 0.78rem;">
+                        <thead><tr><th>Subdomain</th><th>Resolved IP (Scan A)</th><th>Resolved IP (Scan B)</th><th>Diff</th></tr></thead>
+                        <tbody>
+                            ${subs.map(s => {
+                                let badge = '<span class="badge badge-info">UNCHANGED</span>';
+                                if (s.status === 'ADDED') badge = '<span class="badge" style="background: rgba(74, 222, 128, 0.15); color: #4ADE80; border: 1px solid rgba(74, 222, 128, 0.3);">+ ADDED</span>';
+                                else if (s.status === 'REMOVED') badge = '<span class="badge" style="background: rgba(248, 113, 113, 0.15); color: #F87171; border: 1px solid rgba(248, 113, 113, 0.3);">- REMOVED</span>';
+                                else if (s.status === 'CHANGED') badge = '<span class="badge" style="background: rgba(251, 191, 36, 0.15); color: #FBBF24; border: 1px solid rgba(251, 191, 36, 0.3);">~ CHANGED</span>';
+                                return `<tr><td><strong>${escapeHtml(s.item)}</strong></td><td>${escapeHtml(s.ip_a)}</td><td>${escapeHtml(s.ip_b)}</td><td>${badge}</td></tr>`;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                `;
+            }
+
+            if (ports.length === 0 && techs.length === 0 && subs.length === 0) {
+                html += '<div style="color: var(--text-muted); font-style: italic; font-size: 0.8rem;">No differences detected between these two scans.</div>';
+            }
+
+            html += '</div>';
+            container.innerHTML = html;
+        }
+    } catch (err) {
+        if (container) container.innerHTML = `<div style="color: var(--accent-red); font-size: 0.85rem;">Comparison failed: ${escapeHtml(err.message)}</div>`;
+    }
+}
+
+async function openScanChangeInspector(scanId) {
+    const modal = document.getElementById('scanChangeInspectorModal');
+    const content = document.getElementById('scanChangeInspectorContent');
+    const title = document.getElementById('scanChangeInspectorTitle');
+    const meta = document.getElementById('scanChangeInspectorMeta');
+
+    if (title) title.textContent = `Scan #${scanId} Change Inspector`;
+    if (content) content.innerHTML = '<div style="color: var(--text-muted); font-style: italic; text-align: center; padding: 20px;"><i class="fa-solid fa-spinner fa-spin"></i> Fetching scan change audit...</div>';
+    if (modal) modal.classList.add('active');
+
+    try {
+        const res = await fetch(`/api/v1/scans/${scanId}/changes`);
+        const data = await res.json();
+
+        if (data.success && content) {
+            if (meta) meta.textContent = `Target: ${data.target} • Type: ${data.scan_type} • Completed: ${data.completed_at ? new Date(data.completed_at).toLocaleString() : 'N/A'}`;
+
+            const changeEvents = data.change_events || [];
+            if (changeEvents.length === 0) {
+                content.innerHTML = `
+                    <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 10px; padding: 24px; text-align: center; color: var(--text-muted);">
+                        <i class="fa-solid fa-circle-check" style="font-size: 2rem; color: var(--accent-green); margin-bottom: 8px;"></i>
+                        <div>No asset changes detected in Scan #${scanId}.</div>
+                        <div style="font-size: 0.8rem; margin-top: 4px;">Asset state matched previous known baseline.</div>
+                    </div>
+                `;
+            } else {
+                content.innerHTML = changeEvents.map(e => {
+                    const lines = (e.event_details || '').split('\n');
+                    const titleLine = lines[0] || e.event_name;
+                    const detailLines = lines.slice(1).filter(l => l.trim());
+
+                    const formattedDetails = detailLines.map(line => {
+                        let badge = '<span class="badge badge-info" style="font-size: 0.65rem; margin-right: 6px;">INFO</span>';
+                        let lineClass = 'color: var(--text-secondary);';
+
+                        if (line.startsWith('+')) {
+                            badge = '<span class="badge" style="background: rgba(74, 222, 128, 0.15); color: #4ADE80; border: 1px solid rgba(74, 222, 128, 0.3); font-size: 0.65rem; margin-right: 6px;">+ ADDED</span>';
+                            lineClass = 'color: #4ADE80;';
+                        } else if (line.startsWith('-')) {
+                            badge = '<span class="badge" style="background: rgba(248, 113, 113, 0.15); color: #F87171; border: 1px solid rgba(248, 113, 113, 0.3); font-size: 0.65rem; margin-right: 6px;">- REMOVED</span>';
+                            lineClass = 'color: #F87171;';
+                        } else if (line.startsWith('~')) {
+                            badge = '<span class="badge" style="background: rgba(251, 191, 36, 0.15); color: #FBBF24; border: 1px solid rgba(251, 191, 36, 0.3); font-size: 0.65rem; margin-right: 6px;">~ CHANGED</span>';
+                            lineClass = 'color: #FBBF24;';
+                        }
+
+                        return `<div style="margin-top: 4px; font-family: var(--font-mono); font-size: 0.82rem; ${lineClass}">${badge}${escapeHtml(line.replace(/^[+\-~]\s*/, ''))}</div>`;
+                    }).join('');
+
+                    return `
+                        <div class="card-panel" style="margin-bottom: 12px; padding: 14px; border-left: 3px solid var(--accent-purple);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                <strong style="color: var(--text-primary); font-size: 0.95rem;">${escapeHtml(e.event_name)}</strong>
+                                <span style="font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono);">${new Date(e.created_at).toLocaleString()}</span>
+                            </div>
+                            <div style="font-size: 0.85rem; color: var(--accent-purple); font-weight: 600; margin-bottom: 6px;">${escapeHtml(titleLine)}</div>
+                            <div style="background: rgba(0,0,0,0.25); border-radius: 6px; padding: 10px; margin-top: 6px;">${formattedDetails || escapeHtml(e.event_details)}</div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+    } catch (err) {
+        if (content) content.innerHTML = `<div style="color: var(--accent-red); padding: 14px;">Error: ${escapeHtml(err.message)}</div>`;
+    }
+}
+
+function closeScanChangeInspectorModal() {
+    document.getElementById('scanChangeInspectorModal')?.classList.remove('active');
+}
+
 
 

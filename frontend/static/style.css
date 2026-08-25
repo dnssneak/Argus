@@ -5760,3 +5760,10 @@ button.close-btn:active {
     border: 1px solid rgba(239, 68, 68, 0.45);
     box-shadow: 0 0 12px rgba(239, 68, 68, 0.2);
 }
+
+select option {
+    background-color: #12101e !important;
+    color: #f1f5f9 !important;
+    padding: 8px;
+}
+

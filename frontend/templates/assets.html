@@ -83,6 +83,7 @@
             <button id="tab-btn-relationships" class="modal-tab-btn" onclick="switchAssetTab('relationships')"><i class="fa-solid fa-diagram-project"></i> Relationships</button>
             <button id="tab-btn-findings" class="modal-tab-btn" onclick="switchAssetTab('findings')"><i class="fa-solid fa-shield-halved"></i> Findings</button>
             <button id="tab-btn-history" class="modal-tab-btn" onclick="switchAssetTab('history')"><i class="fa-solid fa-clock-rotate-left"></i> History</button>
+            <button id="tab-btn-changes" class="modal-tab-btn" onclick="switchAssetTab('changes')"><i class="fa-solid fa-code-compare"></i> Changes & Monitoring</button>
             <button id="tab-btn-notes" class="modal-tab-btn" onclick="switchAssetTab('notes')"><i class="fa-solid fa-pen-to-square"></i> Notes</button>
         </div>
 
@@ -337,6 +338,49 @@
                         </div>
                         <div id="inspectorContent" style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
                             <!-- Node/edge details populated on click -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 7. CHANGES & MONITORING PANEL -->
+            <div id="panel-changes" class="tab-content-panel">
+                <div style="display: flex; flex-direction: column; gap: 16px;">
+                    <!-- Monitoring Banner -->
+                    <div class="card-panel" style="display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; background: rgba(168, 85, 247, 0.05); border: 1px solid var(--border-accent); border-radius: 10px;">
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span class="pulse-dot" id="monitoringPulseDot"></span>
+                                <strong id="detailMonitoringStatus" style="font-size: 1.1rem; color: var(--text-primary);">Monitoring: Active</strong>
+                            </div>
+                            <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;" id="detailMonitoringMeta">Last scan evaluated change detection pass</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <span id="detailTotalChangesBadge" class="badge badge-purple" style="font-size: 0.85rem;">0 Changes Detected</span>
+                        </div>
+                    </div>
+
+                    <!-- Scan-to-Scan Comparison Tool -->
+                    <div class="card-panel" style="padding: 16px;">
+                        <h4 style="margin: 0 0 12px 0; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--accent-purple); font-family: var(--font-mono);"><i class="fa-solid fa-code-compare"></i> Compare Asset Scans</h4>
+                        <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                            <select id="compareScanA" class="form-control" style="flex: 1; min-width: 200px; padding: 8px 12px; border-radius: 6px; font-size: 0.85rem;">
+                                <option value="">Select Baseline Scan (A)...</option>
+                            </select>
+                            <span style="font-weight: 700; color: var(--text-muted);">vs</span>
+                            <select id="compareScanB" class="form-control" style="flex: 1; min-width: 200px; padding: 8px 12px; border-radius: 6px; font-size: 0.85rem;">
+                                <option value="">Select Comparison Scan (B)...</option>
+                            </select>
+                            <button class="btn btn-primary" onclick="runScanComparison()" style="padding: 8px 16px; font-size: 0.85rem;"><i class="fa-solid fa-scale-balanced"></i> Compare</button>
+                        </div>
+                        <div id="compareResultsContainer" style="margin-top: 14px; display: none;"></div>
+                    </div>
+
+                    <!-- Chronological Changes Feed -->
+                    <div>
+                        <h4 style="margin: 0 0 10px 0; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); font-family: var(--font-mono);"><i class="fa-solid fa-list-check"></i> Detected Changes History</h4>
+                        <div id="detailChangesFeed" class="timeline" style="padding-left: 8px;">
+                            <!-- Populated dynamically via JS -->
                         </div>
                     </div>
                 </div>
