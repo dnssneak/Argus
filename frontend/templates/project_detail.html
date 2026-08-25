@@ -337,6 +337,22 @@
         </div>
     </div>
 </div>
+
+<!-- MODAL: SCAN CHANGE INSPECTOR -->
+<div id="scanChangeInspectorModal" class="modal-overlay">
+    <div class="modal-box" style="max-width: 680px; width: 95%;">
+        <div class="modal-header">
+            <div>
+                <h3 class="modal-title" id="scanChangeInspectorTitle" style="margin: 0; font-size: 1.3rem;">Scan Change Inspector</h3>
+                <div id="scanChangeInspectorMeta" style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">Detected attack surface changes during scan</div>
+            </div>
+            <button class="modal-close" onclick="closeScanChangeInspectorModal()">&times;</button>
+        </div>
+        <div id="scanChangeInspectorContent" style="padding-top: 1rem;">
+            <!-- Populated dynamically via JS -->
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}

@@ -25,6 +25,13 @@ class AssetProcessor:
         processed_assets = []
         now = datetime.utcnow()
 
+        # Capture state snapshots of existing project assets prior to update for change detection
+        from services.change_detector import ChangeDetector
+        asset_snapshots = {}
+        existing_assets = db.query(Asset).filter_by(project_id=project_id).all()
+        for a in existing_assets:
+            asset_snapshots[a.id] = ChangeDetector.snapshot_asset_state(a)
+
         # 1. Resolve primary target asset
         primary_asset = AssetProcessor._get_or_create_asset(
             db=db,
@@ -254,6 +261,20 @@ class AssetProcessor:
 
             if web_asset.id not in [a.id for a in processed_assets]:
                 processed_assets.append(web_asset)
+
+        # Change Detection comparison pass for updated assets
+        for a in processed_assets:
+            prev_snap = asset_snapshots.get(a.id)
+            if prev_snap:
+                diff = ChangeDetector.compare_asset_states(prev_snap, results)
+                if diff.get("has_changes") and diff.get("changes"):
+                    change_details = f"Scan #{scan_id} - {diff['summary']}\n" + "\n".join(diff["changes"])
+                    AssetProcessor._add_history_event(
+                        db=db,
+                        asset_id=a.id,
+                        event_name="Asset change detected",
+                        event_details=change_details
+                    )
 
         db.commit()
 

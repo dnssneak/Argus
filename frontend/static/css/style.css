@@ -429,6 +429,12 @@ body {
     box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
 }
 
+select option {
+    background-color: #0F172A !important;
+    color: #F8FAFC !important;
+    padding: 8px;
+}
+
 .modal-overlay {
     position: fixed;
     top: 0;

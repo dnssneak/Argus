@@ -1,7 +1,7 @@
 # pyrefly: ignore [missing-import]
 from flask import Blueprint, jsonify, request
 from db.database import SessionLocal
-from models.models import Project, Target, Asset, Service, Technology, Finding, Scan, Relationship, Endpoint, AssetHistory, AssetNote
+from models.models import Project, Target, Asset, Service, Technology, Finding, Scan, Relationship, Endpoint, AssetHistory, AssetNote, format_utc_iso
 from models.schemas import ProjectCreate, AssetCreate, FindingCreate
 
 api_bp = Blueprint("api_v1", __name__, url_prefix="/api/v1")
@@ -916,5 +916,145 @@ def clear_project_scans_history(project_id):
         return jsonify({"success": False, "error": str(e)}), 500
     finally:
         db.close()
+
+
+# --- CHANGE DETECTION & ASSET MONITORING API ---
+
+@api_bp.route("/assets/<int:asset_id>/changes", methods=["GET"])
+def get_asset_changes(asset_id):
+    """
+    Get detected change history, monitoring status, and recent change summary for an asset.
+    """
+    db = get_db()
+    try:
+        asset = db.get(Asset, asset_id)
+        if not asset:
+            return jsonify({"success": False, "error": "Asset not found"}), 404
+
+        # Query history events for change detections
+        history_events = db.query(AssetHistory).filter_by(
+            asset_id=asset_id
+        ).order_by(AssetHistory.created_at.desc()).all()
+
+        change_events = []
+        latest_summary = "No significant changes detected."
+        has_recent_changes = False
+
+        for h in history_events:
+            h_dict = h.to_dict()
+            if h.event_name in ("Asset change detected", "Port Scan Completed", "Web Footprint Updated", "Reconnaissance Completed", "Asset Discovered"):
+                change_events.append(h_dict)
+                if h.event_name == "Asset change detected" and not has_recent_changes:
+                    has_recent_changes = True
+                    lines = (h.event_details or "").split("\n")
+                    if lines:
+                        latest_summary = lines[0].replace("Scan #", "").strip()
+
+        # Monitoring status
+        monitoring_status = "Active Changes" if has_recent_changes else "No Recent Changes"
+        if not history_events:
+            monitoring_status = "Newly Discovered"
+
+        # Query project scans for scan comparison selection (filtered by asset target scope)
+        asset_domain = (asset.domain or asset.name).lower()
+        parts = [p for p in asset_domain.split('.') if p]
+        root_domain = '.'.join(parts[-2:]) if len(parts) >= 2 else asset_domain
+
+        scans = db.query(Scan).filter_by(project_id=asset.project_id, status="completed").order_by(Scan.start_time.desc()).all()
+        target_scans = [s for s in scans if root_domain in s.target.lower() or s.target.lower() in asset_domain]
+        if not target_scans:
+            target_scans = scans
+
+        scan_list = [{"id": s.id, "target": s.target, "scan_type": s.scan_type, "start_time": format_utc_iso(s.start_time)} for s in target_scans]
+
+        return jsonify({
+            "success": True,
+            "asset_id": asset_id,
+            "asset_name": asset.name,
+            "monitoring": {
+                "status": monitoring_status,
+                "has_recent_changes": has_recent_changes,
+                "last_seen": format_utc_iso(asset.last_seen),
+                "total_change_events": len([e for e in change_events if e["event_name"] == "Asset change detected"]),
+                "latest_summary": latest_summary
+            },
+            "change_events": change_events,
+            "available_scans": scan_list
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+    finally:
+        db.close()
+
+
+@api_bp.route("/assets/<int:asset_id>/scans/compare", methods=["GET"])
+def compare_asset_scans(asset_id):
+    """
+    Compare two scans (scan_a vs scan_b) for an asset.
+    """
+    db = get_db()
+    try:
+        scan_a_id = request.args.get("scan_a", type=int)
+        scan_b_id = request.args.get("scan_b", type=int)
+
+        if not scan_a_id or not scan_b_id:
+            return jsonify({"success": False, "error": "Both scan_a and scan_b query parameters are required"}), 400
+
+        scan_a = db.get(Scan, scan_a_id)
+        scan_b = db.get(Scan, scan_b_id)
+
+        if not scan_a or not scan_b:
+            return jsonify({"success": False, "error": "One or both specified scans were not found"}), 404
+
+        from services.change_detector import ChangeDetector
+        comparison = ChangeDetector.compare_scans(scan_a.to_dict(), scan_b.to_dict())
+
+        return jsonify({
+            "success": True,
+            "asset_id": asset_id,
+            "scan_a": {"id": scan_a.id, "target": scan_a.target, "start_time": format_utc_iso(scan_a.start_time)},
+            "scan_b": {"id": scan_b.id, "target": scan_b.target, "start_time": format_utc_iso(scan_b.start_time)},
+            "comparison": comparison
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+    finally:
+        db.close()
+
+
+@api_bp.route("/scans/<int:scan_id>/changes", methods=["GET"])
+def get_scan_changes(scan_id):
+    """
+    Get change summary details detected during a specific scan.
+    """
+    db = get_db()
+    try:
+        scan = db.get(Scan, scan_id)
+        if not scan:
+            return jsonify({"success": False, "error": "Scan not found"}), 404
+
+        # Query history events associated with this scan ID
+        scan_tag = f"Scan #{scan_id}"
+        history_events = db.query(AssetHistory).filter(
+            AssetHistory.event_details.like(f"%{scan_tag}%")
+        ).order_by(AssetHistory.created_at.desc()).all()
+
+        events = [h.to_dict() for h in history_events]
+        change_events = [e for e in events if e["event_name"] == "Asset change detected"]
+
+        return jsonify({
+            "success": True,
+            "scan_id": scan_id,
+            "target": scan.target,
+            "scan_type": scan.scan_type,
+            "completed_at": format_utc_iso(scan.end_time),
+            "total_changes_detected": len(change_events),
+            "change_events": events
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+    finally:
+        db.close()
+
 
 
