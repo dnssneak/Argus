@@ -308,6 +308,47 @@ def get_asset_detail(asset_id):
         db.close()
 
 
+@api_bp.route("/assets/<int:asset_id>/graph", methods=["GET"])
+def get_asset_relationship_graph(asset_id):
+    db = get_db()
+    try:
+        max_depth = request.args.get("depth", default=2, type=int)
+        from services.asset_correlator import AssetCorrelator
+        graph_data = AssetCorrelator.get_asset_graph(db, asset_id=asset_id, max_depth=max_depth)
+        return jsonify({"success": True, "graph": graph_data})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+    finally:
+        db.close()
+
+
+@api_bp.route("/projects/<int:project_id>/graph", methods=["GET"])
+def get_project_relationship_graph(project_id):
+    db = get_db()
+    try:
+        from services.asset_correlator import AssetCorrelator
+        graph_data = AssetCorrelator.get_project_graph(db, project_id=project_id)
+        return jsonify({"success": True, "graph": graph_data})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+    finally:
+        db.close()
+
+
+@api_bp.route("/projects/<int:project_id>/correlate", methods=["POST"])
+def trigger_project_correlation(project_id):
+    db = get_db()
+    try:
+        from services.asset_correlator import AssetCorrelator
+        count = AssetCorrelator.correlate_project_assets(db, project_id=project_id)
+        return jsonify({"success": True, "message": f"Correlation pass completed successfully. {count} active relationships established.", "relationship_count": count})
+    except Exception as e:
+        db.rollback()
+        return jsonify({"success": False, "error": str(e)}), 500
+    finally:
+        db.close()
+
+
 @api_bp.route("/assets/<int:asset_id>", methods=["DELETE"])
 def delete_asset(asset_id):
     db = get_db()

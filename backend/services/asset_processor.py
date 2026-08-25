@@ -256,6 +256,14 @@ class AssetProcessor:
                 processed_assets.append(web_asset)
 
         db.commit()
+
+        # Execute relationship correlation pass to update graph topology
+        try:
+            from services.asset_correlator import AssetCorrelator
+            AssetCorrelator.correlate_scan_results(db, project_id, target, scan_id, results)
+        except Exception as ce:
+            print(f"Asset correlation warning: {str(ce)}")
+
         for a in processed_assets:
             db.refresh(a)
 

@@ -34,6 +34,14 @@ def get_db():
 def init_db():
     """Initialize database tables and create default workspace project if empty."""
     from models.models import Project, Asset, Service, Technology, Endpoint, AssetHistory, AssetNote
+
+    # Ensure relationships table is recreated if old NOT NULL schema is present
+    with engine.begin() as conn:
+        res = conn.exec_driver_sql("PRAGMA table_info(relationships)")
+        cols = res.fetchall()
+        if cols and any(c[1] == "source_asset_id" and c[3] == 1 for c in cols):
+            conn.exec_driver_sql("DROP TABLE relationships")
+
     Base.metadata.create_all(bind=engine)
     
     # Dynamic SQLite migrations for new columns
@@ -71,6 +79,20 @@ def init_db():
         add_col("technologies", "vendor", "VARCHAR(128)")
         add_col("technologies", "detection_source", "VARCHAR(64)")
         add_col("technologies", "confidence", "INTEGER DEFAULT 90")
+
+        # relationships table
+        add_col("relationships", "project_id", "INTEGER")
+        add_col("relationships", "source_id", "VARCHAR(255)")
+        add_col("relationships", "source_type", "VARCHAR(64) DEFAULT 'Asset'")
+        add_col("relationships", "source_label", "VARCHAR(255)")
+        add_col("relationships", "target_id", "VARCHAR(255)")
+        add_col("relationships", "target_type", "VARCHAR(64) DEFAULT 'Entity'")
+        add_col("relationships", "target_label", "VARCHAR(255)")
+        add_col("relationships", "source_scan_id", "INTEGER")
+        add_col("relationships", "discovery_source", "VARCHAR(128)")
+        add_col("relationships", "status", "VARCHAR(32) DEFAULT 'active'")
+        add_col("relationships", "first_seen", "DATETIME")
+        add_col("relationships", "last_seen", "DATETIME")
 
     # Ensure default project exists
     db = SessionLocal()

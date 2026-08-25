@@ -117,6 +117,85 @@
     </main>
 
 
+    <!-- Fullscreen Interactive Graph Overlay Modal -->
+    <div id="fullscreenGraphModal" class="modal-overlay">
+        <div class="modal-box" style="max-width: 96vw; width: 96vw; height: 92vh; max-height: 92vh; display: flex; flex-direction: column; padding: 1.25rem;">
+            <div class="modal-header" style="padding-bottom: 0.75rem; border-bottom: 1px solid var(--border); flex-shrink: 0;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <i class="fa-solid fa-diagram-project" style="color: var(--accent-purple); font-size: 1.4rem;"></i>
+                    <div>
+                        <h3 class="modal-title" id="fullGraphModalTitle" style="margin: 0; font-size: 1.3rem;">Attack Surface Relationship Graph</h3>
+                        <span id="fullGraphModalSubtitle" style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted);">Expanded interactive view & topology analysis</span>
+                    </div>
+                </div>
+                <button class="modal-close" onclick="closeFullscreenGraphModal()">&times;</button>
+            </div>
+
+            <!-- Fullscreen Controls Toolbar -->
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 10px; flex-shrink: 0; font-size: 0.8rem;">
+                <!-- Cyber Filter Chips -->
+                <div class="graph-filter-pills">
+                    <span style="color: var(--text-muted); font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 0.05em; display: flex; align-items: center; gap: 4px; margin-right: 4px;">
+                        <i class="fa-solid fa-filter" style="color: var(--accent-purple);"></i> FILTER:
+                    </span>
+                    <label class="filter-chip chip-subdomains active">
+                        <input type="checkbox" id="fullGraphFilterSubdomains" checked onchange="toggleFilterChip(this); updateFullscreenGraphFilters();">
+                        <i class="fa-solid fa-sitemap"></i> Subdomains
+                    </label>
+                    <label class="filter-chip chip-ips active">
+                        <input type="checkbox" id="fullGraphFilterIPs" checked onchange="toggleFilterChip(this); updateFullscreenGraphFilters();">
+                        <i class="fa-solid fa-network-wired"></i> IPs
+                    </label>
+                    <label class="filter-chip chip-ports active">
+                        <input type="checkbox" id="fullGraphFilterPorts" checked onchange="toggleFilterChip(this); updateFullscreenGraphFilters();">
+                        <i class="fa-solid fa-plug"></i> Ports/Services
+                    </label>
+                    <label class="filter-chip chip-tech active">
+                        <input type="checkbox" id="fullGraphFilterTech" checked onchange="toggleFilterChip(this); updateFullscreenGraphFilters();">
+                        <i class="fa-solid fa-layer-group"></i> Tech Stack
+                    </label>
+                    <label class="filter-chip chip-endpoints active">
+                        <input type="checkbox" id="fullGraphFilterEndpoints" checked onchange="toggleFilterChip(this); updateFullscreenGraphFilters();">
+                        <i class="fa-solid fa-code"></i> Endpoints
+                    </label>
+                    <label class="filter-chip chip-findings active">
+                        <input type="checkbox" id="fullGraphFilterFindings" checked onchange="toggleFilterChip(this); updateFullscreenGraphFilters();">
+                        <i class="fa-solid fa-triangle-exclamation"></i> Findings
+                    </label>
+                </div>
+
+                <!-- Action buttons -->
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <button class="btn btn-secondary" onclick="resetFullscreenGraphZoom()" style="font-size: 0.78rem; padding: 5px 12px;"><i class="fa-solid fa-expand"></i> Reset Zoom</button>
+                    <button class="btn btn-secondary" onclick="unjumbleGraphLayout()" style="font-size: 0.78rem; padding: 5px 12px; border-color: var(--border-accent); color: var(--accent-cyan);"><i class="fa-solid fa-wand-magic-sparkles"></i> Un-jumble / Spread</button>
+                    <button class="btn btn-secondary" onclick="triggerFullscreenGraphRecorrelate()" style="font-size: 0.78rem; padding: 5px 12px;"><i class="fa-solid fa-arrows-rotate"></i> Re-Correlate</button>
+                </div>
+            </div>
+
+            <!-- Canvas Body (Graph + Inspector Drawer) -->
+            <div style="flex: 1; position: relative; display: flex; gap: 12px; margin-top: 10px; overflow: hidden; min-height: 0;">
+                <div id="fullGraphContainer" style="flex: 1; position: relative; background: rgba(10, 10, 18, 0.95); border: 1px solid var(--border); border-radius: 10px; overflow: hidden;">
+                    <div id="fullGraphSpinner" style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--accent-purple); font-family: var(--font-mono); background: rgba(10, 10, 18, 0.9); z-index: 5;">
+                        <i class="fa-solid fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: 8px;"></i>
+                        <span>Rendering Expanded Topology...</span>
+                    </div>
+                    <svg id="fullGraphSvg" style="width: 100%; height: 100%; display: block;"></svg>
+                </div>
+
+                <!-- Side Inspector Drawer in Expanded Modal -->
+                <div id="fullGraphInspectorPanel" style="width: 320px; background: rgba(0,0,0,0.4); border: 1px solid var(--border-accent); border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
+                        <span id="fullInspectorTitle" style="font-weight: 700; font-family: var(--font-mono); color: var(--text-primary); font-size: 1rem;">Node Inspector</span>
+                        <span id="fullInspectorBadge" class="badge badge-purple">Select Node</span>
+                    </div>
+                    <div id="fullInspectorContent" style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
+                        <div style="color: var(--text-muted); text-align: center; padding: 20px 0; font-style: italic;">Click any graph node or line to inspect attributes, scan origin, and connected metadata.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Global Toast Container -->
     <div id="toastContainer" class="toast-container"
         style="position: fixed; bottom: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 10px;">
@@ -141,6 +220,7 @@
         </div>
     </footer>
 
+    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
     <script src="{{ url_for('static', filename='script.js') }}"></script>
     <script src="{{ url_for('static', filename='js/app.js') }}?v=9.0"></script>
     {% block scripts %}{% endblock %}

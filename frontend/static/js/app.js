@@ -639,9 +639,10 @@ async function loadProjectDashboard(projectId) {
                 }
             }
 
-            // Load Scan History & Assets for Project
+            // Load Scan History, Assets & Topology Graph for Project
             loadProjectScansHistory(projectId);
             loadProjectAssets(projectId);
+            loadProjectTopologyGraph(projectId);
         }
     } catch (err) {
         showToast('Error loading project dashboard: ' + err.message, 'error');
@@ -1412,6 +1413,10 @@ function switchAssetTab(tabId) {
     // Activate selected button
     const btn = document.getElementById(`tab-btn-${tabId}`);
     if (btn) btn.classList.add('active');
+
+    if (tabId === 'relationships' && currentActiveAssetId) {
+        loadAssetRelationshipGraph(currentActiveAssetId);
+    }
 }
 
 async function viewAssetDetail(assetId) {
@@ -1818,3 +1823,598 @@ function escapeHtml(str) {
     if (!str) return '';
     return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
 }
+
+
+// --- ASSET CORRELATION & RELATIONGRAPH CONTROLLER & UN-JUMBLE ENGINE ---
+
+let currentAssetGraphData = null;
+let currentProjectGraphData = null;
+let activeAssetZoom = null;
+let activeProjectZoom = null;
+let activeFullscreenZoom = null;
+let currentFullscreenScope = 'asset'; // 'asset' or 'project'
+const activeSimulations = {};
+
+function toggleFilterChip(input) {
+    if (!input) return;
+    const chip = input.closest('.filter-chip');
+    if (!chip) return;
+    if (input.checked) {
+        chip.classList.add('active');
+    } else {
+        chip.classList.remove('active');
+    }
+}
+
+async function loadAssetRelationshipGraph(assetId) {
+    const spinner = document.getElementById('assetGraphSpinner');
+    if (spinner) spinner.style.display = 'flex';
+
+    try {
+        const res = await fetch(`/api/v1/assets/${assetId}/graph?depth=2`);
+        const data = await res.json();
+
+        if (data.success && data.graph) {
+            currentAssetGraphData = data.graph;
+            renderAssetRelationshipGraph();
+        } else {
+            showToast(data.error || "Failed to load relationship graph", "error");
+        }
+    } catch (err) {
+        showToast("Error loading graph: " + err.message, "error");
+    } finally {
+        if (spinner) spinner.style.display = 'none';
+    }
+}
+
+function updateAssetGraphFilters() {
+    renderAssetRelationshipGraph();
+}
+
+function resetAssetGraphZoom() {
+    if (activeAssetZoom) {
+        const svg = d3.select("#assetGraphSvg");
+        svg.transition().duration(500).call(activeAssetZoom.transform, d3.zoomIdentity);
+    }
+}
+
+async function triggerAssetGraphRecorrelate() {
+    const projId = document.getElementById('assetProjectFilter')?.value || localStorage.getItem('currentProjectId');
+    if (!projId) {
+        if (currentActiveAssetId) loadAssetRelationshipGraph(currentActiveAssetId);
+        return;
+    }
+    try {
+        showToast("Recorrelating project assets and relationships...");
+        const res = await fetch(`/api/v1/projects/${projId}/correlate`, { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+            showToast(data.message);
+            if (currentActiveAssetId) loadAssetRelationshipGraph(currentActiveAssetId);
+        }
+    } catch (err) {
+        showToast("Recorrelation failed: " + err.message, "error");
+    }
+}
+
+async function loadProjectTopologyGraph(projectId) {
+    const spinner = document.getElementById('projectGraphSpinner');
+    if (spinner) spinner.style.display = 'flex';
+
+    try {
+        const res = await fetch(`/api/v1/projects/${projectId}/graph`);
+        const data = await res.json();
+
+        if (data.success && data.graph) {
+            currentProjectGraphData = data.graph;
+            renderD3Graph("projectGraphSvg", data.graph, false);
+        }
+    } catch (err) {
+        console.error("Topology graph load error:", err);
+    } finally {
+        if (spinner) spinner.style.display = 'none';
+    }
+}
+
+function resetProjectGraphZoom() {
+    if (activeProjectZoom) {
+        const svg = d3.select("#projectGraphSvg");
+        svg.transition().duration(500).call(activeProjectZoom.transform, d3.zoomIdentity);
+    }
+}
+
+async function triggerProjectGraphRecorrelate() {
+    const projId = document.getElementById('currentProjectId')?.value;
+    if (!projId) return;
+
+    try {
+        showToast("Re-building project relationship graph...");
+        const res = await fetch(`/api/v1/projects/${projId}/correlate`, { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+            showToast(data.message);
+            loadProjectTopologyGraph(projId);
+        }
+    } catch (err) {
+        showToast("Correlation error: " + err.message, "error");
+    }
+}
+
+// --- FULLSCREEN EXPANDED GRAPH MODAL CONTROLLER ---
+
+function openFullscreenGraphModal(scope = 'asset') {
+    currentFullscreenScope = scope;
+    const modal = document.getElementById('fullscreenGraphModal');
+    if (!modal) return;
+
+    modal.classList.add('active');
+
+    const titleEl = document.getElementById('fullGraphModalTitle');
+    const subTitleEl = document.getElementById('fullGraphModalSubtitle');
+
+    if (scope === 'asset' && currentAssetGraphData) {
+        titleEl.textContent = `Asset Relationship Graph — ${currentAssetGraphData.nodes.find(n => n.id === currentAssetGraphData.root_node_id)?.label || 'Asset Profile'}`;
+        subTitleEl.textContent = "Expanded interactive topology view & entity relationship analyzer";
+        renderFullscreenGraph();
+    } else if (scope === 'project' && currentProjectGraphData) {
+        const projName = document.getElementById('projNameText')?.textContent || 'Project Scope';
+        titleEl.textContent = `Attack Surface Topology Graph — ${projName}`;
+        subTitleEl.textContent = "Full project-wide network hierarchy & discovered connections";
+        renderFullscreenGraph();
+    }
+}
+
+function closeFullscreenGraphModal() {
+    const modal = document.getElementById('fullscreenGraphModal');
+    if (modal) modal.classList.remove('active');
+}
+
+function updateFullscreenGraphFilters() {
+    renderFullscreenGraph();
+}
+
+function resetFullscreenGraphZoom() {
+    if (activeFullscreenZoom) {
+        const svg = d3.select("#fullGraphSvg");
+        svg.transition().duration(500).call(activeFullscreenZoom.transform, d3.zoomIdentity);
+    }
+}
+
+function unjumbleGraphLayout() {
+    const sim = activeSimulations["fullGraphSvg"] || activeSimulations["assetGraphSvg"] || activeSimulations["projectGraphSvg"];
+    if (sim) {
+        showToast("Spreading nodes and un-jumbling topology layout...");
+        sim.force("charge", d3.forceManyBody().strength(-1600));
+        sim.force("collision", d3.forceCollide().radius(50));
+        sim.alpha(1).restart();
+    }
+}
+
+async function triggerFullscreenGraphRecorrelate() {
+    if (currentFullscreenScope === 'asset') {
+        await triggerAssetGraphRecorrelate();
+        renderFullscreenGraph();
+    } else {
+        await triggerProjectGraphRecorrelate();
+        renderFullscreenGraph();
+    }
+}
+
+function renderFullscreenGraph() {
+    const spinner = document.getElementById('fullGraphSpinner');
+    if (spinner) spinner.style.display = 'flex';
+
+    setTimeout(() => {
+        if (currentFullscreenScope === 'asset' && currentAssetGraphData) {
+            const showSubdomains = document.getElementById('fullGraphFilterSubdomains')?.checked ?? true;
+            const showIPs = document.getElementById('fullGraphFilterIPs')?.checked ?? true;
+            const showPorts = document.getElementById('fullGraphFilterPorts')?.checked ?? true;
+            const showTech = document.getElementById('fullGraphFilterTech')?.checked ?? true;
+            const showEndpoints = document.getElementById('fullGraphFilterEndpoints')?.checked ?? true;
+            const showFindings = document.getElementById('fullGraphFilterFindings')?.checked ?? true;
+
+            const rootId = currentAssetGraphData.root_node_id;
+
+            const filteredNodes = currentAssetGraphData.nodes.filter(n => {
+                if (n.id === rootId) return true;
+                const type = (n.type || '').toLowerCase();
+                if (type === 'subdomain' && !showSubdomains) return false;
+                if (type === 'ip' && !showIPs) return false;
+                if ((type === 'port' || type === 'service') && !showPorts) return false;
+                if (type === 'technology' && !showTech) return false;
+                if (type === 'endpoint' && !showEndpoints) return false;
+                if (type === 'finding' && !showFindings) return false;
+                return true;
+            });
+
+            const nodeIds = new Set(filteredNodes.map(n => n.id));
+            const filteredEdges = currentAssetGraphData.edges.filter(e => nodeIds.has(e.source_id) && nodeIds.has(e.target_id));
+
+            renderD3Graph("fullGraphSvg", { nodes: filteredNodes, edges: filteredEdges, root_node_id: rootId }, true, true);
+        } else if (currentFullscreenScope === 'project' && currentProjectGraphData) {
+            renderD3Graph("fullGraphSvg", currentProjectGraphData, false, true);
+        }
+        if (spinner) spinner.style.display = 'none';
+    }, 50);
+}
+
+function renderAssetRelationshipGraph() {
+    if (!currentAssetGraphData) return;
+
+    const showSubdomains = document.getElementById('graphFilterSubdomains')?.checked ?? true;
+    const showIPs = document.getElementById('graphFilterIPs')?.checked ?? true;
+    const showPorts = document.getElementById('graphFilterPorts')?.checked ?? true;
+    const showTech = document.getElementById('graphFilterTech')?.checked ?? true;
+    const showEndpoints = document.getElementById('graphFilterEndpoints')?.checked ?? true;
+    const showFindings = document.getElementById('graphFilterFindings')?.checked ?? true;
+
+    const rootId = currentAssetGraphData.root_node_id;
+
+    const filteredNodes = currentAssetGraphData.nodes.filter(n => {
+        if (n.id === rootId) return true;
+        const type = (n.type || '').toLowerCase();
+        if (type === 'subdomain' && !showSubdomains) return false;
+        if (type === 'ip' && !showIPs) return false;
+        if ((type === 'port' || type === 'service') && !showPorts) return false;
+        if (type === 'technology' && !showTech) return false;
+        if (type === 'endpoint' && !showEndpoints) return false;
+        if (type === 'finding' && !showFindings) return false;
+        return true;
+    });
+
+    const nodeIds = new Set(filteredNodes.map(n => n.id));
+    const filteredEdges = currentAssetGraphData.edges.filter(e => nodeIds.has(e.source_id) && nodeIds.has(e.target_id));
+
+    renderD3Graph("assetGraphSvg", { nodes: filteredNodes, edges: filteredEdges, root_node_id: rootId }, true, false);
+}
+
+function getNodeColor(type) {
+    switch ((type || '').toLowerCase()) {
+        case 'domain':
+        case 'subdomain':
+            return '#a855f7'; // Purple
+        case 'ip':
+            return '#3b82f6'; // Blue
+        case 'port':
+            return '#f59e0b'; // Amber
+        case 'service':
+            return '#eab308'; // Yellow
+        case 'technology':
+            return '#10b981'; // Emerald Green
+        case 'endpoint':
+            return '#06b6d4'; // Cyan
+        case 'certificate':
+            return '#ec4899'; // Pink
+        case 'finding':
+            return '#ef4444'; // Red
+        case 'scan':
+            return '#8b5cf6'; // Violet
+        case 'target':
+        case 'project':
+            return '#f43f5e'; // Rose
+        default:
+            return '#a855f7';
+    }
+}
+
+function getRingRadius(type) {
+    switch ((type || '').toLowerCase()) {
+        case 'project':
+        case 'target':
+            return 0;
+        case 'domain':
+        case 'subdomain':
+        case 'ip':
+            return 160;
+        case 'port':
+        case 'service':
+        case 'technology':
+            return 280;
+        case 'endpoint':
+        case 'certificate':
+        case 'finding':
+        case 'scan':
+            return 400;
+        default:
+            return 220;
+    }
+}
+
+
+
+function renderD3Graph(svgId, graphData, isAssetScope, isFullscreen = false) {
+    const svgEl = document.getElementById(svgId);
+    if (!svgEl) return;
+
+    const width = svgEl.clientWidth || (isFullscreen ? 1500 : 800);
+    const height = svgEl.clientHeight || (isFullscreen ? 800 : 420);
+
+    const svg = d3.select("#" + svgId);
+    svg.selectAll("*").remove();
+
+    if (!graphData.nodes || graphData.nodes.length === 0) {
+        svg.append("text")
+            .attr("x", width / 2)
+            .attr("y", height / 2)
+            .attr("text-anchor", "middle")
+            .attr("fill", "#6b7280")
+            .attr("font-family", "var(--font-mono)")
+            .text("No correlated relationships discovered yet.");
+        return;
+    }
+
+    const rootId = graphData.root_node_id;
+
+    // Calculate radial initial positions to prevent node jumbling
+    const nodes = graphData.nodes.map((d, idx, arr) => {
+        let initX = width / 2;
+        let initY = height / 2;
+        if (d.id !== rootId) {
+            const angle = (idx / arr.length) * 2 * Math.PI;
+            const r = getRingRadius(d.type) * (isFullscreen ? 1.3 : 1.0);
+            initX += r * Math.cos(angle);
+            initY += r * Math.sin(angle);
+        }
+        return {
+            x: initX,
+            y: initY,
+            ...d
+        };
+    });
+
+    const links = graphData.edges.map(e => ({
+        source: e.source_id,
+        target: e.target_id,
+        ...e
+    }));
+
+    // SVG Defs for Markers & Glow
+    const defs = svg.append("defs");
+    
+    defs.append("marker")
+        .attr("id", `arrow-${svgId}`)
+        .attr("viewBox", "0 -5 10 10")
+        .attr("refX", isFullscreen ? 26 : 22)
+        .attr("refY", 0)
+        .attr("markerWidth", 6)
+        .attr("markerHeight", 6)
+        .attr("orient", "auto")
+        .append("path")
+        .attr("d", "M0,-5L10,0L0,5")
+        .attr("fill", "#6b7280");
+
+    const filter = defs.append("filter").attr("id", `glow-${svgId}`);
+    filter.append("feGaussianBlur").attr("stdDeviation", "3").attr("result", "coloredBlur");
+    const feMerge = filter.append("feMerge");
+    feMerge.append("feMergeNode").attr("in", "coloredBlur");
+    feMerge.append("feMergeNode").attr("in", "SourceGraphic");
+
+    const containerGroup = svg.append("g");
+
+    // Zoom behavior
+    const zoom = d3.zoom()
+        .scaleExtent([0.2, 5])
+        .on("zoom", (event) => {
+            containerGroup.attr("transform", event.transform);
+        });
+
+    svg.call(zoom);
+    if (isFullscreen) activeFullscreenZoom = zoom;
+    else if (isAssetScope) activeAssetZoom = zoom;
+    else activeProjectZoom = zoom;
+
+    // Spaced Un-jumbled Force Simulation Setup
+    const simulation = d3.forceSimulation(nodes)
+        .force("link", d3.forceLink(links).id(d => d.id).distance(isFullscreen ? 160 : 120))
+        .force("charge", d3.forceManyBody().strength(isFullscreen ? -1100 : -750))
+        .force("center", d3.forceCenter(width / 2, height / 2))
+        .force("collision", d3.forceCollide().radius(d => (d.id === rootId ? 55 : (isFullscreen ? 45 : 36))))
+        .force("radial", d3.forceRadial(d => getRingRadius(d.type) * (isFullscreen ? 1.2 : 0.9), width / 2, height / 2).strength(0.35));
+
+    activeSimulations[svgId] = simulation;
+
+    // Links
+    const link = containerGroup.append("g")
+        .selectAll("line")
+        .data(links)
+        .enter()
+        .append("line")
+        .attr("stroke", d => d.status === 'stale' ? '#4b5563' : '#6b7280')
+        .attr("stroke-opacity", d => d.status === 'stale' ? 0.35 : 0.6)
+        .attr("stroke-width", isFullscreen ? 2.2 : 1.8)
+        .attr("stroke-dasharray", d => d.status === 'stale' ? '4,4' : 'none')
+        .attr("marker-end", `url(#arrow-${svgId})`);
+
+    // Edge Labels
+    const linkText = containerGroup.append("g")
+        .selectAll("text")
+        .data(links)
+        .enter()
+        .append("text")
+        .attr("font-size", isFullscreen ? "10px" : "9px")
+        .attr("font-family", "var(--font-mono)")
+        .attr("fill", "#9ca3af")
+        .attr("text-anchor", "middle")
+        .text(d => (d.relationship_type || '').replace(/_/g, ' '));
+
+    // Nodes
+    const node = containerGroup.append("g")
+        .selectAll("g")
+        .data(nodes)
+        .enter()
+        .append("g")
+        .style("cursor", "pointer")
+        .call(d3.drag()
+            .on("start", dragstarted)
+            .on("drag", dragged)
+            .on("end", dragended));
+
+    // Outer Circle Glow
+    node.append("circle")
+        .attr("r", d => d.id === rootId ? (isFullscreen ? 28 : 24) : (d.is_asset ? (isFullscreen ? 22 : 18) : (isFullscreen ? 16 : 14)))
+        .attr("fill", d => getNodeColor(d.type))
+        .attr("fill-opacity", 0.2)
+        .attr("stroke", d => getNodeColor(d.type))
+        .attr("stroke-width", d => d.id === rootId ? 3 : 1.5)
+        .style("filter", `url(#glow-${svgId})`);
+
+    // Inner Circle
+    node.append("circle")
+        .attr("r", d => d.id === rootId ? (isFullscreen ? 18 : 16) : (d.is_asset ? (isFullscreen ? 14 : 12) : (isFullscreen ? 11 : 9)))
+        .attr("fill", d => getNodeColor(d.type))
+        .attr("stroke", "#ffffff")
+        .attr("stroke-width", 1.5);
+
+    // Node Text Labels - ALWAYS single clean line, perfectly centered
+    node.append("text")
+        .attr("dy", d => (d.id === rootId ? (isFullscreen ? 40 : 34) : (isFullscreen ? 30 : 26)))
+        .attr("text-anchor", "middle")
+        .attr("font-size", d => d.id === rootId ? "12px" : (isFullscreen ? "11px" : "10px"))
+        .attr("font-family", "var(--font-mono)")
+        .attr("font-weight", d => d.id === rootId ? "700" : "500")
+        .attr("fill", d => d.id === rootId ? "#a855f7" : "#e5e7eb")
+        .text(d => {
+            const raw = (d.label || d.id).replace(/[\r\n]+/g, ' ').trim();
+            const maxLen = isFullscreen ? 26 : 18;
+            return raw.length > maxLen ? raw.substring(0, maxLen - 2) + '…' : raw;
+        });
+
+    // Hover Highlight Effects
+    node.on("mouseover", (event, d) => {
+        const connectedNodeIds = new Set([d.id]);
+        links.forEach(l => {
+            if (l.source.id === d.id) connectedNodeIds.add(l.target.id);
+            if (l.target.id === d.id) connectedNodeIds.add(l.source.id);
+        });
+
+        node.style("opacity", n => connectedNodeIds.has(n.id) ? 1 : 0.2);
+        link.style("opacity", l => (l.source.id === d.id || l.target.id === d.id) ? 1 : 0.1);
+        linkText.style("opacity", l => (l.source.id === d.id || l.target.id === d.id) ? 1 : 0.1);
+    }).on("mouseout", () => {
+        node.style("opacity", 1);
+        link.style("opacity", 1);
+        linkText.style("opacity", 1);
+    });
+
+    // Node Click Listener
+    node.on("click", (event, d) => {
+        event.stopPropagation();
+
+        if (isFullscreen) {
+            showFullscreenGraphNodeInspector(d);
+        } else if (isAssetScope) {
+            showGraphNodeInspector(d);
+        } else {
+            if (d.asset_id) {
+                viewAssetDetail(d.asset_id);
+            } else {
+                showToast(`Selected Node: ${d.label} (${d.type})`);
+            }
+        }
+    });
+
+    simulation.on("tick", () => {
+        link
+            .attr("x1", d => d.source.x)
+            .attr("y1", d => d.source.y)
+            .attr("x2", d => d.target.x)
+            .attr("y2", d => d.target.y);
+
+        linkText
+            .attr("x", d => (d.source.x + d.target.x) / 2)
+            .attr("y", d => (d.source.y + d.target.y) / 2 - 4);
+
+        node.attr("transform", d => `translate(${d.x},${d.y})`);
+    });
+
+    function dragstarted(event, d) {
+        if (!event.active) simulation.alphaTarget(0.3).restart();
+        d.fx = d.x;
+        d.fy = d.y;
+    }
+
+    function dragged(event, d) {
+        d.fx = event.x;
+        d.fy = event.y;
+    }
+
+    function dragended(event, d) {
+        if (!event.active) simulation.alphaTarget(0);
+        d.fx = null;
+        d.fy = null;
+    }
+}
+
+function showGraphNodeInspector(node) {
+    const panel = document.getElementById('graphInspectorPanel');
+    if (!panel) return;
+
+    panel.style.display = 'block';
+
+    const titleEl = document.getElementById('inspectorTitle');
+    const badgeEl = document.getElementById('inspectorBadge');
+    const contentEl = document.getElementById('inspectorContent');
+
+    titleEl.textContent = node.label || node.id;
+    badgeEl.textContent = (node.type || 'Entity').toUpperCase();
+    badgeEl.className = 'badge badge-purple';
+
+    let html = `
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 8px;">
+            <div>Node Type: <strong style="color: var(--text-primary);">${node.type}</strong></div>
+            <div>Identifier: <span class="font-mono" style="color: var(--accent-cyan);">${node.id}</span></div>
+            ${node.ip_address ? `<div>IP Address: <span class="font-mono">${node.ip_address}</span></div>` : ''}
+            ${node.risk_score !== undefined ? `<div>Risk Score: <strong style="color: var(--accent-purple);">${node.risk_score}/100</strong></div>` : ''}
+            ${node.exposure ? `<div>Exposure: <strong>${node.exposure}</strong></div>` : ''}
+        </div>
+    `;
+
+    if (node.asset_id && node.asset_id !== currentActiveAssetId) {
+        html += `
+            <div style="margin-top: 8px; text-align: right;">
+                <button class="btn btn-primary" style="font-size: 0.78rem; padding: 4px 12px;" onclick="viewAssetDetail(${node.asset_id})">
+                    <i class="fa-solid fa-arrow-right-to-bracket"></i> Open Asset Profile
+                </button>
+            </div>
+        `;
+    }
+
+    contentEl.innerHTML = html;
+}
+
+function showFullscreenGraphNodeInspector(node) {
+    const titleEl = document.getElementById('fullInspectorTitle');
+    const badgeEl = document.getElementById('fullInspectorBadge');
+    const contentEl = document.getElementById('fullInspectorContent');
+
+    if (!titleEl || !contentEl) return;
+
+    titleEl.textContent = node.label || node.id;
+    badgeEl.textContent = (node.type || 'Entity').toUpperCase();
+    badgeEl.className = 'badge badge-purple';
+
+    let html = `
+        <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
+            <div><strong style="color: var(--text-muted); font-family: var(--font-mono); font-size: 0.75rem;">NODE ID</strong><div class="font-mono" style="color: var(--accent-cyan); word-break: break-all;">${node.id}</div></div>
+            <div><strong style="color: var(--text-muted); font-family: var(--font-mono); font-size: 0.75rem;">ENTITY TYPE</strong><div>${node.type}</div></div>
+            ${node.ip_address ? `<div><strong style="color: var(--text-muted); font-family: var(--font-mono); font-size: 0.75rem;">IP ADDRESS</strong><div class="font-mono">${node.ip_address}</div></div>` : ''}
+            ${node.risk_score !== undefined ? `<div><strong style="color: var(--text-muted); font-family: var(--font-mono); font-size: 0.75rem;">RISK SCORE</strong><div><strong style="color: var(--accent-purple);">${node.risk_score}/100</strong></div></div>` : ''}
+            ${node.exposure ? `<div><strong style="color: var(--text-muted); font-family: var(--font-mono); font-size: 0.75rem;">EXPOSURE</strong><div>${node.exposure}</div></div>` : ''}
+            ${node.status ? `<div><strong style="color: var(--text-muted); font-family: var(--font-mono); font-size: 0.75rem;">STATUS</strong><div><span class="badge ${node.status === 'stale' ? 'badge-medium' : 'badge-info'}">${node.status.toUpperCase()}</span></div></div>` : ''}
+        </div>
+    `;
+
+    if (node.asset_id) {
+        html += `
+            <div style="margin-top: 12px;">
+                <button class="btn btn-primary" style="width: 100%; font-size: 0.8rem; padding: 8px 12px; display: flex; align-items: center; justify-content: center; gap: 6px;" onclick="closeFullscreenGraphModal(); viewAssetDetail(${node.asset_id});">
+                    <i class="fa-solid fa-arrow-right-to-bracket"></i> Open Asset Profile
+                </button>
+            </div>
+        `;
+    }
+
+    contentEl.innerHTML = html;
+}
+
+

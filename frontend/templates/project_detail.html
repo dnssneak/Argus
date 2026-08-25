@@ -79,6 +79,28 @@
             </div>
         </div>
 
+        <!-- ATTACK SURFACE TOPOLOGY GRAPH CARD -->
+        <div class="card" style="width: 100%; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; box-sizing: border-box;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; width: 100%; flex-wrap: wrap; gap: 10px;">
+                <h3 style="font-size: 1.15rem; font-weight: 600; display: flex; align-items: center; gap: 8px; margin: 0;">
+                    <i class="fa-solid fa-diagram-project" style="color: var(--accent-purple);"></i> Attack Surface Topology Graph
+                </h3>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <button onclick="openFullscreenGraphModal('project')" class="btn btn-secondary" style="font-size: 0.78rem; padding: 4px 10px; border-color: var(--border-accent); color: var(--accent-purple);"><i class="fa-solid fa-up-right-and-down-left-from-center"></i> Expand Window</button>
+                    <button onclick="resetProjectGraphZoom()" class="btn btn-secondary" style="font-size: 0.78rem; padding: 4px 10px;"><i class="fa-solid fa-expand"></i> Reset View</button>
+                    <button onclick="triggerProjectGraphRecorrelate()" class="btn btn-secondary" style="font-size: 0.78rem; padding: 4px 10px;"><i class="fa-solid fa-arrows-rotate"></i> Re-Correlate</button>
+                </div>
+            </div>
+            
+            <div id="projectGraphContainer" style="width: 100%; height: 380px; position: relative; background: rgba(10, 10, 18, 0.85); border: 1px solid var(--border); border-radius: 10px; overflow: hidden;">
+                <div id="projectGraphSpinner" style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--accent-purple); font-family: var(--font-mono); background: rgba(10, 10, 18, 0.9); z-index: 5;">
+                    <i class="fa-solid fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: 8px;"></i>
+                    <span>Loading Project Topology Graph...</span>
+                </div>
+                <svg id="projectGraphSvg" style="width: 100%; height: 100%; display: block;"></svg>
+            </div>
+        </div>
+
         <!-- DISCOVERED ASSETS CARD -->
         <div class="card" style="width: 100%; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; box-sizing: border-box;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; width: 100%;">
