@@ -503,6 +503,7 @@ async function loadAssetsProjectFilterOptions() {
             if (modalSelect) {
                 modalSelect.innerHTML = data.projects.map(p => `<option value="${p.id}" ${p.id == currentProjectId ? 'selected' : ''}>${escapeHtml(p.name)}</option>`).join('');
             }
+            if (typeof initCustomSelects === 'function') initCustomSelects();
         }
     } catch (err) {
         console.error('Error loading project options:', err);
@@ -638,6 +639,9 @@ async function loadProjectDashboard(projectId) {
                     `).join('');
                 }
             }
+
+            // Populate Target Dropdowns for Relationship Graph
+            populateProjectGraphTargetDropdown(targets);
 
             // Load Scan History, Assets & Topology Graph for Project
             loadProjectScansHistory(projectId);
@@ -998,13 +1002,13 @@ async function handleExecuteProjectScanSubmit(event) {
     progressContainer.innerHTML = capabilities.map(cap => `
         <div id="progItem-${cap}" style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 10px; overflow: hidden;">
             <div style="padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2);">
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <span style="font-weight: 600; color: var(--text-primary); font-size: 0.92rem;">${capNames[cap]}</span>
-                    <span class="prog-status-badge badge" style="background: rgba(251, 191, 36, 0.15); color: #FBBF24; font-size: 0.75rem; border: 1px solid rgba(251, 191, 36, 0.3);">Running...</span>
+                <span style="font-weight: 600; color: var(--text-primary); font-size: 0.92rem;">${capNames[cap]}</span>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <span class="prog-status-badge badge" style="background: rgba(251, 191, 36, 0.15); color: #FBBF24; font-size: 0.75rem; border: 1px solid rgba(251, 191, 36, 0.3);">RUNNING...</span>
+                    <button type="button" onclick="toggleCmdOutput('${cap}')" id="cmdToggleBtn-${cap}" style="background: rgba(168, 85, 247, 0.12); border: 1px solid var(--border-accent); color: var(--accent-purple); width: 32px; height: 32px; border-radius: 8px; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease;" title="Toggle Command Execution Console">
+                        <i class="fa-solid fa-chevron-down" id="cmdChevron-${cap}"></i>
+                    </button>
                 </div>
-                <button type="button" onclick="toggleCmdOutput('${cap}')" id="cmdToggleBtn-${cap}" style="background: rgba(168, 85, 247, 0.12); border: 1px solid var(--border-accent); color: var(--accent-purple); width: 32px; height: 32px; border-radius: 8px; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease;" title="Toggle Command Execution Console">
-                    <i class="fa-solid fa-chevron-down" id="cmdChevron-${cap}"></i>
-                </button>
             </div>
             <div id="cmdBox-${cap}" style="display: none; background: #08090c; border-top: 1px solid rgba(255,255,255,0.08); padding: 12px 16px; font-family: 'Consolas', 'Monaco', monospace; font-size: 0.78rem; color: #4ADE80; max-height: 180px; overflow-y: auto; line-height: 1.55; box-shadow: inset 0 2px 8px rgba(0,0,0,0.5);">
                 <div style="color: #6B7280; font-size: 0.72rem; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 4px;">
@@ -1347,8 +1351,8 @@ function filterAssets() {
     const type = document.getElementById('assetTypeFilter')?.value || '';
 
     const filtered = allAssetsCache.filter(a => {
-        const matchesSearch = a.name.toLowerCase().includes(search) || 
-                              (a.ip_address && a.ip_address.toLowerCase().includes(search));
+        const matchesSearch = a.name.toLowerCase().includes(search) ||
+            (a.ip_address && a.ip_address.toLowerCase().includes(search));
         const matchesType = type ? a.asset_type === type : true;
         return matchesSearch && matchesType;
     });
@@ -1408,11 +1412,11 @@ function switchAssetTab(tabId) {
     document.querySelectorAll('.tab-content-panel').forEach(p => p.classList.remove('active'));
     // Deactivate all tab buttons
     document.querySelectorAll('.modal-tab-btn').forEach(b => b.classList.remove('active'));
-    
+
     // Show selected panel
     const panel = document.getElementById(`panel-${tabId}`);
     if (panel) panel.classList.add('active');
-    
+
     // Activate selected button
     const btn = document.getElementById(`tab-btn-${tabId}`);
     if (btn) btn.classList.add('active');
@@ -1422,6 +1426,124 @@ function switchAssetTab(tabId) {
     } else if (tabId === 'changes' && currentActiveAssetId) {
         loadAssetChanges(currentActiveAssetId);
     }
+}
+
+function getRiskTypeInfo(factorText) {
+    const text = (factorText || '').toLowerCase();
+
+    if (text.includes('internet-facing') || text.includes('exposed to public') || text.includes('exposure')) {
+        return { type: 'EXPOSURE', icon: 'fa-globe', color: '#f87171' };
+    }
+    if (text.includes('criticality') || text.includes('target scope') || text.includes('business')) {
+        return { type: 'SCOPE CRITICALITY', icon: 'fa-bullseye', color: '#fb923c' };
+    }
+    if (text.includes('interconnectivity') || text.includes('topology') || text.includes('graph')) {
+        return { type: 'INTERCONNECTIVITY', icon: 'fa-diagram-project', color: '#60a5fa' };
+    }
+    if (text.includes('sensitive management') || text.includes('database service') || text.includes('sensitive service')) {
+        return { type: 'SENSITIVE SERVICE', icon: 'fa-server', color: '#f87171' };
+    }
+    if (text.includes('open port') || text.includes('exposed network port')) {
+        return { type: 'PORT EXPOSURE', icon: 'fa-plug', color: '#fbbf24' };
+    }
+    if (text.includes('vulnerability') || text.includes('finding')) {
+        return { type: 'VULNERABILITY', icon: 'fa-bug', color: '#ef4444' };
+    }
+    if (text.includes('endpoint') || text.includes('unauthenticated') || text.includes('web/api')) {
+        return { type: 'API / ENDPOINT', icon: 'fa-code', color: '#38bdf8' };
+    }
+    if (text.includes('software stack') || text.includes('outdated') || text.includes('legacy')) {
+        return { type: 'TECH STACK', icon: 'fa-layer-group', color: '#c084fc' };
+    }
+    return { type: 'RISK FACTOR', icon: 'fa-triangle-exclamation', color: '#fbbf24' };
+}
+
+function getRiskImpactBadge(impactLevel) {
+    switch ((impactLevel || '').toLowerCase()) {
+        case 'high':
+        case 'critical':
+            return {
+                label: 'HIGH IMPACT',
+                bg: 'rgba(248, 113, 113, 0.15)',
+                color: '#f87171',
+                border: 'rgba(248, 113, 113, 0.35)'
+            };
+        case 'medium':
+            return {
+                label: 'MEDIUM IMPACT',
+                bg: 'rgba(251, 146, 60, 0.15)',
+                color: '#fb923c',
+                border: 'rgba(251, 146, 60, 0.35)'
+            };
+        case 'low':
+        default:
+            return {
+                label: 'LOW IMPACT',
+                bg: 'rgba(96, 165, 250, 0.15)',
+                color: '#60a5fa',
+                border: 'rgba(96, 165, 250, 0.35)'
+            };
+    }
+}
+
+function renderAssetRiskFactorsList(asset) {
+    const container = document.getElementById('detailRiskFactorsList');
+    if (!container) return;
+
+    let factorItems = [];
+
+    if (asset.categorized_risk_factors) {
+        const cats = asset.categorized_risk_factors;
+        (cats.high || []).forEach(f => factorItems.push({ text: f, impact: 'high' }));
+        (cats.medium || []).forEach(f => factorItems.push({ text: f, impact: 'medium' }));
+        (cats.low || []).forEach(f => factorItems.push({ text: f, impact: 'low' }));
+    } else if (asset.risk_factors && asset.risk_factors.length > 0) {
+        asset.risk_factors.forEach(f => {
+            let impact = 'low';
+            const textLower = f.toLowerCase();
+            if (textLower.includes('internet-facing') || textLower.includes('critical') || textLower.includes('unauthenticated') || textLower.includes('sensitive management')) {
+                impact = 'high';
+            } else if (textLower.includes('criticality') || textLower.includes('medium') || textLower.includes('multiple exposed')) {
+                impact = 'medium';
+            }
+            factorItems.push({ text: f, impact });
+        });
+    }
+
+    if (factorItems.length === 0) {
+        container.innerHTML = `
+            <div style="color: var(--text-muted); font-style: italic; font-size: 0.85rem; padding: 12px; text-align: center;">
+                <i class="fa-solid fa-shield-check" style="color: var(--accent-green); font-size: 1.2rem; margin-bottom: 4px; display: block;"></i>
+                No elevated risk factors detected for this asset.
+            </div>`;
+        return;
+    }
+
+    container.innerHTML = factorItems.map(item => {
+        const typeInfo = getRiskTypeInfo(item.text);
+        const impactBadge = getRiskImpactBadge(item.impact);
+
+        return `
+            <div class="risk-factor-row" style="display: flex; align-items: center; justify-content: space-between; padding: 11px 14px; margin-bottom: 8px; border-radius: 8px; background: rgba(255, 255, 255, 0.02); border-left: 3px solid ${impactBadge.color}; border-top: 1px solid rgba(255, 255, 255, 0.05); border-right: 1px solid rgba(255, 255, 255, 0.05); border-bottom: 1px solid rgba(255, 255, 255, 0.05); gap: 12px; transition: all 0.2s ease;">
+                <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0;">
+                    <div style="width: 32px; height: 32px; border-radius: 8px; background: ${impactBadge.bg}; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 1px solid ${impactBadge.border};">
+                        <i class="fa-solid ${typeInfo.icon}" style="color: ${typeInfo.color}; font-size: 0.88rem;"></i>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0;">
+                        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                            <span style="font-size: 0.68rem; font-family: var(--font-mono); font-weight: 700; color: #c084fc; text-transform: uppercase; letter-spacing: 0.05em; flex-shrink: 0; white-space: nowrap;">${typeInfo.type}</span>
+                            <span style="font-size: 0.84rem; color: var(--text-primary); font-weight: 500; line-height: 1.35;">${escapeHtml(item.text)}</span>
+                        </div>
+                    </div>
+                </div>
+                <div style="flex-shrink: 0; display: flex; align-items: center;">
+                    <span style="display: inline-flex; align-items: center; font-size: 0.68rem; padding: 4px 10px; border-radius: 20px; background: ${impactBadge.bg}; color: ${impactBadge.color}; border: 1px solid ${impactBadge.border}; font-family: var(--font-mono); font-weight: 700; letter-spacing: 0.04em; white-space: nowrap;">
+                        ${impactBadge.label}
+                    </span>
+                </div>
+            </div>
+        `;
+    }).join('');
 }
 
 async function viewAssetDetail(assetId) {
@@ -1439,24 +1561,24 @@ async function viewAssetDetail(assetId) {
 
             // Populate header elements
             document.getElementById('detailAssetName').textContent = asset.name;
-            
+
             const statusBadge = document.getElementById('detailAssetStatusBadge');
             statusBadge.textContent = (asset.status || 'Active').toUpperCase();
             statusBadge.className = `badge ${asset.status === 'inactive' ? 'badge-medium' : 'badge-info'}`;
 
             document.getElementById('detailAssetType').textContent = asset.asset_type;
-            
+
             const expBadge = document.getElementById('detailAssetExposure');
             expBadge.textContent = asset.exposure;
             expBadge.className = `badge ${asset.exposure === 'Internet-Facing' ? 'badge-critical' : 'badge-low'}`;
-            
+
             document.getElementById('detailAssetConfidence').textContent = `Confidence: ${asset.confidence}%`;
 
             // Overview Tab
             // Risk Circle & Severity
             const riskCircle = document.getElementById('detailAssetRiskCircle');
             riskCircle.textContent = asset.risk_score;
-            
+
             // Animate SVG circular progress
             const circleProgress = document.getElementById('riskProgressCircle');
             if (circleProgress) {
@@ -1464,17 +1586,17 @@ async function viewAssetDetail(assetId) {
                 const circumference = 2 * Math.PI * radius; // ~314.16
                 const offset = circumference - (asset.risk_score / 100) * circumference;
                 circleProgress.style.strokeDashoffset = offset;
-                
+
                 // Color mapping matching cybersecurity categories
                 let strokeColor = '#a855f7'; // var(--accent-purple) -> Critical / Default
                 if (asset.risk_score < 20) strokeColor = '#4ade80'; // var(--accent-green) -> Info/Low
                 else if (asset.risk_score < 40) strokeColor = '#fbbf24'; // var(--accent-yellow) -> Medium
                 else if (asset.risk_score < 80) strokeColor = '#f87171'; // var(--accent-red) -> High
-                
+
                 circleProgress.style.stroke = strokeColor;
                 circleProgress.style.filter = `drop-shadow(0 0 6px ${strokeColor})`;
             }
-            
+
             let riskLabelClass = 'badge-info';
             let riskLabelText = 'INFORMATIONAL';
             if (asset.risk_score >= 80) {
@@ -1490,11 +1612,11 @@ async function viewAssetDetail(assetId) {
                 riskLabelClass = 'badge-low';
                 riskLabelText = 'LOW';
             }
-            
+
             const riskLabel = document.getElementById('detailAssetRiskLabel');
             riskLabel.textContent = riskLabelText;
             riskLabel.className = `badge ${riskLabelClass}`;
-            
+
             // Details List
             document.getElementById('detailAssetId').textContent = `AST-${asset.id.toString().padStart(6, '0')}`;
             document.getElementById('detailAssetIp').textContent = asset.ip_address || 'Unresolved';
@@ -1505,17 +1627,7 @@ async function viewAssetDetail(assetId) {
             renderTags();
 
             // Risk Factors
-            const riskFactorsList = document.getElementById('detailRiskFactorsList');
-            if (asset.risk_factors && asset.risk_factors.length > 0) {
-                riskFactorsList.innerHTML = asset.risk_factors.map(f => `
-                    <div style="display: flex; gap: 8px; color: var(--accent-red); align-items: flex-start; margin-bottom: 4px;">
-                        <i class="fa-solid fa-triangle-exclamation" style="margin-top: 3px;"></i>
-                        <span>${escapeHtml(f)}</span>
-                    </div>
-                `).join('');
-            } else {
-                riskFactorsList.innerHTML = '<div style="color: var(--text-muted); font-style: italic;">No specific risk factors computed.</div>';
-            }
+            renderAssetRiskFactorsList(asset);
 
             // Discovery Sources
             const discoverySourcesList = document.getElementById('detailDiscoverySourcesList');
@@ -1576,7 +1688,7 @@ async function viewAssetDetail(assetId) {
             document.getElementById('detailWebStatus').textContent = asset.web_status_code || '—';
             document.getElementById('detailWebTitle').textContent = asset.web_title || '—';
             document.getElementById('detailWebServerBanner').textContent = asset.web_server || '—';
-            
+
             // Endpoints
             const endpointsContainer = document.getElementById('detailEndpointsContainer');
             if (asset.endpoints && asset.endpoints.length > 0) {
@@ -1736,7 +1848,7 @@ async function submitAssetNote() {
     }
     const targetId = currentActiveAssetId;
     if (!targetId) return;
-    
+
     const textarea = document.getElementById('newAssetNoteContent');
     const content = textarea.value.trim();
     if (!content) {
@@ -1768,14 +1880,14 @@ async function submitAssetNote() {
 
 async function triggerAssetOnDemandScan() {
     if (!currentActiveAssetId) return;
-    
+
     const btn = document.getElementById('btnDetailScan');
     const originalText = btn.innerHTML;
     btn.disabled = true;
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Scanning...';
-    
+
     showToast("Background scan started. Resolving IP, scanning ports, and fingerprinting technologies...");
-    
+
     try {
         const res = await fetch(`/api/v1/assets/${currentActiveAssetId}/scan`, {
             method: 'POST'
@@ -1902,17 +2014,61 @@ async function triggerAssetGraphRecorrelate() {
     }
 }
 
-async function loadProjectTopologyGraph(projectId) {
+let currentProjectTargetFilter = 'ALL';
+let loadedProjectTargetsCache = [];
+
+function populateProjectGraphTargetDropdown(targets) {
+    loadedProjectTargetsCache = targets || [];
+    const select = document.getElementById('projectGraphTargetSelect');
+    if (!select) return;
+
+    const currentVal = select.value || currentProjectTargetFilter || 'ALL';
+
+    let html = '<option value="ALL">Target: All Scope Targets</option>';
+    if (targets && targets.length > 0) {
+        targets.forEach(t => {
+            const targetText = escapeHtml(t.target);
+            const typeText = t.target_type ? ` (${escapeHtml(t.target_type)})` : '';
+            html += `<option value="${targetText}">Target: ${targetText}${typeText}</option>`;
+        });
+    }
+    select.innerHTML = html;
+    select.value = currentVal;
+}
+
+function handleProjectGraphTargetChange() {
+    const select = document.getElementById('projectGraphTargetSelect');
+    if (!select) return;
+    const targetVal = select.value;
+    currentProjectTargetFilter = targetVal;
+
+    const projId = document.getElementById('currentProjectId')?.value;
+    if (projId) {
+        loadProjectTopologyGraph(projId, targetVal);
+    }
+}
+
+async function loadProjectTopologyGraph(projectId, targetFilter = null) {
+    if (targetFilter !== null) {
+        currentProjectTargetFilter = targetFilter;
+    } else {
+        targetFilter = currentProjectTargetFilter;
+    }
+
     const spinner = document.getElementById('projectGraphSpinner');
     if (spinner) spinner.style.display = 'flex';
 
     try {
-        const res = await fetch(`/api/v1/projects/${projectId}/graph`);
+        let url = `/api/v1/projects/${projectId}/graph`;
+        if (targetFilter && targetFilter !== 'ALL') {
+            url += `?target=${encodeURIComponent(targetFilter)}`;
+        }
+        const res = await fetch(url);
         const data = await res.json();
 
         if (data.success && data.graph) {
             currentProjectGraphData = data.graph;
-            renderD3Graph("projectGraphSvg", data.graph, false);
+            renderProjectTopologyGraph();
         }
     } catch (err) {
         console.error("Topology graph load error:", err);
@@ -1938,7 +2094,7 @@ async function triggerProjectGraphRecorrelate() {
         const data = await res.json();
         if (data.success) {
             showToast(data.message);
-            loadProjectTopologyGraph(projId);
+            loadProjectTopologyGraph(projId, currentProjectTargetFilter);
         }
     } catch (err) {
         showToast("Correlation error: " + err.message, "error");
@@ -1957,15 +2113,20 @@ function openFullscreenGraphModal(scope = 'asset') {
     const titleEl = document.getElementById('fullGraphModalTitle');
     const subTitleEl = document.getElementById('fullGraphModalSubtitle');
 
-    if (scope === 'asset' && currentAssetGraphData) {
-        titleEl.textContent = `Asset Relationship Graph — ${currentAssetGraphData.nodes.find(n => n.id === currentAssetGraphData.root_node_id)?.label || 'Asset Profile'}`;
-        subTitleEl.textContent = "Expanded interactive topology view & entity relationship analyzer";
-        renderFullscreenGraph();
-    } else if (scope === 'project' && currentProjectGraphData) {
-        const projName = document.getElementById('projNameText')?.textContent || 'Project Scope';
-        titleEl.textContent = `Attack Surface Topology Graph — ${projName}`;
-        subTitleEl.textContent = "Full project-wide network hierarchy & discovered connections";
-        renderFullscreenGraph();
+    if (scope === 'asset') {
+        if (currentAssetGraphData) {
+            titleEl.textContent = `Asset Relationship Graph — ${currentAssetGraphData.nodes.find(n => n.id === currentAssetGraphData.root_node_id)?.label || 'Asset Profile'}`;
+            subTitleEl.textContent = "Expanded interactive topology view & entity relationship analyzer";
+            renderFullscreenGraph();
+        }
+    } else if (scope === 'project') {
+        if (currentProjectGraphData) {
+            const projName = document.getElementById('projNameText')?.textContent || 'Project Scope';
+            const targetFilterLabel = currentProjectTargetFilter && currentProjectTargetFilter !== 'ALL' ? ` (${currentProjectTargetFilter})` : '';
+            titleEl.textContent = `Attack Surface Topology Graph — ${projName}${targetFilterLabel}`;
+            subTitleEl.textContent = "Full project-wide network hierarchy & discovered connections";
+            renderFullscreenGraph();
+        }
     }
 }
 
@@ -2005,39 +2166,106 @@ async function triggerFullscreenGraphRecorrelate() {
     }
 }
 
+function updateAssetGraphFilters() {
+    renderAssetRelationshipGraph();
+}
+
+function updateProjectGraphFilters() {
+    renderProjectTopologyGraph();
+}
+
+function filterGraphNodesAndEdges(graphData, filterOptions) {
+    if (!graphData || !Array.isArray(graphData.nodes)) {
+        return { nodes: [], edges: [] };
+    }
+
+    const {
+        showSubdomains = true,
+        showIPs = true,
+        showPorts = true,
+        showTech = true,
+        showEndpoints = true,
+        showFindings = true
+    } = filterOptions;
+
+    const rootId = graphData.root_node_id;
+    const ipRegex = /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/;
+
+    const filteredNodes = graphData.nodes.filter(n => {
+        if (rootId && n.id === rootId) return true;
+
+        const type = (n.type || '').toLowerCase();
+        const id = (n.id || '').toLowerCase();
+
+        const isRootNode = rootId ? (n.id === rootId) : (type === 'project' || type === 'target');
+
+        // 1. Subdomains: matches subdomain type, or domain/asset type that isn't the root anchor
+        const isSubdomain = (type === 'subdomain') ||
+            (!isRootNode && (type === 'domain' || type === 'asset'));
+        if (isSubdomain && !showSubdomains) return false;
+
+        // 2. IPs
+        const isIP = (type === 'ip' || type === 'ip address') || id.startsWith('ip:') || ipRegex.test(n.label || '');
+        if (isIP && !showIPs) return false;
+
+        // 3. Ports & Services
+        const isPortOrService = (type === 'port' || type === 'service') || id.includes(':port:') || id.startsWith('service:');
+        if (isPortOrService && !showPorts) return false;
+
+        // 4. Technology
+        const isTech = (type === 'technology' || type === 'tech') || id.startsWith('tech:');
+        if (isTech && !showTech) return false;
+
+        // 5. Endpoints
+        const isEndpoint = (type === 'endpoint' || type === 'api') || id.startsWith('endpoint:');
+        if (isEndpoint && !showEndpoints) return false;
+
+        // 6. Findings
+        const isFinding = (type === 'finding') || id.startsWith('finding:');
+        if (isFinding && !showFindings) return false;
+
+        return true;
+    });
+
+    const nodeIds = new Set(filteredNodes.map(n => n.id));
+    const filteredEdges = (graphData.edges || []).filter(e => {
+        const sourceId = typeof e.source === 'object' ? e.source.id : (e.source_id || e.source);
+        const targetId = typeof e.target === 'object' ? e.target.id : (e.target_id || e.target);
+        return nodeIds.has(sourceId) && nodeIds.has(targetId);
+    });
+
+    return {
+        ...graphData,
+        nodes: filteredNodes,
+        edges: filteredEdges
+    };
+}
+
+function renderProjectTopologyGraph() {
+    if (!currentProjectGraphData) return;
+    renderD3Graph("projectGraphSvg", currentProjectGraphData, false, false);
+}
+
 function renderFullscreenGraph() {
     const spinner = document.getElementById('fullGraphSpinner');
     if (spinner) spinner.style.display = 'flex';
 
     setTimeout(() => {
+        const filterOptions = {
+            showSubdomains: document.getElementById('fullGraphFilterSubdomains')?.checked ?? true,
+            showIPs: document.getElementById('fullGraphFilterIPs')?.checked ?? true,
+            showPorts: document.getElementById('fullGraphFilterPorts')?.checked ?? true,
+            showTech: document.getElementById('fullGraphFilterTech')?.checked ?? true,
+            showEndpoints: document.getElementById('fullGraphFilterEndpoints')?.checked ?? true,
+            showFindings: document.getElementById('fullGraphFilterFindings')?.checked ?? true,
+        };
+
         if (currentFullscreenScope === 'asset' && currentAssetGraphData) {
-            const showSubdomains = document.getElementById('fullGraphFilterSubdomains')?.checked ?? true;
-            const showIPs = document.getElementById('fullGraphFilterIPs')?.checked ?? true;
-            const showPorts = document.getElementById('fullGraphFilterPorts')?.checked ?? true;
-            const showTech = document.getElementById('fullGraphFilterTech')?.checked ?? true;
-            const showEndpoints = document.getElementById('fullGraphFilterEndpoints')?.checked ?? true;
-            const showFindings = document.getElementById('fullGraphFilterFindings')?.checked ?? true;
-
-            const rootId = currentAssetGraphData.root_node_id;
-
-            const filteredNodes = currentAssetGraphData.nodes.filter(n => {
-                if (n.id === rootId) return true;
-                const type = (n.type || '').toLowerCase();
-                if (type === 'subdomain' && !showSubdomains) return false;
-                if (type === 'ip' && !showIPs) return false;
-                if ((type === 'port' || type === 'service') && !showPorts) return false;
-                if (type === 'technology' && !showTech) return false;
-                if (type === 'endpoint' && !showEndpoints) return false;
-                if (type === 'finding' && !showFindings) return false;
-                return true;
-            });
-
-            const nodeIds = new Set(filteredNodes.map(n => n.id));
-            const filteredEdges = currentAssetGraphData.edges.filter(e => nodeIds.has(e.source_id) && nodeIds.has(e.target_id));
-
-            renderD3Graph("fullGraphSvg", { nodes: filteredNodes, edges: filteredEdges, root_node_id: rootId }, true, true);
+            const filteredData = filterGraphNodesAndEdges(currentAssetGraphData, filterOptions);
+            renderD3Graph("fullGraphSvg", filteredData, true, true);
         } else if (currentFullscreenScope === 'project' && currentProjectGraphData) {
-            renderD3Graph("fullGraphSvg", currentProjectGraphData, false, true);
+            const filteredData = filterGraphNodesAndEdges(currentProjectGraphData, filterOptions);
+            renderD3Graph("fullGraphSvg", filteredData, false, true);
         }
         if (spinner) spinner.style.display = 'none';
     }, 50);
@@ -2046,31 +2274,17 @@ function renderFullscreenGraph() {
 function renderAssetRelationshipGraph() {
     if (!currentAssetGraphData) return;
 
-    const showSubdomains = document.getElementById('graphFilterSubdomains')?.checked ?? true;
-    const showIPs = document.getElementById('graphFilterIPs')?.checked ?? true;
-    const showPorts = document.getElementById('graphFilterPorts')?.checked ?? true;
-    const showTech = document.getElementById('graphFilterTech')?.checked ?? true;
-    const showEndpoints = document.getElementById('graphFilterEndpoints')?.checked ?? true;
-    const showFindings = document.getElementById('graphFilterFindings')?.checked ?? true;
+    const filterOptions = {
+        showSubdomains: document.getElementById('graphFilterSubdomains')?.checked ?? true,
+        showIPs: document.getElementById('graphFilterIPs')?.checked ?? true,
+        showPorts: document.getElementById('graphFilterPorts')?.checked ?? true,
+        showTech: document.getElementById('graphFilterTech')?.checked ?? true,
+        showEndpoints: document.getElementById('graphFilterEndpoints')?.checked ?? true,
+        showFindings: document.getElementById('graphFilterFindings')?.checked ?? true,
+    };
 
-    const rootId = currentAssetGraphData.root_node_id;
-
-    const filteredNodes = currentAssetGraphData.nodes.filter(n => {
-        if (n.id === rootId) return true;
-        const type = (n.type || '').toLowerCase();
-        if (type === 'subdomain' && !showSubdomains) return false;
-        if (type === 'ip' && !showIPs) return false;
-        if ((type === 'port' || type === 'service') && !showPorts) return false;
-        if (type === 'technology' && !showTech) return false;
-        if (type === 'endpoint' && !showEndpoints) return false;
-        if (type === 'finding' && !showFindings) return false;
-        return true;
-    });
-
-    const nodeIds = new Set(filteredNodes.map(n => n.id));
-    const filteredEdges = currentAssetGraphData.edges.filter(e => nodeIds.has(e.source_id) && nodeIds.has(e.target_id));
-
-    renderD3Graph("assetGraphSvg", { nodes: filteredNodes, edges: filteredEdges, root_node_id: rootId }, true, false);
+    const filteredData = filterGraphNodesAndEdges(currentAssetGraphData, filterOptions);
+    renderD3Graph("assetGraphSvg", filteredData, true, false);
 }
 
 function getNodeColor(type) {
@@ -2175,7 +2389,7 @@ function renderD3Graph(svgId, graphData, isAssetScope, isFullscreen = false) {
 
     // SVG Defs for Markers & Glow
     const defs = svg.append("defs");
-    
+
     defs.append("marker")
         .attr("id", `arrow-${svgId}`)
         .attr("viewBox", "0 -5 10 10")
@@ -2550,53 +2764,59 @@ async function runScanComparison() {
             if (ports.length > 0) {
                 html += `
                     <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 4px;">Ports & Services:</div>
-                    <table class="data-table" style="font-size: 0.78rem; margin-bottom: 12px;">
-                        <thead><tr><th>Port/Protocol</th><th>Service</th><th>Scan #${comp.scan_a_id}</th><th>Scan #${comp.scan_b_id}</th><th>Diff</th></tr></thead>
-                        <tbody>
-                            ${ports.map(p => {
-                                let badge = '<span class="badge badge-info">UNCHANGED</span>';
-                                if (p.status === 'ADDED') badge = '<span class="badge" style="background: rgba(74, 222, 128, 0.15); color: #4ADE80; border: 1px solid rgba(74, 222, 128, 0.3);">+ ADDED</span>';
-                                else if (p.status === 'REMOVED') badge = '<span class="badge" style="background: rgba(248, 113, 113, 0.15); color: #F87171; border: 1px solid rgba(248, 113, 113, 0.3);">- REMOVED</span>';
-                                return `<tr><td class="font-mono">${p.item}</td><td>${escapeHtml(p.service)}</td><td>${p.in_scan_a ? 'Open' : '—'}</td><td>${p.in_scan_b ? 'Open' : '—'}</td><td>${badge}</td></tr>`;
-                            }).join('')}
-                        </tbody>
-                    </table>
+                    <div style="overflow-x: auto; width: 100%; max-width: 100%; border-radius: 6px; margin-bottom: 12px; border: 1px solid rgba(255, 255, 255, 0.08);">
+                        <table class="data-table" style="font-size: 0.78rem; width: 100%; margin-bottom: 0;">
+                            <thead><tr><th>Port/Protocol</th><th>Service</th><th>Scan #${comp.scan_a_id}</th><th>Scan #${comp.scan_b_id}</th><th>Diff</th></tr></thead>
+                            <tbody>
+                                ${ports.map(p => {
+                        let badge = '<span class="badge badge-info">UNCHANGED</span>';
+                        if (p.status === 'ADDED') badge = '<span class="badge" style="background: rgba(74, 222, 128, 0.15); color: #4ADE80; border: 1px solid rgba(74, 222, 128, 0.3);">+ ADDED</span>';
+                        else if (p.status === 'REMOVED') badge = '<span class="badge" style="background: rgba(248, 113, 113, 0.15); color: #F87171; border: 1px solid rgba(248, 113, 113, 0.3);">- REMOVED</span>';
+                        return `<tr><td class="font-mono">${p.item}</td><td>${escapeHtml(p.service)}</td><td>${p.in_scan_a ? 'Open' : '—'}</td><td>${p.in_scan_b ? 'Open' : '—'}</td><td>${badge}</td></tr>`;
+                    }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
                 `;
             }
 
             if (techs.length > 0) {
                 html += `
                     <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 4px;">Technology & Stack:</div>
-                    <table class="data-table" style="font-size: 0.78rem; margin-bottom: 12px;">
-                        <thead><tr><th>Component / Stack</th><th>Value (Scan A)</th><th>Value (Scan B)</th><th>Diff</th></tr></thead>
-                        <tbody>
-                            ${techs.map(t => {
-                                let badge = '<span class="badge badge-info">UNCHANGED</span>';
-                                if (t.status === 'ADDED') badge = '<span class="badge" style="background: rgba(74, 222, 128, 0.15); color: #4ADE80; border: 1px solid rgba(74, 222, 128, 0.3);">+ ADDED</span>';
-                                else if (t.status === 'REMOVED') badge = '<span class="badge" style="background: rgba(248, 113, 113, 0.15); color: #F87171; border: 1px solid rgba(248, 113, 113, 0.3);">- REMOVED</span>';
-                                else if (t.status === 'CHANGED') badge = '<span class="badge" style="background: rgba(251, 191, 36, 0.15); color: #FBBF24; border: 1px solid rgba(251, 191, 36, 0.3);">~ CHANGED</span>';
-                                return `<tr><td><strong>${escapeHtml(t.item)}</strong></td><td>${escapeHtml(t.version_a || '—')}</td><td>${escapeHtml(t.version_b || '—')}</td><td>${badge}</td></tr>`;
-                            }).join('')}
-                        </tbody>
-                    </table>
+                    <div style="overflow-x: auto; width: 100%; max-width: 100%; border-radius: 6px; margin-bottom: 12px; border: 1px solid rgba(255, 255, 255, 0.08);">
+                        <table class="data-table" style="font-size: 0.78rem; width: 100%; margin-bottom: 0;">
+                            <thead><tr><th>Component / Stack</th><th>Value (Scan A)</th><th>Value (Scan B)</th><th>Diff</th></tr></thead>
+                            <tbody>
+                                ${techs.map(t => {
+                        let badge = '<span class="badge badge-info">UNCHANGED</span>';
+                        if (t.status === 'ADDED') badge = '<span class="badge" style="background: rgba(74, 222, 128, 0.15); color: #4ADE80; border: 1px solid rgba(74, 222, 128, 0.3);">+ ADDED</span>';
+                        else if (t.status === 'REMOVED') badge = '<span class="badge" style="background: rgba(248, 113, 113, 0.15); color: #F87171; border: 1px solid rgba(248, 113, 113, 0.3);">- REMOVED</span>';
+                        else if (t.status === 'CHANGED') badge = '<span class="badge" style="background: rgba(251, 191, 36, 0.15); color: #FBBF24; border: 1px solid rgba(251, 191, 36, 0.3);">~ CHANGED</span>';
+                        return `<tr><td><strong>${escapeHtml(t.item)}</strong></td><td>${escapeHtml(t.version_a || '—')}</td><td>${escapeHtml(t.version_b || '—')}</td><td>${badge}</td></tr>`;
+                    }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
                 `;
             }
 
             if (subs.length > 0) {
                 html += `
                     <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 4px;">Subdomains Discovered:</div>
-                    <table class="data-table" style="font-size: 0.78rem;">
-                        <thead><tr><th>Subdomain</th><th>Resolved IP (Scan A)</th><th>Resolved IP (Scan B)</th><th>Diff</th></tr></thead>
-                        <tbody>
-                            ${subs.map(s => {
-                                let badge = '<span class="badge badge-info">UNCHANGED</span>';
-                                if (s.status === 'ADDED') badge = '<span class="badge" style="background: rgba(74, 222, 128, 0.15); color: #4ADE80; border: 1px solid rgba(74, 222, 128, 0.3);">+ ADDED</span>';
-                                else if (s.status === 'REMOVED') badge = '<span class="badge" style="background: rgba(248, 113, 113, 0.15); color: #F87171; border: 1px solid rgba(248, 113, 113, 0.3);">- REMOVED</span>';
-                                else if (s.status === 'CHANGED') badge = '<span class="badge" style="background: rgba(251, 191, 36, 0.15); color: #FBBF24; border: 1px solid rgba(251, 191, 36, 0.3);">~ CHANGED</span>';
-                                return `<tr><td><strong>${escapeHtml(s.item)}</strong></td><td>${escapeHtml(s.ip_a)}</td><td>${escapeHtml(s.ip_b)}</td><td>${badge}</td></tr>`;
-                            }).join('')}
-                        </tbody>
-                    </table>
+                    <div style="overflow-x: auto; width: 100%; max-width: 100%; border-radius: 6px; margin-bottom: 12px; border: 1px solid rgba(255, 255, 255, 0.08);">
+                        <table class="data-table" style="font-size: 0.78rem; width: 100%; margin-bottom: 0;">
+                            <thead><tr><th>Subdomain</th><th>Resolved IP (Scan A)</th><th>Resolved IP (Scan B)</th><th>Diff</th></tr></thead>
+                            <tbody>
+                                ${subs.map(s => {
+                        let badge = '<span class="badge badge-info">UNCHANGED</span>';
+                        if (s.status === 'ADDED') badge = '<span class="badge" style="background: rgba(74, 222, 128, 0.15); color: #4ADE80; border: 1px solid rgba(74, 222, 128, 0.3);">+ ADDED</span>';
+                        else if (s.status === 'REMOVED') badge = '<span class="badge" style="background: rgba(248, 113, 113, 0.15); color: #F87171; border: 1px solid rgba(248, 113, 113, 0.3);">- REMOVED</span>';
+                        else if (s.status === 'CHANGED') badge = '<span class="badge" style="background: rgba(251, 191, 36, 0.15); color: #FBBF24; border: 1px solid rgba(251, 191, 36, 0.3);">~ CHANGED</span>';
+                        return `<tr><td style="word-break: break-all;"><strong>${escapeHtml(s.item)}</strong></td><td>${escapeHtml(s.ip_a)}</td><td>${escapeHtml(s.ip_b)}</td><td>${badge}</td></tr>`;
+                    }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
                 `;
             }
 
@@ -2683,6 +2903,9 @@ async function openScanChangeInspector(scanId) {
 function closeScanChangeInspectorModal() {
     document.getElementById('scanChangeInspectorModal')?.classList.remove('active');
 }
+
+
+
 
 
 

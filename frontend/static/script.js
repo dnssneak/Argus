@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', function () {
     initScrollReveal();
     initFaqAccordion();
     initMicroInteractions();
+    initCustomSelects();
 });
 
 // 1. Terminal Simulator Typewriter Sequence & Micro-Presets
@@ -487,5 +488,220 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         if (target) {
             target.scrollIntoView({ behavior: 'smooth' });
         }
+    });
+});
+
+// Helper: safe HTML escaper
+function safeEscapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+// Universal Custom Cyber Select Enhancer System
+function initCustomSelects() {
+    const selects = document.querySelectorAll('select');
+
+    selects.forEach(select => {
+        if (select.dataset.customSelectInit === 'true') {
+            updateCustomSelectWrapper(select);
+            return;
+        }
+
+        select.dataset.customSelectInit = 'true';
+        select.style.display = 'none';
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'custom-select-wrapper';
+        if (select.classList.contains('cyber-select-pill')) {
+            wrapper.classList.add('pill-mode');
+        }
+
+        // Inherit width / flex properties from select inline styles or classes
+        if (select.style.width === '100%' || select.classList.contains('form-control')) {
+            wrapper.style.width = '100%';
+        }
+        if (select.style.flex) {
+            wrapper.style.flex = select.style.flex;
+        }
+
+        const trigger = document.createElement('div');
+        trigger.className = 'custom-select-trigger';
+        if (select.style.width === '100%' || select.classList.contains('form-control')) {
+            trigger.style.width = '100%';
+            trigger.style.justifyContent = 'space-between';
+        }
+
+        const iconClass = getSelectIconClass(select);
+        let iconHtml = '';
+        if (iconClass) {
+            iconHtml = `<i class="fa-solid ${iconClass} custom-select-icon"></i>`;
+        }
+
+        const selectedOpt = select.options[select.selectedIndex] || select.options[0];
+        const labelText = selectedOpt ? selectedOpt.text : 'Select...';
+
+        trigger.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 8px; overflow: hidden;">
+                ${iconHtml}
+                <span class="custom-select-label">${safeEscapeHtml(labelText)}</span>
+            </div>
+            <i class="fa-solid fa-chevron-down custom-select-chevron"></i>
+        `;
+
+        const menu = document.createElement('div');
+        menu.className = 'custom-select-menu';
+        menu.style.background = '#090714';
+        menu.style.backgroundColor = '#090714';
+        menu.style.opacity = '1';
+        menu.style.zIndex = '99999';
+        if (select.style.width === '100%' || select.classList.contains('form-control')) {
+            menu.style.width = '100%';
+        }
+
+        buildCustomSelectMenuOptions(select, menu, trigger);
+
+        wrapper.appendChild(trigger);
+        wrapper.appendChild(menu);
+
+        select.parentNode.insertBefore(wrapper, select);
+
+        trigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            document.querySelectorAll('.custom-select-wrapper.open').forEach(other => {
+                if (other !== wrapper) {
+                    other.classList.remove('open');
+                    other.style.zIndex = '';
+                }
+            });
+            const isOpen = wrapper.classList.toggle('open');
+            wrapper.style.zIndex = isOpen ? '999999' : '';
+        });
+
+        // Observe native select for dynamic <option> updates
+        const observer = new MutationObserver(() => {
+            buildCustomSelectMenuOptions(select, menu, trigger);
+        });
+        observer.observe(select, { childList: true, subtree: true, attributes: true });
+
+        select.addEventListener('change', () => {
+            updateCustomSelectTriggerLabel(select, trigger);
+            highlightSelectedOption(select, menu);
+        });
+    });
+}
+
+function getSelectIconClass(select) {
+    if (select.dataset.icon) return select.dataset.icon;
+    const id = (select.id || '').toLowerCase();
+    if (id.includes('project')) return 'fa-folder-tree';
+    if (id.includes('type')) return 'fa-shapes';
+    if (id.includes('severity')) return 'fa-shield-halved';
+    if (id.includes('sort')) return 'fa-arrow-down-wide-short';
+    if (id.includes('status')) return 'fa-circle-dot';
+    if (id.includes('scan')) return 'fa-radar';
+    return null;
+}
+
+function updateCustomSelectTriggerLabel(select, trigger) {
+    const selectedOpt = select.options[select.selectedIndex];
+    const labelSpan = trigger.querySelector('.custom-select-label');
+    if (labelSpan && selectedOpt) {
+        labelSpan.textContent = selectedOpt.text;
+    }
+}
+
+function highlightSelectedOption(select, menu) {
+    const val = select.value;
+    const items = menu.querySelectorAll('.custom-select-option');
+    items.forEach(item => {
+        if (item.dataset.value === val) {
+            item.classList.add('selected');
+        } else {
+            item.classList.remove('selected');
+        }
+    });
+}
+
+function updateCustomSelectWrapper(select) {
+    const wrapper = select.previousElementSibling;
+    if (wrapper && wrapper.classList.contains('custom-select-wrapper')) {
+        const trigger = wrapper.querySelector('.custom-select-trigger');
+        const menu = wrapper.querySelector('.custom-select-menu');
+        if (trigger && menu) {
+            buildCustomSelectMenuOptions(select, menu, trigger);
+        }
+    }
+}
+
+function buildCustomSelectMenuOptions(select, menu, trigger) {
+    menu.innerHTML = '';
+    const currentVal = select.value;
+
+    Array.from(select.options).forEach(opt => {
+        const item = document.createElement('div');
+        item.className = 'custom-select-option' + (opt.value === currentVal ? ' selected' : '');
+        item.dataset.value = opt.value;
+
+        const text = opt.text;
+        let badgeHtml = '';
+        const upperText = text.toUpperCase();
+
+        if (upperText.includes('CRITICAL')) {
+            badgeHtml = `<span class="opt-badge critical">CRITICAL</span>`;
+        } else if (upperText.includes('HIGH')) {
+            badgeHtml = `<span class="opt-badge high">HIGH</span>`;
+        } else if (upperText.includes('MEDIUM')) {
+            badgeHtml = `<span class="opt-badge medium">MEDIUM</span>`;
+        } else if (upperText.includes('LOW')) {
+            badgeHtml = `<span class="opt-badge low">LOW</span>`;
+        } else if (upperText.includes('INFORMATIONAL') || upperText.includes('INFO')) {
+            badgeHtml = `<span class="opt-badge info">INFO</span>`;
+        }
+
+        item.innerHTML = `
+            <span>${safeEscapeHtml(text)}</span>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                ${badgeHtml}
+                <i class="fa-solid fa-check opt-check"></i>
+            </div>
+        `;
+
+        item.addEventListener('click', (e) => {
+            e.stopPropagation();
+            select.value = opt.value;
+            select.dispatchEvent(new Event('change', { bubbles: true }));
+            updateCustomSelectTriggerLabel(select, trigger);
+            highlightSelectedOption(select, menu);
+            const parentWrap = wrapperClosest(item, 'custom-select-wrapper');
+            if (parentWrap) {
+                parentWrap.classList.remove('open');
+                parentWrap.style.zIndex = '';
+            }
+        });
+
+        menu.appendChild(item);
+    });
+
+    updateCustomSelectTriggerLabel(select, trigger);
+}
+
+function wrapperClosest(el, className) {
+    while (el && el !== document) {
+        if (el.classList && el.classList.contains(className)) return el;
+        el = el.parentNode;
+    }
+    return null;
+}
+
+// Global click to close custom dropdowns
+document.addEventListener('click', () => {
+    document.querySelectorAll('.custom-select-wrapper.open').forEach(wrapper => {
+        wrapper.classList.remove('open');
+        wrapper.style.zIndex = '';
     });
 });
