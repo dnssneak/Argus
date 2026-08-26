@@ -459,6 +459,81 @@ def update_asset_tags(asset_id):
         db.close()
 
 
+@api_bp.route("/assets/<int:asset_id>/findings", methods=["POST"])
+def add_asset_finding(asset_id):
+    db = get_db()
+    try:
+        asset = db.get(Asset, asset_id)
+        if not asset:
+            return jsonify({"success": False, "error": "Asset not found"}), 404
+
+        data = request.get_json() or {}
+        title = data.get("title", "").strip()
+        severity = data.get("severity", "Informational").strip()
+        cvss_score = data.get("risk_score", 0)
+        description = data.get("description")
+        evidence = data.get("evidence")
+        recommendation = data.get("recommendation")
+        cve_id = data.get("cve_id")
+
+        if not title:
+            return jsonify({"success": False, "error": "Finding title is required"}), 400
+
+        finding = Finding(
+            asset_id=asset_id,
+            title=title,
+            severity=severity,
+            risk_score=cvss_score,
+            description=description,
+            evidence=evidence,
+            recommendation=recommendation,
+            cve_id=cve_id,
+            status="open"
+        )
+        db.add(finding)
+        db.commit()
+
+        # Recalculate asset risk score using RiskEngine
+        from services.risk_engine import RiskEngine
+        RiskEngine.recalculate_and_update_asset_risk(db, asset, trigger_reason=f"New {severity} Finding Added")
+
+        db.refresh(finding)
+        return jsonify({"success": True, "finding": finding.to_dict()}), 201
+    except Exception as e:
+        db.rollback()
+        return jsonify({"success": False, "error": str(e)}), 500
+    finally:
+        db.close()
+
+
+@api_bp.route("/findings/<int:finding_id>/status", methods=["PUT"])
+def update_finding_status(finding_id):
+    db = get_db()
+    try:
+        finding = db.get(Finding, finding_id)
+        if not finding:
+            return jsonify({"success": False, "error": "Finding not found"}), 404
+
+        data = request.get_json() or {}
+        new_status = data.get("status", "open").lower()
+        finding.status = new_status
+        db.commit()
+
+        # Recalculate asset risk
+        asset = db.get(Asset, finding.asset_id)
+        if asset:
+            from services.risk_engine import RiskEngine
+            RiskEngine.recalculate_and_update_asset_risk(db, asset, trigger_reason=f"Finding Status set to {new_status}")
+
+        return jsonify({"success": True, "finding": finding.to_dict()})
+    except Exception as e:
+        db.rollback()
+        return jsonify({"success": False, "error": str(e)}), 500
+    finally:
+        db.close()
+
+
+
 @api_bp.route("/assets/<int:asset_id>/scan", methods=["POST"])
 def scan_single_asset(asset_id):
     db = get_db()

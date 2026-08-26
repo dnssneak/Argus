@@ -269,12 +269,12 @@ class AssetCorrelator:
                 )
                 observed_rel_keys.add(key_scan)
 
-        # Update stale status for any relationship not present in current correlation pass
+        # Purge stale relationships not present in current correlation pass
         all_db_rels = db.query(Relationship).filter_by(project_id=project_id).all()
         for rel in all_db_rels:
             rel_key = f"{rel.source_id}->{rel.relationship_type}->{rel.target_id}"
             if rel_key not in observed_rel_keys:
-                rel.status = "stale"
+                db.delete(rel)
             else:
                 rel.status = "active"
 
@@ -346,6 +346,7 @@ class AssetCorrelator:
 
             # Query DB relationships where curr_node_id is source or target
             rels = db.query(Relationship).filter(
+                Relationship.status == "active",
                 (Relationship.source_id == curr_node_id) | (Relationship.target_id == curr_node_id)
             ).all()
 
@@ -404,7 +405,7 @@ class AssetCorrelator:
     @staticmethod
     def get_project_graph(db: Session, project_id: int) -> Dict[str, Any]:
         """
-        Retrieves project-wide relationship graph topology.
+        Retrieves project-wide relationship graph topology for active targets.
         """
         # Ensure fresh correlation pass
         AssetCorrelator.correlate_project_assets(db, project_id)
@@ -412,6 +413,10 @@ class AssetCorrelator:
         project = db.get(Project, project_id)
         if not project:
             return {"nodes": [], "edges": []}
+
+        # Query active targets for this project
+        active_targets = db.query(Target).filter_by(project_id=project_id).all()
+        active_target_strings = [t.target.strip().lower() for t in active_targets]
 
         nodes_dict = {}
         # Root Project Node
@@ -425,27 +430,38 @@ class AssetCorrelator:
             "details": project.to_dict()
         }
 
-        # Query all project relationships
-        rels = db.query(Relationship).filter_by(project_id=project_id).all()
+        # Query ONLY active project relationships
+        rels = db.query(Relationship).filter_by(project_id=project_id, status="active").all()
         edges_list = [r.to_dict() for r in rels]
 
-        # Populate all nodes
+        # Filter assets to those matching active target scope
         assets = db.query(Asset).filter_by(project_id=project_id).all()
         for a in assets:
-            a_node_id = f"asset:{a.id}"
-            nodes_dict[a_node_id] = {
-                "id": a_node_id,
-                "label": a.name,
-                "type": a.asset_type,
-                "is_asset": True,
-                "asset_id": a.id,
-                "risk_score": a.risk_score,
-                "ip_address": a.ip_address,
-                "exposure": a.exposure,
-                "details": a.to_dict()
-            }
+            a_name_lower = a.name.lower()
+            matches_active = False
+            if not active_target_strings:
+                matches_active = True
+            else:
+                for t_str in active_target_strings:
+                    t_clean = t_str.replace("https://", "").replace("http://", "").split("/")[0]
+                    if a_name_lower == t_clean or a_name_lower.endswith("." + t_clean) or t_clean.endswith("." + a_name_lower):
+                        matches_active = True
+                        break
+            if matches_active:
+                a_node_id = f"asset:{a.id}"
+                nodes_dict[a_node_id] = {
+                    "id": a_node_id,
+                    "label": a.name,
+                    "type": a.asset_type,
+                    "is_asset": True,
+                    "asset_id": a.id,
+                    "risk_score": a.risk_score,
+                    "ip_address": a.ip_address,
+                    "exposure": a.exposure,
+                    "details": a.to_dict()
+                }
 
-        # Add target & non-asset nodes from relationships
+        # Add target & non-asset nodes from active relationships
         for r in rels:
             for n_id, n_type, n_label, n_asset_id in [
                 (r.source_id, r.source_type, r.source_label, r.source_asset_id),
