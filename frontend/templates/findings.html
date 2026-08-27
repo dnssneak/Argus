@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}Prioritized Findings — Argus 2.0{% endblock %}
+
+{% block page_tag %}
+<div style="margin-bottom: 0.6rem;">
+    <span class="page-tag" style="display: inline-block; font-family: var(--font-mono); font-size: 0.78rem; color: var(--accent-magenta); text-transform: uppercase; letter-spacing: 0.1em; background: rgba(244, 63, 94, 0.1); padding: 5px 16px; border-radius: 30px; border: 1px solid var(--border-accent);">
+        VULNERABILITY PRIORITIZATION & CORRELATION
+    </span>
+</div>
+{% endblock %}
+
+{% block page_title %}Prioritized Security Findings{% endblock %}
+{% block page_subtitle %}Global repository of correlated findings across all assets, ranked by contextual urgency priority{% endblock %}
+
+{% block top_actions %}
+{% endblock %}
+
+{% block content %}
+<div class="card-panel">
+    <!-- Header & Filter Controls -->
+    <div class="panel-header" style="flex-wrap: wrap; gap: 16px; margin-bottom: 1.75rem; align-items: center; justify-content: space-between;">
+        <h2 class="panel-title" style="font-size: 1.5rem; font-weight: 700; margin: 0; min-width: 220px;">Prioritized Findings</h2>
+        
+        <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+            <div style="position: relative; display: inline-flex; align-items: center;">
+                <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 16px; color: var(--accent-purple); font-size: 0.85rem; pointer-events: none;"></i>
+                <input type="text" id="findingSearchInput" class="cyber-search-pill" placeholder="Search title, CVE, asset, IP..." onkeyup="filterFindingsPage()">
+            </div>
+            
+            <select id="findingProjectFilter" class="cyber-select-pill" data-icon="fa-folder-tree" onchange="loadFindingsPage()">
+                <option value="">All Projects Scope</option>
+            </select>
+
+            <select id="findingPriorityFilter" class="cyber-select-pill" data-icon="fa-triangle-exclamation" onchange="filterFindingsPage()">
+                <option value="">All Priorities</option>
+                <option value="CRITICAL">CRITICAL Priority</option>
+                <option value="HIGH">HIGH Priority</option>
+                <option value="MEDIUM">MEDIUM Priority</option>
+                <option value="LOW">LOW Priority</option>
+                <option value="INFORMATIONAL">INFO Priority</option>
+            </select>
+
+            <select id="findingSeverityFilter" class="cyber-select-pill" data-icon="fa-shield-halved" onchange="filterFindingsPage()">
+                <option value="">All Severities</option>
+                <option value="CRITICAL">CRITICAL Severity</option>
+                <option value="HIGH">HIGH Severity</option>
+                <option value="MEDIUM">MEDIUM Severity</option>
+                <option value="LOW">LOW Severity</option>
+                <option value="INFORMATIONAL">INFO Severity</option>
+            </select>
+
+            <select id="findingLifecycleFilter" class="cyber-select-pill" data-icon="fa-arrows-rotate" onchange="filterFindingsPage()">
+                <option value="">All Lifecycles</option>
+                <option value="NEW">NEW Findings</option>
+                <option value="RECURRING">RECURRING Findings</option>
+            </select>
+
+            <button class="cyber-btn cyber-btn-accent" onclick="recorrelateProjectFindings()"><i class="fa-solid fa-arrows-rotate"></i> Re-Correlate</button>
+        </div>
+    </div>
+
+    <!-- Quick Stats Cards Summary -->
+    <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 1.5rem;">
+        <div class="card-panel" style="padding: 12px; text-align: center; border-top: 3px solid var(--risk-critical);">
+            <div style="font-size: 0.72rem; font-family: var(--font-mono); color: var(--text-muted); text-transform: uppercase;">CRITICAL Priority</div>
+            <div id="statCountCritical" style="font-size: 1.6rem; font-weight: 700; font-family: var(--font-mono); color: var(--risk-critical); margin-top: 4px;">0</div>
+        </div>
+        <div class="card-panel" style="padding: 12px; text-align: center; border-top: 3px solid var(--risk-high);">
+            <div style="font-size: 0.72rem; font-family: var(--font-mono); color: var(--text-muted); text-transform: uppercase;">HIGH Priority</div>
+            <div id="statCountHigh" style="font-size: 1.6rem; font-weight: 700; font-family: var(--font-mono); color: var(--risk-high); margin-top: 4px;">0</div>
+        </div>
+        <div class="card-panel" style="padding: 12px; text-align: center; border-top: 3px solid var(--risk-medium);">
+            <div style="font-size: 0.72rem; font-family: var(--font-mono); color: var(--text-muted); text-transform: uppercase;">MEDIUM Priority</div>
+            <div id="statCountMedium" style="font-size: 1.6rem; font-weight: 700; font-family: var(--font-mono); color: var(--risk-medium); margin-top: 4px;">0</div>
+        </div>
+        <div class="card-panel" style="padding: 12px; text-align: center; border-top: 3px solid var(--risk-low);">
+            <div style="font-size: 0.72rem; font-family: var(--font-mono); color: var(--text-muted); text-transform: uppercase;">LOW Priority</div>
+            <div id="statCountLow" style="font-size: 1.6rem; font-weight: 700; font-family: var(--font-mono); color: var(--risk-low); margin-top: 4px;">0</div>
+        </div>
+        <div class="card-panel" style="padding: 12px; text-align: center; border-top: 3px solid var(--accent-blue);">
+            <div style="font-size: 0.72rem; font-family: var(--font-mono); color: var(--text-muted); text-transform: uppercase;">INFO Priority</div>
+            <div id="statCountInfo" style="font-size: 1.6rem; font-weight: 700; font-family: var(--font-mono); color: var(--accent-blue); margin-top: 4px;">0</div>
+        </div>
+    </div>
+
+    <!-- Grouped Priority Container / View -->
+    <div id="findingsGroupedContainer" style="display: flex; flex-direction: column; gap: 24px;">
+        <!-- Dynamically populated by app.js -->
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        loadFindingsPage();
+    });
+</script>
+{% endblock %}
