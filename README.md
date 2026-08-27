@@ -171,4 +171,4 @@ Thank you for choosing **Argus** as your network auditing companion. May your ne
 
 If you encounter any bugs, have feature requests, or wish to contribute, please feel free to open a Pull Request or file an issue in the repository.
 
-*Keep scanning safely!* 
+
