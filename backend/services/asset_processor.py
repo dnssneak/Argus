@@ -293,6 +293,48 @@ class AssetProcessor:
         except Exception as re:
             print(f"Risk recalculation warning: {str(re)}")
 
+        # Ingest explicit findings/vulnerabilities from scan results if present
+        vulnerabilities = results.get("vulnerabilities") or results.get("findings") or []
+        if isinstance(vulnerabilities, list):
+            for v in vulnerabilities:
+                if isinstance(v, dict) and v.get("title"):
+                    target_asset = primary_asset
+                    v_asset_name = v.get("asset_name") or v.get("target")
+                    if v_asset_name:
+                        matched = [a for a in processed_assets if a.name.lower() == str(v_asset_name).strip().lower()]
+                        if matched:
+                            target_asset = matched[0]
+
+                    v_title = v.get("title").strip()
+                    existing_f = db.query(Finding).filter_by(asset_id=target_asset.id, title=v_title).first()
+                    if not existing_f:
+                        new_f = Finding(
+                            asset_id=target_asset.id,
+                            scan_id=scan_id,
+                            title=v_title,
+                            severity=v.get("severity", "Medium"),
+                            cvss_score=float(v.get("cvss_score") or v.get("risk_score") or 0),
+                            risk_score=int(v.get("risk_score") or 0),
+                            description=v.get("description"),
+                            evidence=v.get("evidence"),
+                            recommendation=v.get("recommendation"),
+                            cve_id=v.get("cve_id"),
+                            port=v.get("port"),
+                            service_name=v.get("service_name"),
+                            technology=v.get("technology"),
+                            endpoint=v.get("endpoint"),
+                            status="open"
+                        )
+                        db.add(new_f)
+
+        # Execute Finding correlation & contextual prioritization pass
+        try:
+            from services.finding_correlator import FindingCorrelator
+            FindingCorrelator.correlate_project_findings(db, project_id)
+            FindingCorrelator.correlate_scan_findings(db, project_id, target, scan_id, results)
+        except Exception as fe:
+            print(f"Finding correlation warning: {str(fe)}")
+
         for a in processed_assets:
             db.refresh(a)
 

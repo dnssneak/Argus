@@ -270,30 +270,92 @@ class Finding(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     asset_id = Column(Integer, ForeignKey("assets.id", ondelete="CASCADE"), nullable=False, index=True)
+    scan_id = Column(Integer, ForeignKey("scans.id", ondelete="SET NULL"), nullable=True, index=True)
+    target_id = Column(Integer, ForeignKey("targets.id", ondelete="SET NULL"), nullable=True, index=True)
+    first_scan_id = Column(Integer, ForeignKey("scans.id", ondelete="SET NULL"), nullable=True)
+    last_scan_id = Column(Integer, ForeignKey("scans.id", ondelete="SET NULL"), nullable=True)
+    
     title = Column(String(255), nullable=False)
     severity = Column(String(32), default="Informational")  # Critical, High, Medium, Low, Informational
+    priority = Column(String(32), nullable=True)  # CRITICAL, HIGH, MEDIUM, LOW, INFORMATIONAL
+    priority_score = Column(Integer, default=0)
+    priority_explanation = Column(Text, nullable=True)  # JSON or text string of factors
     risk_score = Column(Integer, default=0)
+    cvss_score = Column(Float, nullable=True)
+    
     description = Column(Text, nullable=True)
     evidence = Column(Text, nullable=True)
     recommendation = Column(Text, nullable=True)
     cve_id = Column(String(64), nullable=True)
+    
+    port = Column(Integer, nullable=True)
+    service_name = Column(String(64), nullable=True)
+    technology = Column(String(128), nullable=True)
+    endpoint = Column(String(512), nullable=True)
+    discovery_source = Column(String(128), nullable=True)
+
     status = Column(String(32), default="open")  # open, resolved, false_positive
+    lifecycle_status = Column(String(32), default="NEW")  # NEW, EXISTING, RECURRING, RESOLVED
+    first_seen = Column(DateTime, default=utc_now)
+    last_seen = Column(DateTime, default=utc_now)
     created_at = Column(DateTime, default=utc_now)
 
+    # Relationships
     asset = relationship("Asset", back_populates="findings")
+    scan = relationship("Scan", foreign_keys=[scan_id])
+    target = relationship("Target", foreign_keys=[target_id])
+    first_scan = relationship("Scan", foreign_keys=[first_scan_id])
+    last_scan = relationship("Scan", foreign_keys=[last_scan_id])
 
     def to_dict(self):
+        asset_name = self.asset.name if self.asset else None
+        project_id = self.asset.project_id if self.asset else None
+        project_name = self.asset.project.name if (self.asset and self.asset.project) else None
+        target_name = self.target.target if self.target else (self.scan.target if self.scan else None)
+        exposure = self.asset.exposure if self.asset else "Unknown"
+        asset_risk_score = self.asset.risk_score if self.asset else 0
+
+        explanation_list = []
+        if self.priority_explanation:
+            try:
+                import json
+                explanation_list = json.loads(self.priority_explanation)
+            except Exception:
+                explanation_list = [f.strip() for f in self.priority_explanation.split("\n") if f.strip()]
+
         return {
             "id": self.id,
             "asset_id": self.asset_id,
+            "asset_name": asset_name,
+            "project_id": project_id,
+            "project_name": project_name,
+            "target_id": self.target_id,
+            "target_name": target_name,
+            "scan_id": self.scan_id,
+            "first_scan_id": self.first_scan_id,
+            "last_scan_id": self.last_scan_id,
             "title": self.title,
-            "severity": self.severity,
+            "severity": self.severity,  # Original severity - never overwritten
+            "priority": self.priority or (self.severity.upper() if self.severity else "INFORMATIONAL"),
+            "priority_score": self.priority_score or 0,
+            "priority_explanation": explanation_list,
             "risk_score": self.risk_score,
+            "cvss": self.cvss_score if self.cvss_score is not None else float(self.risk_score or 0),
             "description": self.description,
             "evidence": self.evidence,
             "recommendation": self.recommendation,
             "cve_id": self.cve_id,
             "status": self.status,
+            "lifecycle_status": self.lifecycle_status or "NEW",
+            "port": self.port,
+            "service_name": self.service_name,
+            "technology": self.technology,
+            "endpoint": self.endpoint,
+            "exposure": exposure,
+            "asset_risk_score": asset_risk_score,
+            "discovery_source": self.discovery_source or "Scanner",
+            "first_seen": format_utc_iso(self.first_seen or self.created_at),
+            "last_seen": format_utc_iso(self.last_seen or self.created_at),
             "created_at": format_utc_iso(self.created_at),
         }
 

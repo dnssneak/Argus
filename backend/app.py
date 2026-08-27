@@ -56,6 +56,12 @@ def assets_page():
     return render_template("assets.html")
 
 
+@app.route("/findings-page")
+def findings_page():
+    """Global Prioritized Findings view."""
+    return render_template("findings.html")
+
+
 # Standalone scanning routes now redirect to Projects workspace
 @app.route("/recon", methods=["GET", "POST"])
 @app.route("/fingerprint", methods=["GET", "POST"])
