@@ -1069,11 +1069,10 @@ function openScanResultsFromProgress() {
 }
 
 async function viewHistoricalScan(scanId) {
-    const projId = document.getElementById('currentProjectId')?.value;
-    if (!projId) return;
-
     try {
-        const res = await fetch(`/api/v1/projects/${projId}/scans/${scanId}`);
+        const projId = document.getElementById('currentProjectId')?.value;
+        const url = projId ? `/api/v1/projects/${projId}/scans/${scanId}` : `/api/v1/scans/${scanId}`;
+        const res = await fetch(url);
         const data = await res.json();
 
         if (data.success) {
@@ -1338,16 +1337,18 @@ function renderAssetTable(assets) {
     tbody.innerHTML = assets.map(a => {
         const riskClass = getRiskBadgeClass(a.risk_score);
         const typeBadge = (a.asset_type || '').toLowerCase() === 'domain' ? 'badge-blue' : 'badge-info';
-        const statusBadge = (a.status || 'active').toLowerCase() === 'active' ? 'badge-active' : 'badge-info';
+        const isInactive = (a.status || '').toLowerCase() === 'inactive' || (!a.ip_address && (a.asset_type || '').toLowerCase() === 'subdomain');
+        const statusBadge = isInactive ? 'badge-inactive' : 'badge-active';
+        const statusText = isInactive ? 'INACTIVE' : 'ACTIVE';
         return `
             <tr>
                 <td class="font-mono" style="font-weight: 600; color: var(--text-primary); white-space: nowrap;">${escapeHtml(a.name)}</td>
                 <td style="white-space: nowrap;"><span class="badge ${typeBadge}">${escapeHtml(a.asset_type)}</span></td>
-                <td class="font-mono" style="white-space: nowrap; color: var(--text-secondary);">${escapeHtml(a.ip_address || '—')}</td>
+                <td class="font-mono" style="white-space: nowrap; color: ${isInactive ? 'var(--text-muted)' : 'var(--text-secondary)'};">${escapeHtml(a.ip_address || '—')}</td>
                 <td style="white-space: nowrap;"><span class="badge ${riskClass}">Risk ${a.risk_score}/100</span></td>
                 <td style="white-space: nowrap; color: var(--text-secondary);">${a.service_count} Services</td>
                 <td style="white-space: nowrap; color: var(--text-secondary);">${a.technology_count} Technologies</td>
-                <td style="white-space: nowrap;"><span class="badge ${statusBadge}">${escapeHtml(a.status || 'Active')}</span></td>
+                <td style="white-space: nowrap;"><span class="badge ${statusBadge}">${statusText}</span></td>
                 <td style="white-space: nowrap;">
                     <div style="display: inline-flex; align-items: center; gap: 8px;">
                         <button class="btn-action-icon" style="background: rgba(255, 255, 255, 0.04) !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; color: var(--text-secondary) !important; width: 32px; height: 32px; border-radius: 6px; font-size: 0.85rem; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: all 0.2s ease;" onclick="viewAssetDetail(${a.id})" title="View Asset Profile Details">
@@ -1580,8 +1581,9 @@ async function viewAssetDetail(assetId) {
             document.getElementById('detailAssetName').textContent = asset.name;
 
             const statusBadge = document.getElementById('detailAssetStatusBadge');
-            statusBadge.textContent = (asset.status || 'Active').toUpperCase();
-            statusBadge.className = `badge ${asset.status === 'inactive' ? 'badge-medium' : 'badge-info'}`;
+            const isInactive = (asset.status || '').toLowerCase() === 'inactive' || (!asset.ip_address && (asset.asset_type || '').toLowerCase() === 'subdomain');
+            statusBadge.textContent = isInactive ? 'INACTIVE' : 'ACTIVE';
+            statusBadge.className = `badge ${isInactive ? 'badge-inactive' : 'badge-active'}`;
 
             document.getElementById('detailAssetType').textContent = asset.asset_type;
 
@@ -1649,8 +1651,9 @@ async function viewAssetDetail(assetId) {
             // Discovery Sources
             const discoverySourcesList = document.getElementById('detailDiscoverySourcesList');
             const possibleSources = ["Subdomain Discovery", "DNS Enumeration", "Certificate Transparency", "IP Resolution", "Port Scan", "HTTP Probe", "Technology Fingerprint"];
+            const sourcesArr = Array.isArray(asset.discovery_sources) ? asset.discovery_sources : (typeof asset.discovery_sources === 'string' ? asset.discovery_sources.split(',') : []);
             discoverySourcesList.innerHTML = possibleSources.map(src => {
-                const found = (asset.discovery_sources || []).some(s => s.toLowerCase().includes(src.split(' ')[0].toLowerCase()));
+                const found = sourcesArr.some(s => s.trim().toLowerCase().includes(src.split(' ')[0].toLowerCase()));
                 return `
                     <div style="display: flex; align-items: center; gap: 10px; color: ${found ? 'var(--text-primary)' : 'var(--text-muted)'}; margin-bottom: 4px;">
                         <i class="fa-solid ${found ? 'fa-square-check' : 'fa-square'}" style="color: ${found ? 'var(--accent-purple)' : 'var(--text-muted)'}; font-size: 1.1rem;"></i>
@@ -1723,7 +1726,8 @@ async function viewAssetDetail(assetId) {
             document.getElementById('detailCertIssuer').textContent = asset.cert_issuer || '—';
             document.getElementById('detailCertValidFrom').textContent = asset.cert_valid_from ? new Date(asset.cert_valid_from).toLocaleDateString() : '—';
             document.getElementById('detailCertExpires').textContent = asset.cert_expires ? new Date(asset.cert_expires).toLocaleDateString() : '—';
-            document.getElementById('detailCertSans').textContent = (asset.cert_sans || []).join(', ') || '—';
+            const sansStr = Array.isArray(asset.cert_sans) ? asset.cert_sans.join(', ') : (asset.cert_sans || '—');
+            document.getElementById('detailCertSans').textContent = sansStr || '—';
 
             // Findings Tab
             const findingsContainer = document.getElementById('detailFindingsContainer');
@@ -1749,7 +1753,7 @@ async function viewAssetDetail(assetId) {
                         <div class="card-panel" style="border-left: 4px solid var(--risk-${sevLower || 'informational'}); padding: 14px; margin-bottom: 8px;">
                             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
                                 <div>
-                                    <strong style="font-size: 0.98rem; color: var(--text-primary); cursor: pointer;" onclick="openFindingDetailModal(${f.id})">${escapeHtml(f.title)}</strong>
+                                    ${formatFindingTitleHTML(f.title, f.id)}
                                     <div style="display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; align-items: center; font-size: 0.78rem;">
                                         <span class="badge ${severityClass}">Severity: ${(f.severity || 'INFO').toUpperCase()}</span>
                                         <span class="badge ${priorityClass}">Priority: ${priorityUpper}</span>
@@ -3042,6 +3046,27 @@ function filterFindingsPage() {
     renderGroupedFindings(filtered);
 }
 
+function formatFindingTitleHTML(titleText, findingId, lifecycleBadge = '') {
+    let mainTitle = titleText || 'Security Finding';
+    let targetSub = '';
+
+    if (mainTitle.includes('(') && mainTitle.endsWith(')')) {
+        const lastParenIdx = mainTitle.lastIndexOf('(');
+        targetSub = mainTitle.substring(lastParenIdx + 1, mainTitle.length - 1).trim();
+        mainTitle = mainTitle.substring(0, lastParenIdx).trim();
+    }
+
+    return `
+        <div style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <strong style="font-size: 0.96rem; font-weight: 700; color: var(--text-primary); cursor: pointer;" onclick="openFindingDetailModal(${findingId})">${escapeHtml(mainTitle)}</strong>
+                ${targetSub ? `<span class="badge badge-purple font-mono"><i class="fa-solid fa-globe" style="font-size: 0.68rem; margin-right: 4px;"></i>${escapeHtml(targetSub)}</span>` : ''}
+                ${lifecycleBadge}
+            </div>
+        </div>
+    `;
+}
+
 function renderGroupedFindings(findingsList) {
     const container = document.getElementById('findingsGroupedContainer');
     if (!container) return;
@@ -3107,10 +3132,7 @@ function renderGroupedFindings(findingsList) {
                     <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap;">
                         
                         <div style="flex: 1; min-width: 280px;">
-                            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px;">
-                                <strong style="font-size: 1.02rem; color: var(--text-primary); cursor: pointer;" onclick="openFindingDetailModal(${f.id})">${escapeHtml(f.title)}</strong>
-                                ${lifecycleBadge}
-                            </div>
+                            ${formatFindingTitleHTML(f.title, f.id, lifecycleBadge)}
 
                             <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 10px; font-family: var(--font-mono);">
                                 <span><i class="fa-solid fa-server" style="color: var(--accent-purple); font-size: 0.75rem;"></i> ${escapeHtml(f.asset_name || 'Asset')}</span>
@@ -3160,7 +3182,26 @@ async function openFindingDetailModal(findingId) {
             const f = data.finding;
             activeFindingDetail = f;
 
-            document.getElementById('fdModalTitle').textContent = f.title;
+            let mainTitle = f.title || 'Finding Details';
+            let targetDomain = '';
+            if (mainTitle.includes('(') && mainTitle.endsWith(')')) {
+                const lastIdx = mainTitle.lastIndexOf('(');
+                targetDomain = mainTitle.substring(lastIdx + 1, mainTitle.length - 1).trim();
+                mainTitle = mainTitle.substring(0, lastIdx).trim();
+            }
+
+            document.getElementById('fdModalTitle').textContent = mainTitle;
+
+            const domainContainer = document.getElementById('fdModalDomainBadge');
+            if (domainContainer) {
+                const domainText = targetDomain || f.asset_name;
+                if (domainText) {
+                    domainContainer.innerHTML = `<span class="badge badge-purple font-mono"><i class="fa-solid fa-globe" style="font-size: 0.68rem; margin-right: 4px;"></i>${escapeHtml(domainText)}</span>`;
+                    domainContainer.style.display = 'inline-flex';
+                } else {
+                    domainContainer.style.display = 'none';
+                }
+            }
 
             // Badges
             const pUpper = (f.priority || 'INFORMATIONAL').toUpperCase();
@@ -3223,9 +3264,13 @@ async function openFindingDetailModal(findingId) {
             document.getElementById('fdModalDescription').textContent = f.description || 'No detailed description recorded.';
 
             const recBox = document.getElementById('fdModalRecommendationBox');
+            const aiTag = document.getElementById('fdModalAiTag');
             if (f.recommendation) {
                 recBox.style.display = 'block';
                 document.getElementById('fdModalRecommendation').textContent = f.recommendation;
+                if (aiTag) {
+                    aiTag.style.display = 'inline-flex';
+                }
             } else {
                 recBox.style.display = 'none';
             }

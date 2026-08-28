@@ -226,14 +226,12 @@
         <div class="modal-box" style="max-width: 680px; width: 95%;">
             <div class="modal-header" style="align-items: flex-start; gap: 16px;">
                 <div style="flex: 1;">
-                    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                        <h3 class="modal-title" id="fdModalTitle" style="margin: 0; font-size: 1.4rem; word-break: break-all;">Finding Details</h3>
+                    <h3 class="modal-title" id="fdModalTitle" style="margin: 0 0 10px 0; font-size: 1.25rem; font-weight: 700; word-break: normal; overflow-wrap: break-word; color: var(--text-primary);">Finding Details</h3>
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <div id="fdModalDomainBadge" style="display: inline-flex;"></div>
                         <span id="fdModalPriorityBadge" class="badge badge-critical">CRITICAL</span>
                         <span id="fdModalSeverityBadge" class="badge badge-high">HIGH</span>
                         <span id="fdModalLifecycleBadge" class="badge badge-info">RECURRING</span>
-                    </div>
-                    <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 6px; font-family: var(--font-mono);" id="fdModalMeta">
-                        Correlated Security Vulnerability Context
                     </div>
                 </div>
                 <button class="modal-close" onclick="closeFindingDetailModal()">&times;</button>
@@ -311,9 +309,16 @@
                 <div id="fdModalDescBox" class="card-panel" style="padding: 16px;">
                     <h4 style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 8px; font-family: var(--font-mono); text-transform: uppercase;">Observation Description</h4>
                     <p id="fdModalDescription" style="font-size: 0.88rem; color: var(--text-primary); margin-bottom: 12px; line-height: 1.5; white-space: pre-wrap;"></p>
-                    <div id="fdModalRecommendationBox" style="display: none; font-size: 0.82rem; background: rgba(0,0,0,0.3); padding: 10px 14px; border-radius: 6px; border-left: 3px solid var(--accent-purple); color: var(--text-muted);">
-                        <strong style="color: var(--text-secondary); display: block; margin-bottom: 2px;">Remediation Recommendation:</strong>
-                        <span id="fdModalRecommendation"></span>
+                    <div id="fdModalRecommendationBox" style="display: none; font-size: 0.84rem; background: rgba(0,0,0,0.3); padding: 12px 14px; border-radius: 6px; border-left: 3px solid var(--accent-purple); color: var(--text-muted);">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                            <strong style="color: var(--text-secondary); display: inline-flex; align-items: center; gap: 6px;">
+                                <i class="fa-solid fa-shield-halved" style="color: var(--accent-purple);"></i> Remediation Recommendation
+                            </strong>
+                            <span id="fdModalAiTag" class="badge" style="display: none; font-size: 0.68rem; color: var(--accent-purple); background: rgba(168,85,247,0.1); border: 1px solid rgba(168,85,247,0.3);">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i> AI ADVISOR
+                            </span>
+                        </div>
+                        <span id="fdModalRecommendation" style="line-height: 1.5; white-space: pre-wrap; color: var(--text-primary);"></span>
                     </div>
                 </div>
             </div>

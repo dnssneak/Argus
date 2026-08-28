@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import or_
 
 from models.models import Finding, Asset, Scan, Target, Project, Service, Technology, Endpoint, Relationship, format_utc_iso, utc_now
+from services.ai_advisor import AIRemediationAdvisor
 
 
 class FindingCorrelator:
@@ -174,6 +175,19 @@ class FindingCorrelator:
             ).first()
             if target_obj:
                 finding.target_id = target_obj.id
+
+        # Automatic AI Remediation Advisor Processing Pipeline
+        try:
+            asset_dict = asset.to_dict() if asset else (finding.asset.to_dict() if finding.asset else {})
+            remediation_text, is_enhanced = AIRemediationAdvisor.enhance_or_generate_remediation(
+                finding_dict=finding.to_dict(),
+                asset_dict=asset_dict,
+                baseline_recommendation=finding.recommendation
+            )
+            finding.recommendation = remediation_text
+            finding.ai_enhanced = is_enhanced
+        except Exception as err:
+            pass
 
         db.commit()
         db.refresh(finding)

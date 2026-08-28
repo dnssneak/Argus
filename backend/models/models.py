@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 # pyrefly: ignore [missing-import]
 from sqlalchemy import (
-    Column, Integer, String, Text, DateTime, ForeignKey, Float, Table
+    Column, Integer, String, Text, DateTime, ForeignKey, Float, Table, Boolean
 )
 # pyrefly: ignore [missing-import]
 from sqlalchemy.orm import relationship
@@ -296,6 +296,7 @@ class Finding(Base):
 
     status = Column(String(32), default="open")  # open, resolved, false_positive
     lifecycle_status = Column(String(32), default="NEW")  # NEW, EXISTING, RECURRING, RESOLVED
+    ai_enhanced = Column(Boolean, default=False)
     first_seen = Column(DateTime, default=utc_now)
     last_seen = Column(DateTime, default=utc_now)
     created_at = Column(DateTime, default=utc_now)
@@ -347,6 +348,7 @@ class Finding(Base):
             "cve_id": self.cve_id,
             "status": self.status,
             "lifecycle_status": self.lifecycle_status or "NEW",
+            "ai_enhanced": self.ai_enhanced or False,
             "port": self.port,
             "service_name": self.service_name,
             "technology": self.technology,

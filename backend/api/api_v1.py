@@ -213,7 +213,13 @@ def list_assets():
         assets = query.order_by(order_col).all()
 
         formatted_assets = []
+        need_commit = False
         for a in assets:
+            calc_score = RiskEngine.calculate_asset_risk(db, a)["score"]
+            if a.risk_score != calc_score:
+                a.risk_score = calc_score
+                need_commit = True
+
             a_dict = a.to_dict()
             sev = RiskEngine.get_severity_level(a.risk_score or 0)
             a_dict["severity"] = sev
@@ -223,6 +229,9 @@ def list_assets():
                 continue
 
             formatted_assets.append(a_dict)
+
+        if need_commit:
+            db.commit()
 
         return jsonify({"success": True, "count": len(formatted_assets), "assets": formatted_assets})
     finally:
@@ -308,15 +317,11 @@ def get_asset_detail(asset_id):
         if not asset:
             return jsonify({"success": False, "error": "Asset not found"}), 404
 
-        # Automatically correlate findings for asset project scope
-        from services.finding_correlator import FindingCorrelator
-        from services.risk_engine import RiskEngine
-
-        FindingCorrelator.correlate_project_findings(db, project_id=asset.project_id)
-        db.refresh(asset)
-
         # Compute full risk analysis
         risk_analysis = RiskEngine.calculate_asset_risk(db, asset)
+        if asset.risk_score != risk_analysis["score"]:
+            asset.risk_score = risk_analysis["score"]
+            db.commit()
 
         data = asset.to_dict()
         data["risk_score"] = risk_analysis["score"]
@@ -524,8 +529,9 @@ def get_finding_detail(finding_id):
         if not finding:
             return jsonify({"success": False, "error": "Finding not found"}), 404
 
-        from services.finding_correlator import FindingCorrelator
-        FindingCorrelator.correlate_and_prioritize_finding(db, finding)
+        if not finding.recommendation or not finding.recommendation.strip():
+            from services.finding_correlator import FindingCorrelator
+            FindingCorrelator.correlate_and_prioritize_finding(db, finding)
 
         return jsonify({"success": True, "finding": finding.to_dict()})
     except Exception as e:
@@ -824,11 +830,12 @@ def list_project_scans(project_id):
 
 
 @api_bp.route("/projects/<int:project_id>/scans/<int:scan_id>", methods=["GET"])
-def get_project_scan_detail(project_id, scan_id):
+@api_bp.route("/scans/<int:scan_id>", methods=["GET"])
+def get_project_scan_detail(scan_id, project_id=None):
     db = get_db()
     try:
         scan = db.get(Scan, scan_id)
-        if not scan or scan.project_id != project_id:
+        if not scan or (project_id and scan.project_id != project_id):
             return jsonify({"success": False, "error": "Scan not found"}), 404
 
         s_dict = scan.to_dict()
