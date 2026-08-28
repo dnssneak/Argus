@@ -6,7 +6,8 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 
 # Database URL configuration (SQLite default, customizable via environment variable)
 BASE_DIR = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
-DEFAULT_DB_PATH = os.path.join(BASE_DIR, "argus.db")
+backend_db = os.path.join(BASE_DIR, "backend", "argus.db")
+DEFAULT_DB_PATH = backend_db if os.path.exists(backend_db) else os.path.join(BASE_DIR, "argus.db")
 DATABASE_URL = os.environ.get("DATABASE_URL", f"sqlite:///{DEFAULT_DB_PATH}")
 
 # For SQLite, enable check_same_thread=False for multi-threaded Flask requests
@@ -92,7 +93,24 @@ def init_db():
         add_col("relationships", "discovery_source", "VARCHAR(128)")
         add_col("relationships", "status", "VARCHAR(32) DEFAULT 'active'")
         add_col("relationships", "first_seen", "DATETIME")
-        add_col("relationships", "last_seen", "DATETIME")
+        # findings table
+        add_col("findings", "scan_id", "INTEGER")
+        add_col("findings", "target_id", "INTEGER")
+        add_col("findings", "first_scan_id", "INTEGER")
+        add_col("findings", "last_scan_id", "INTEGER")
+        add_col("findings", "priority", "VARCHAR(32)")
+        add_col("findings", "priority_score", "INTEGER DEFAULT 0")
+        add_col("findings", "priority_explanation", "TEXT")
+        add_col("findings", "cvss_score", "FLOAT")
+        add_col("findings", "port", "INTEGER")
+        add_col("findings", "service_name", "VARCHAR(64)")
+        add_col("findings", "technology", "VARCHAR(128)")
+        add_col("findings", "endpoint", "VARCHAR(512)")
+        add_col("findings", "discovery_source", "VARCHAR(128)")
+        add_col("findings", "lifecycle_status", "VARCHAR(32) DEFAULT 'NEW'")
+        add_col("findings", "ai_enhanced", "BOOLEAN DEFAULT 0")
+        add_col("findings", "first_seen", "DATETIME")
+        add_col("findings", "last_seen", "DATETIME")
 
     # Ensure default project exists
     db = SessionLocal()

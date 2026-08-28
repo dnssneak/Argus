@@ -68,9 +68,13 @@ class RiskEngine:
         medium_factors: List[str] = []
         low_factors: List[str] = []
 
-        # 1. Internet Exposure
+        # 1. Internet Exposure & Status Check
+        status = (asset.status or "").strip().lower()
         exposure = (asset.exposure or "").strip().lower()
-        if exposure in ["internet-facing", "publicly accessible", "public"]:
+
+        if status == "inactive" or exposure in ["unresolved", "inactive"]:
+            low_factors.append("Inactive / Unresolved host (DNS resolution inactive)")
+        elif exposure in ["internet-facing", "publicly accessible", "public"]:
             raw_score += 20.0
             high_factors.append("Internet-facing asset directly exposed to public network")
         elif exposure in ["internal", "private"]:

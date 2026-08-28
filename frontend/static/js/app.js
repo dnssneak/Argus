@@ -1069,11 +1069,10 @@ function openScanResultsFromProgress() {
 }
 
 async function viewHistoricalScan(scanId) {
-    const projId = document.getElementById('currentProjectId')?.value;
-    if (!projId) return;
-
     try {
-        const res = await fetch(`/api/v1/projects/${projId}/scans/${scanId}`);
+        const projId = document.getElementById('currentProjectId')?.value;
+        const url = projId ? `/api/v1/projects/${projId}/scans/${scanId}` : `/api/v1/scans/${scanId}`;
+        const res = await fetch(url);
         const data = await res.json();
 
         if (data.success) {
@@ -1101,13 +1100,19 @@ async function viewHistoricalScan(scanId) {
                                 <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
                                     <thead><tr style="text-align: left; border-bottom: 1px solid var(--border); color: var(--text-muted); font-family: var(--font-mono);"><th style="padding: 8px;">Subdomain</th><th style="padding: 8px;">Status</th><th style="padding: 8px;">IP Address</th></tr></thead>
                                     <tbody>
-                                        ${list.map(s => `
-                                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                                                <td style="padding: 8px; font-family: var(--font-mono); color: var(--accent-purple); font-weight: 600;">${escapeHtml(s.subdomain)}</td>
-                                                <td style="padding: 8px;"><span class="badge" style="background: rgba(74, 222, 128, 0.15); color: #4ADE80; font-size: 0.72rem;">${s.status}</span></td>
-                                                <td style="padding: 8px; font-family: var(--font-mono);">${escapeHtml(s.ip_address)}</td>
-                                            </tr>
-                                        `).join('')}
+                                        ${list.map(s => {
+                                            const statusUpper = (s.status || 'ACTIVE').toUpperCase();
+                                            const isInactive = statusUpper === 'INACTIVE' || (s.ip_address || '').toLowerCase().includes('not resolved');
+                                            const badgeClass = isInactive ? 'badge-inactive' : 'badge-active';
+                                            const finalStatus = isInactive ? 'INACTIVE' : 'ACTIVE';
+                                            return `
+                                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                                    <td style="padding: 8px; font-family: var(--font-mono); color: var(--accent-purple); font-weight: 600;">${escapeHtml(s.subdomain)}</td>
+                                                    <td style="padding: 8px;"><span class="badge ${badgeClass}" style="font-size: 0.7rem;">${finalStatus}</span></td>
+                                                    <td style="padding: 8px; font-family: var(--font-mono); color: ${isInactive ? 'var(--text-muted)' : 'var(--text-primary)'};">${escapeHtml(s.ip_address)}</td>
+                                                </tr>
+                                            `;
+                                        }).join('')}
                                     </tbody>
                                 </table>
                             </div>
@@ -1311,6 +1316,15 @@ function closeTargetHistoryModal() {
     if (modal) modal.classList.remove('active');
 }
 
+function getRiskBadgeClass(score) {
+    const val = parseInt(score) || 0;
+    if (val >= 80) return 'badge-critical';
+    if (val >= 60) return 'badge-high';
+    if (val >= 40) return 'badge-medium';
+    if (val >= 20) return 'badge-low';
+    return 'badge-info';
+}
+
 function renderAssetTable(assets) {
     const tbody = document.getElementById('assetTableBody');
     if (!tbody) return;
@@ -1322,21 +1336,25 @@ function renderAssetTable(assets) {
 
     tbody.innerHTML = assets.map(a => {
         const riskClass = getRiskBadgeClass(a.risk_score);
+        const typeBadge = (a.asset_type || '').toLowerCase() === 'domain' ? 'badge-blue' : 'badge-info';
+        const isInactive = (a.status || '').toLowerCase() === 'inactive' || (!a.ip_address && (a.asset_type || '').toLowerCase() === 'subdomain');
+        const statusBadge = isInactive ? 'badge-inactive' : 'badge-active';
+        const statusText = isInactive ? 'INACTIVE' : 'ACTIVE';
         return `
             <tr>
-                <td class="font-mono" style="font-weight: 600; color: var(--accent-cyan); white-space: nowrap;">${escapeHtml(a.name)}</td>
-                <td style="white-space: nowrap;"><span class="badge badge-blue">${escapeHtml(a.asset_type)}</span></td>
-                <td class="font-mono" style="white-space: nowrap;">${escapeHtml(a.ip_address || '—')}</td>
+                <td class="font-mono" style="font-weight: 600; color: var(--text-primary); white-space: nowrap;">${escapeHtml(a.name)}</td>
+                <td style="white-space: nowrap;"><span class="badge ${typeBadge}">${escapeHtml(a.asset_type)}</span></td>
+                <td class="font-mono" style="white-space: nowrap; color: ${isInactive ? 'var(--text-muted)' : 'var(--text-secondary)'};">${escapeHtml(a.ip_address || '—')}</td>
                 <td style="white-space: nowrap;"><span class="badge ${riskClass}">Risk ${a.risk_score}/100</span></td>
-                <td style="white-space: nowrap;">${a.service_count} Services</td>
-                <td style="white-space: nowrap;">${a.technology_count} Technologies</td>
-                <td style="white-space: nowrap;"><span class="badge badge-info">${escapeHtml(a.status)}</span></td>
+                <td style="white-space: nowrap; color: var(--text-secondary);">${a.service_count} Services</td>
+                <td style="white-space: nowrap; color: var(--text-secondary);">${a.technology_count} Technologies</td>
+                <td style="white-space: nowrap;"><span class="badge ${statusBadge}">${statusText}</span></td>
                 <td style="white-space: nowrap;">
                     <div style="display: inline-flex; align-items: center; gap: 8px;">
-                        <button class="btn-action-icon" style="background: rgba(168, 85, 247, 0.15) !important; border: 1px solid var(--border-accent) !important; color: var(--accent-purple) !important; width: 32px; height: 32px; border-radius: 8px; font-size: 0.85rem; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: all 0.2s ease;" onclick="viewAssetDetail(${a.id})" title="View Asset Profile Details">
+                        <button class="btn-action-icon" style="background: rgba(255, 255, 255, 0.04) !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; color: var(--text-secondary) !important; width: 32px; height: 32px; border-radius: 6px; font-size: 0.85rem; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: all 0.2s ease;" onclick="viewAssetDetail(${a.id})" title="View Asset Profile Details">
                             <i class="fa-solid fa-eye"></i>
                         </button>
-                        <button class="btn-action-icon btn-delete" style="background: rgba(0, 0, 0, 0.4) !important; border: 1px solid rgba(255, 255, 255, 0.08) !important; color: var(--risk-critical) !important; width: 32px; height: 32px; border-radius: 8px; font-size: 0.85rem; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: all 0.2s ease;" onclick="deleteAsset(${a.id})" title="Delete Asset">
+                        <button class="btn-action-icon btn-delete" style="background: rgba(244, 63, 94, 0.1) !important; border: 1px solid rgba(244, 63, 94, 0.25) !important; color: #f43f5e !important; width: 32px; height: 32px; border-radius: 6px; font-size: 0.85rem; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: all 0.2s ease;" onclick="deleteAsset(${a.id})" title="Delete Asset">
                             <i class="fa-solid fa-trash"></i>
                         </button>
                     </div>
@@ -1563,8 +1581,9 @@ async function viewAssetDetail(assetId) {
             document.getElementById('detailAssetName').textContent = asset.name;
 
             const statusBadge = document.getElementById('detailAssetStatusBadge');
-            statusBadge.textContent = (asset.status || 'Active').toUpperCase();
-            statusBadge.className = `badge ${asset.status === 'inactive' ? 'badge-medium' : 'badge-info'}`;
+            const isInactive = (asset.status || '').toLowerCase() === 'inactive' || (!asset.ip_address && (asset.asset_type || '').toLowerCase() === 'subdomain');
+            statusBadge.textContent = isInactive ? 'INACTIVE' : 'ACTIVE';
+            statusBadge.className = `badge ${isInactive ? 'badge-inactive' : 'badge-active'}`;
 
             document.getElementById('detailAssetType').textContent = asset.asset_type;
 
@@ -1632,8 +1651,9 @@ async function viewAssetDetail(assetId) {
             // Discovery Sources
             const discoverySourcesList = document.getElementById('detailDiscoverySourcesList');
             const possibleSources = ["Subdomain Discovery", "DNS Enumeration", "Certificate Transparency", "IP Resolution", "Port Scan", "HTTP Probe", "Technology Fingerprint"];
+            const sourcesArr = Array.isArray(asset.discovery_sources) ? asset.discovery_sources : (typeof asset.discovery_sources === 'string' ? asset.discovery_sources.split(',') : []);
             discoverySourcesList.innerHTML = possibleSources.map(src => {
-                const found = (asset.discovery_sources || []).some(s => s.toLowerCase().includes(src.split(' ')[0].toLowerCase()));
+                const found = sourcesArr.some(s => s.trim().toLowerCase().includes(src.split(' ')[0].toLowerCase()));
                 return `
                     <div style="display: flex; align-items: center; gap: 10px; color: ${found ? 'var(--text-primary)' : 'var(--text-muted)'}; margin-bottom: 4px;">
                         <i class="fa-solid ${found ? 'fa-square-check' : 'fa-square'}" style="color: ${found ? 'var(--accent-purple)' : 'var(--text-muted)'}; font-size: 1.1rem;"></i>
@@ -1706,26 +1726,48 @@ async function viewAssetDetail(assetId) {
             document.getElementById('detailCertIssuer').textContent = asset.cert_issuer || '—';
             document.getElementById('detailCertValidFrom').textContent = asset.cert_valid_from ? new Date(asset.cert_valid_from).toLocaleDateString() : '—';
             document.getElementById('detailCertExpires').textContent = asset.cert_expires ? new Date(asset.cert_expires).toLocaleDateString() : '—';
-            document.getElementById('detailCertSans').textContent = (asset.cert_sans || []).join(', ') || '—';
+            const sansStr = Array.isArray(asset.cert_sans) ? asset.cert_sans.join(', ') : (asset.cert_sans || '—');
+            document.getElementById('detailCertSans').textContent = sansStr || '—';
 
             // Findings Tab
             const findingsContainer = document.getElementById('detailFindingsContainer');
             if (asset.findings && asset.findings.length > 0) {
                 findingsContainer.innerHTML = asset.findings.map(f => {
                     let severityClass = 'badge-info';
-                    if (f.severity.toLowerCase() === 'critical') severityClass = 'badge-critical';
-                    else if (f.severity.toLowerCase() === 'high') severityClass = 'badge-high';
-                    else if (f.severity.toLowerCase() === 'medium') severityClass = 'badge-medium';
-                    else if (f.severity.toLowerCase() === 'low') severityClass = 'badge-low';
+                    const sevLower = (f.severity || '').toLowerCase();
+                    if (sevLower === 'critical') severityClass = 'badge-critical';
+                    else if (sevLower === 'high') severityClass = 'badge-high';
+                    else if (sevLower === 'medium') severityClass = 'badge-medium';
+                    else if (sevLower === 'low') severityClass = 'badge-low';
+
+                    let priorityClass = 'badge-info';
+                    const priorityUpper = (f.priority || f.severity || 'INFORMATIONAL').toUpperCase();
+                    if (priorityUpper === 'CRITICAL') priorityClass = 'badge-critical';
+                    else if (priorityUpper === 'HIGH') priorityClass = 'badge-high';
+                    else if (priorityUpper === 'MEDIUM') priorityClass = 'badge-medium';
+                    else if (priorityUpper === 'LOW') priorityClass = 'badge-low';
+
+                    const cvssVal = f.cvss !== undefined ? f.cvss : (f.risk_score || 0);
 
                     return `
-                        <div class="card-panel" style="border-left: 4px solid var(--risk-${f.severity.toLowerCase()}); padding: 14px; margin-bottom: 8px;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                                <strong style="font-size: 0.95rem; color: var(--text-primary);">${escapeHtml(f.title)}</strong>
-                                <span class="badge ${severityClass}">${f.severity.toUpperCase()}</span>
+                        <div class="card-panel" style="border-left: 4px solid var(--risk-${sevLower || 'informational'}); padding: 14px; margin-bottom: 8px;">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+                                <div>
+                                    ${formatFindingTitleHTML(f.title, f.id)}
+                                    <div style="display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; align-items: center; font-size: 0.78rem;">
+                                        <span class="badge ${severityClass}">Severity: ${(f.severity || 'INFO').toUpperCase()}</span>
+                                        <span class="badge ${priorityClass}">Priority: ${priorityUpper}</span>
+                                        <span class="badge badge-purple font-mono">CVSS: ${cvssVal}</span>
+                                        <span class="badge badge-info font-mono">Asset Risk: ${asset.risk_score || 0}</span>
+                                        <span class="badge ${asset.exposure === 'Internet-Facing' ? 'badge-critical' : 'badge-low'}">${escapeHtml(asset.exposure || 'Unknown')}</span>
+                                    </div>
+                                </div>
+                                <button class="btn btn-secondary" style="font-size: 0.75rem; padding: 5px 10px;" onclick="openFindingDetailModal(${f.id})">
+                                    <i class="fa-solid fa-circle-info"></i> Finding Details
+                                </button>
                             </div>
-                            <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 8px;">${escapeHtml(f.description)}</p>
-                            ${f.recommendation ? `<div style="font-size: 0.8rem; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 6px; color: var(--text-muted);"><strong style="color: var(--text-secondary);">Recommendation:</strong> ${escapeHtml(f.recommendation)}</div>` : ''}
+                            <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 8px; line-height: 1.4;">${escapeHtml(f.description)}</p>
+                            ${f.recommendation ? `<div style="font-size: 0.8rem; background: rgba(0,0,0,0.2); padding: 8px 12px; border-radius: 6px; color: var(--text-muted); border-left: 2px solid var(--accent-purple);"><strong style="color: var(--text-secondary);">Recommendation:</strong> ${escapeHtml(f.recommendation)}</div>` : ''}
                         </div>
                     `;
                 }).join('');
@@ -2902,6 +2944,447 @@ async function openScanChangeInspector(scanId) {
 
 function closeScanChangeInspectorModal() {
     document.getElementById('scanChangeInspectorModal')?.classList.remove('active');
+}
+
+// --- FINDINGS CORRELATION & PRIORITIZATION CONTROLLER ---
+
+let allFindingsCache = [];
+let activeFindingDetail = null;
+
+async function loadFindingsPage() {
+    const projFilter = document.getElementById('findingProjectFilter');
+    if (projFilter && projFilter.options.length <= 1) {
+        try {
+            const res = await fetch('/api/v1/projects');
+            const data = await res.json();
+            if (data.success && data.projects) {
+                let html = '<option value="">All Projects Scope</option>';
+                data.projects.forEach(p => {
+                    html += `<option value="${p.id}">${escapeHtml(p.name)}</option>`;
+                });
+                projFilter.innerHTML = html;
+                const savedProj = localStorage.getItem('currentProjectId');
+                if (savedProj) projFilter.value = savedProj;
+            }
+        } catch (err) {
+            console.error("Error loading project dropdown:", err);
+        }
+    }
+
+    const projId = projFilter?.value || '';
+    const container = document.getElementById('findingsGroupedContainer');
+    if (container) {
+        container.innerHTML = `
+            <div style="text-align: center; color: var(--accent-purple); padding: 40px; font-family: var(--font-mono);">
+                <i class="fa-solid fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                <div>Correlating & Prioritizing Findings...</div>
+            </div>`;
+    }
+
+    try {
+        let url = '/api/v1/findings';
+        if (projId) url += `?project_id=${projId}`;
+
+        let res = await fetch(url);
+        let data = await res.json();
+
+        if (data.success) {
+            // Auto-trigger correlation pass if 0 findings returned for selected scope
+            if ((!data.findings || data.findings.length === 0) && projId) {
+                await fetch(`/api/v1/projects/${projId}/findings/correlate`, { method: 'POST' });
+                res = await fetch(url);
+                data = await res.json();
+            }
+
+            allFindingsCache = data.findings || [];
+            filterFindingsPage();
+        } else {
+            showToast(data.error || "Failed to load findings", "error");
+        }
+    } catch (err) {
+        showToast("Error loading findings: " + err.message, "error");
+    }
+}
+
+function filterFindingsPage() {
+    const search = (document.getElementById('findingSearchInput')?.value || '').toLowerCase();
+    const priorityFilter = document.getElementById('findingPriorityFilter')?.value || '';
+    const severityFilter = document.getElementById('findingSeverityFilter')?.value || '';
+    const lifecycleFilter = document.getElementById('findingLifecycleFilter')?.value || '';
+
+    const filtered = allFindingsCache.filter(f => {
+        const titleMatch = (f.title || '').toLowerCase().includes(search);
+        const assetMatch = (f.asset_name || '').toLowerCase().includes(search);
+        const cveMatch = (f.cve_id || '').toLowerCase().includes(search);
+        const descMatch = (f.description || '').toLowerCase().includes(search);
+        const searchMatch = !search || titleMatch || assetMatch || cveMatch || descMatch;
+
+        const priorityMatch = !priorityFilter || (f.priority || '').toUpperCase() === priorityFilter.toUpperCase();
+        const severityMatch = !severityFilter || (f.severity || '').toUpperCase() === severityFilter.toUpperCase();
+        const lifecycleMatch = !lifecycleFilter || (f.lifecycle_status || '').toUpperCase() === lifecycleFilter.toUpperCase();
+
+        return searchMatch && priorityMatch && severityMatch && lifecycleMatch;
+    });
+
+    // Update Quick Stats Counts
+    let crit = 0, high = 0, med = 0, low = 0, info = 0;
+    filtered.forEach(f => {
+        const p = (f.priority || f.severity || 'INFORMATIONAL').toUpperCase();
+        if (p === 'CRITICAL') crit++;
+        else if (p === 'HIGH') high++;
+        else if (p === 'MEDIUM') med++;
+        else if (p === 'LOW') low++;
+        else info++;
+    });
+
+    if (document.getElementById('statCountCritical')) document.getElementById('statCountCritical').textContent = crit;
+    if (document.getElementById('statCountHigh')) document.getElementById('statCountHigh').textContent = high;
+    if (document.getElementById('statCountMedium')) document.getElementById('statCountMedium').textContent = med;
+    if (document.getElementById('statCountLow')) document.getElementById('statCountLow').textContent = low;
+    if (document.getElementById('statCountInfo')) document.getElementById('statCountInfo').textContent = info;
+
+    renderGroupedFindings(filtered);
+}
+
+function formatFindingTitleHTML(titleText, findingId, lifecycleBadge = '') {
+    let mainTitle = titleText || 'Security Finding';
+    let targetSub = '';
+
+    if (mainTitle.includes('(') && mainTitle.endsWith(')')) {
+        const lastParenIdx = mainTitle.lastIndexOf('(');
+        targetSub = mainTitle.substring(lastParenIdx + 1, mainTitle.length - 1).trim();
+        mainTitle = mainTitle.substring(0, lastParenIdx).trim();
+    }
+
+    return `
+        <div style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <strong style="font-size: 0.96rem; font-weight: 700; color: var(--text-primary); cursor: pointer;" onclick="openFindingDetailModal(${findingId})">${escapeHtml(mainTitle)}</strong>
+                ${targetSub ? `<span class="badge badge-purple font-mono"><i class="fa-solid fa-globe" style="font-size: 0.68rem; margin-right: 4px;"></i>${escapeHtml(targetSub)}</span>` : ''}
+                ${lifecycleBadge}
+            </div>
+        </div>
+    `;
+}
+
+function renderGroupedFindings(findingsList) {
+    const container = document.getElementById('findingsGroupedContainer');
+    if (!container) return;
+
+    if (!findingsList || findingsList.length === 0) {
+        container.innerHTML = `
+            <div class="card-panel" style="text-align: center; padding: 40px; color: var(--text-muted); font-style: italic;">
+                <i class="fa-solid fa-shield-check" style="font-size: 2.5rem; color: var(--accent-green); margin-bottom: 12px; display: block;"></i>
+                No security findings matched your criteria.
+            </div>`;
+        return;
+    }
+
+    const priorityTiers = ["CRITICAL", "HIGH", "MEDIUM", "LOW", "INFORMATIONAL"];
+    const grouped = {};
+    priorityTiers.forEach(t => grouped[t] = []);
+
+    findingsList.forEach(f => {
+        const p = (f.priority || f.severity || 'INFORMATIONAL').toUpperCase();
+        if (grouped[p]) grouped[p].push(f);
+        else grouped["INFORMATIONAL"].push(f);
+    });
+
+    let html = '';
+
+    priorityTiers.forEach(tier => {
+        const list = grouped[tier];
+        if (list.length === 0) return;
+
+        let badgeClass = 'badge-info';
+        let borderColor = 'var(--accent-blue)';
+        if (tier === 'CRITICAL') { badgeClass = 'badge-critical'; borderColor = 'var(--risk-critical)'; }
+        else if (tier === 'HIGH') { badgeClass = 'badge-high'; borderColor = 'var(--risk-high)'; }
+        else if (tier === 'MEDIUM') { badgeClass = 'badge-medium'; borderColor = 'var(--risk-medium)'; }
+        else if (tier === 'LOW') { badgeClass = 'badge-low'; borderColor = 'var(--risk-low)'; }
+
+        html += `
+            <div class="findings-tier-group" style="margin-bottom: 16px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid ${borderColor}; padding-bottom: 8px; margin-bottom: 14px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span class="badge ${badgeClass}" style="font-size: 0.85rem; font-family: var(--font-mono); font-weight: 700; padding: 4px 14px;">
+                            ${tier} PRIORITY
+                        </span>
+                        <span style="font-size: 0.85rem; color: var(--text-muted); font-family: var(--font-mono);">
+                            (${list.length} ${list.length === 1 ? 'finding' : 'findings'})
+                        </span>
+                    </div>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+        `;
+
+        list.forEach(f => {
+            const sevUpper = (f.severity || 'INFORMATIONAL').toUpperCase();
+            let lifecycleBadge = '';
+            if (f.lifecycle_status) {
+                const lc = f.lifecycle_status.toUpperCase();
+                lifecycleBadge = `<span style="font-size: 0.68rem; font-family: var(--font-mono); font-weight: 700; color: var(--accent-purple); background: rgba(168,85,247,0.1); border: 1px solid rgba(168,85,247,0.3); padding: 2px 7px; border-radius: 4px; text-transform: uppercase;">${lc}</span>`;
+            }
+
+            html += `
+                <div class="card-panel finding-card" style="border-left: 3px solid ${borderColor}; padding: 18px 20px; background: rgba(18, 18, 26, 0.75); border-radius: 8px; border-top: 1px solid var(--border); border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); margin-bottom: 4px;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap;">
+                        
+                        <div style="flex: 1; min-width: 280px;">
+                            ${formatFindingTitleHTML(f.title, f.id, lifecycleBadge)}
+
+                            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 10px; font-family: var(--font-mono);">
+                                <span><i class="fa-solid fa-server" style="color: var(--accent-purple); font-size: 0.75rem;"></i> ${escapeHtml(f.asset_name || 'Asset')}</span>
+                                <span style="color: var(--border);">&bull;</span>
+                                <span style="color: var(--text-muted);">Asset Risk: <strong style="color: var(--text-primary);">${f.asset_risk_score || 0}</strong></span>
+                                <span style="color: var(--border);">&bull;</span>
+                                <span style="color: ${f.exposure === 'Internet-Facing' ? '#f87171' : 'var(--text-muted)'};">${escapeHtml(f.exposure || 'Internal')}</span>
+                                ${f.port ? `<span style="color: var(--border);">&bull;</span><span style="color: var(--text-muted);">Port ${f.port}</span>` : ''}
+                                ${f.endpoint ? `<span style="color: var(--border);">&bull;</span><span style="color: var(--text-muted);">${escapeHtml(f.endpoint)}</span>` : ''}
+                            </div>
+
+                            ${f.description ? `<p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0; line-height: 1.5;">${escapeHtml(f.description)}</p>` : ''}
+                        </div>
+
+                        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 10px; flex-shrink: 0;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span class="badge ${badgeClass}" style="font-size: 0.72rem; font-weight: 700; padding: 4px 12px; letter-spacing: 0.05em;">PRIORITY: ${tier}</span>
+                                <span style="font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono); background: rgba(255,255,255,0.03); border: 1px solid var(--border); padding: 3px 8px; border-radius: 4px;">Sev: <strong style="color: var(--text-primary);">${sevUpper}</strong></span>
+                                <span style="font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono); background: rgba(255,255,255,0.03); border: 1px solid var(--border); padding: 3px 8px; border-radius: 4px;">CVSS: <strong style="color: var(--accent-purple);">${f.cvss || 0}</strong></span>
+                            </div>
+
+                            <button class="btn btn-secondary" style="font-size: 0.75rem; padding: 5px 12px; border-color: rgba(255,255,255,0.1); background: rgba(255,255,255,0.02);" onclick="openFindingDetailModal(${f.id})">
+                                <i class="fa-solid fa-circle-info" style="font-size: 0.75rem;"></i> Finding Details
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+            `;
+        });
+
+        html += `
+                </div>
+            </div>
+        `;
+    });
+
+    container.innerHTML = html;
+}
+
+async function openFindingDetailModal(findingId) {
+    try {
+        const res = await fetch(`/api/v1/findings/${findingId}`);
+        const data = await res.json();
+
+        if (data.success && data.finding) {
+            const f = data.finding;
+            activeFindingDetail = f;
+
+            let mainTitle = f.title || 'Finding Details';
+            let targetDomain = '';
+            if (mainTitle.includes('(') && mainTitle.endsWith(')')) {
+                const lastIdx = mainTitle.lastIndexOf('(');
+                targetDomain = mainTitle.substring(lastIdx + 1, mainTitle.length - 1).trim();
+                mainTitle = mainTitle.substring(0, lastIdx).trim();
+            }
+
+            document.getElementById('fdModalTitle').textContent = mainTitle;
+
+            const domainContainer = document.getElementById('fdModalDomainBadge');
+            if (domainContainer) {
+                const domainText = targetDomain || f.asset_name;
+                if (domainText) {
+                    domainContainer.innerHTML = `<span class="badge badge-purple font-mono"><i class="fa-solid fa-globe" style="font-size: 0.68rem; margin-right: 4px;"></i>${escapeHtml(domainText)}</span>`;
+                    domainContainer.style.display = 'inline-flex';
+                } else {
+                    domainContainer.style.display = 'none';
+                }
+            }
+
+            // Badges
+            const pUpper = (f.priority || 'INFORMATIONAL').toUpperCase();
+            let pClass = 'badge-info';
+            if (pUpper === 'CRITICAL') pClass = 'badge-critical';
+            else if (pUpper === 'HIGH') pClass = 'badge-high';
+            else if (pUpper === 'MEDIUM') pClass = 'badge-medium';
+            else if (pUpper === 'LOW') pClass = 'badge-low';
+
+            const pBadge = document.getElementById('fdModalPriorityBadge');
+            pBadge.textContent = `PRIORITY: ${pUpper}`;
+            pBadge.className = `badge ${pClass}`;
+
+            const sUpper = (f.severity || 'INFORMATIONAL').toUpperCase();
+            let sClass = 'badge-info';
+            if (sUpper === 'CRITICAL') sClass = 'badge-critical';
+            else if (sUpper === 'HIGH') sClass = 'badge-high';
+            else if (sUpper === 'MEDIUM') sClass = 'badge-medium';
+            else if (sUpper === 'LOW') sClass = 'badge-low';
+
+            const sBadge = document.getElementById('fdModalSeverityBadge');
+            sBadge.textContent = `SEVERITY: ${sUpper}`;
+            sBadge.className = `badge ${sClass}`;
+
+            const lcUpper = (f.lifecycle_status || 'NEW').toUpperCase();
+            const lcBadge = document.getElementById('fdModalLifecycleBadge');
+            lcBadge.textContent = lcUpper;
+            lcBadge.className = 'badge';
+            lcBadge.style.cssText = 'font-size: 0.7rem; color: var(--accent-purple); background: rgba(168,85,247,0.1); border: 1px solid rgba(168,85,247,0.3);';
+
+            // Populate 13 Correlated Context Fields
+            document.getElementById('fdValSeverity').textContent = sUpper;
+            document.getElementById('fdValPriority').textContent = pUpper;
+            document.getElementById('fdValCvss').textContent = f.cvss !== undefined ? f.cvss : '—';
+            document.getElementById('fdValAsset').textContent = f.asset_name || '—';
+            document.getElementById('fdValAssetRisk').textContent = f.asset_risk_score !== undefined ? f.asset_risk_score : '—';
+            document.getElementById('fdValExposure').textContent = f.exposure || '—';
+            document.getElementById('fdValPort').textContent = f.port ? `${f.port}${f.service_name ? ' (' + f.service_name + ')' : ''}` : '—';
+            document.getElementById('fdValTechnology').textContent = f.technology || '—';
+            document.getElementById('fdValEndpoint').textContent = f.endpoint || '—';
+            document.getElementById('fdValProject').textContent = f.project_name || '—';
+            document.getElementById('fdValTarget').textContent = f.target_name || '—';
+            document.getElementById('fdValScan').textContent = f.scan_id ? `#${f.scan_id}` : '—';
+
+            // Priority Explanation Contributing Factors
+            const factorsContainer = document.getElementById('fdModalFactorsList');
+            const factors = f.priority_explanation || [];
+            if (factors && factors.length > 0) {
+                factorsContainer.innerHTML = factors.map(factor => `
+                    <div style="display: flex; align-items: center; gap: 8px; color: var(--text-primary); background: rgba(255,255,255,0.03); padding: 8px 12px; border-radius: 6px; border-left: 2px solid var(--accent-purple);">
+                        <i class="fa-solid fa-angle-right" style="color: var(--accent-purple); font-size: 0.8rem;"></i>
+                        <span>${escapeHtml(factor)}</span>
+                    </div>
+                `).join('');
+            } else {
+                factorsContainer.innerHTML = '<div style="color: var(--text-muted); font-style: italic;">No specific priority elevation factors.</div>';
+            }
+
+            // Description & Recommendation
+            document.getElementById('fdModalDescription').textContent = f.description || 'No detailed description recorded.';
+
+            const recBox = document.getElementById('fdModalRecommendationBox');
+            const aiTag = document.getElementById('fdModalAiTag');
+            if (f.recommendation) {
+                recBox.style.display = 'block';
+                document.getElementById('fdModalRecommendation').textContent = f.recommendation;
+                if (aiTag) {
+                    aiTag.style.display = 'inline-flex';
+                }
+            } else {
+                recBox.style.display = 'none';
+            }
+
+            document.getElementById('findingDetailModal')?.classList.add('active');
+        } else {
+            showToast(data.error || "Could not load finding details", "error");
+        }
+    } catch (err) {
+        showToast("Error fetching finding detail: " + err.message, "error");
+    }
+}
+
+function closeFindingDetailModal() {
+    document.getElementById('findingDetailModal')?.classList.remove('active');
+}
+
+async function toggleFindingResolvedStatus() {
+    if (!activeFindingDetail) return;
+    const currentStatus = activeFindingDetail.status || 'open';
+    const newStatus = currentStatus.toLowerCase() === 'resolved' ? 'open' : 'resolved';
+
+    try {
+        const res = await fetch(`/api/v1/findings/${activeFindingDetail.id}/status`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: newStatus })
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast(`Finding status changed to '${newStatus}'.`);
+            closeFindingDetailModal();
+            loadFindingsPage();
+            if (currentActiveAssetId) viewAssetDetail(currentActiveAssetId);
+        } else {
+            showToast(data.error || "Failed to update status", "error");
+        }
+    } catch (err) {
+        showToast("Error updating finding status: " + err.message, "error");
+    }
+}
+
+async function recorrelateProjectFindings() {
+    const projId = document.getElementById('findingProjectFilter')?.value || localStorage.getItem('currentProjectId');
+    if (!projId) {
+        showToast("Select a project scope first to trigger re-correlation.", "warning");
+        return;
+    }
+
+    try {
+        showToast("Recorrelating security findings and updating priority scores...");
+        const res = await fetch(`/api/v1/projects/${projId}/findings/correlate`, { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+            showToast(data.message);
+            loadFindingsPage();
+        } else {
+            showToast(data.error || "Recorrelation failed", "error");
+        }
+    } catch (err) {
+        showToast("Error during correlation pass: " + err.message, "error");
+    }
+}
+
+function openAddFindingModal() {
+    document.getElementById('addFindingForm')?.reset();
+    document.getElementById('addFindingModal')?.classList.add('active');
+}
+
+function closeAddFindingModal() {
+    document.getElementById('addFindingModal')?.classList.remove('active');
+}
+
+async function handleAddFindingSubmit(event) {
+    event.preventDefault();
+    if (!currentActiveAssetId) {
+        showToast("No active asset selected.", "error");
+        return;
+    }
+
+    const title = document.getElementById('afTitle').value.trim();
+    const severity = document.getElementById('afSeverity').value;
+    const cvss = parseFloat(document.getElementById('afCvss').value) || 0;
+    const port = parseInt(document.getElementById('afPort').value) || null;
+    const endpoint = document.getElementById('afEndpoint').value.trim() || null;
+    const description = document.getElementById('afDescription').value.trim() || null;
+    const recommendation = document.getElementById('afRecommendation').value.trim() || null;
+
+    try {
+        const res = await fetch(`/api/v1/assets/${currentActiveAssetId}/findings`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                title,
+                severity,
+                risk_score: cvss,
+                port,
+                endpoint,
+                description,
+                recommendation
+            })
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast(`Finding '${title}' added and prioritized successfully!`);
+            closeAddFindingModal();
+            viewAssetDetail(currentActiveAssetId);
+            loadAssetsPage();
+        } else {
+            showToast(data.error || "Failed to add finding", "error");
+        }
+    } catch (err) {
+        showToast("Error creating finding: " + err.message, "error");
+    }
 }
 
 

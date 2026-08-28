@@ -574,15 +574,28 @@ function initCustomSelects() {
             e.stopPropagation();
             document.querySelectorAll('.custom-select-wrapper.open').forEach(other => {
                 if (other !== wrapper) {
-                    other.classList.remove('open');
+                    other.classList.remove('open', 'pop-up');
                     other.style.zIndex = '';
                 }
             });
             const isOpen = wrapper.classList.toggle('open');
-            wrapper.style.zIndex = isOpen ? '999999' : '';
+            if (isOpen) {
+                wrapper.style.zIndex = '1000000';
+                
+                // Smart viewport positioning: pop up if close to bottom of screen
+                const rect = trigger.getBoundingClientRect();
+                const spaceBelow = window.innerHeight - rect.bottom;
+                if (spaceBelow < 260 && rect.top > 260) {
+                    wrapper.classList.add('pop-up');
+                } else {
+                    wrapper.classList.remove('pop-up');
+                }
+            } else {
+                wrapper.style.zIndex = '';
+                wrapper.classList.remove('pop-up');
+            }
         });
 
-        // Observe native select for dynamic <option> updates
         const observer = new MutationObserver(() => {
             buildCustomSelectMenuOptions(select, menu, trigger);
         });
@@ -701,7 +714,7 @@ function wrapperClosest(el, className) {
 // Global click to close custom dropdowns
 document.addEventListener('click', () => {
     document.querySelectorAll('.custom-select-wrapper.open').forEach(wrapper => {
-        wrapper.classList.remove('open');
+        wrapper.classList.remove('open', 'pop-up');
         wrapper.style.zIndex = '';
     });
 });

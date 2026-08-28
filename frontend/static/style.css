@@ -21,11 +21,95 @@
     --accent-green: #4ade80;
     --accent-red: #f87171;
     --accent-yellow: #fbbf24;
+    --accent-blue: #38bdf8;
+    --risk-critical: #ef4444;
+    --risk-high: #f87171;
+    --risk-medium: #fbbf24;
+    --risk-low: #60a5fa;
+    --risk-informational: #38bdf8;
     --font-mono: 'JetBrains Mono', monospace;
     --font-sans: 'Inter', sans-serif;
     --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
     --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.4);
     --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Badges & Metric Chips */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3px 9px;
+    border-radius: 6px;
+    font-size: 0.7rem;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: var(--text-secondary);
+}
+
+.badge-critical {
+    background: rgba(244, 63, 94, 0.12) !important;
+    color: #f43f5e !important;
+    border: 1px solid rgba(244, 63, 94, 0.3) !important;
+}
+
+.badge-high {
+    background: rgba(249, 115, 22, 0.12) !important;
+    color: #f97316 !important;
+    border: 1px solid rgba(249, 115, 22, 0.3) !important;
+}
+
+.badge-medium {
+    background: rgba(234, 179, 8, 0.10) !important;
+    color: #eab308 !important;
+    border: 1px solid rgba(234, 179, 8, 0.25) !important;
+}
+
+.badge-low {
+    background: rgba(59, 130, 246, 0.10) !important;
+    color: #60a5fa !important;
+    border: 1px solid rgba(59, 130, 246, 0.25) !important;
+}
+
+.badge-info, .badge-cyan {
+    background: rgba(148, 163, 184, 0.08) !important;
+    color: #94a3b8 !important;
+    border: 1px solid rgba(148, 163, 184, 0.2) !important;
+}
+
+.badge-purple {
+    background: rgba(168, 85, 247, 0.10) !important;
+    color: #c084fc !important;
+    border: 1px solid rgba(168, 85, 247, 0.25) !important;
+}
+
+.badge-blue {
+    background: rgba(59, 130, 246, 0.10) !important;
+    color: #60a5fa !important;
+    border: 1px solid rgba(59, 130, 246, 0.25) !important;
+}
+
+.badge-active {
+    background: rgba(16, 185, 129, 0.10) !important;
+    color: #10b981 !important;
+    border: 1px solid rgba(16, 185, 129, 0.25) !important;
+}
+
+.badge-inactive {
+    background: rgba(148, 163, 184, 0.08) !important;
+    color: #94a3b8 !important;
+    border: 1px solid rgba(148, 163, 184, 0.2) !important;
+}
+
+.badge-blue {
+    background: rgba(96, 165, 250, 0.18) !important;
+    color: #60a5fa !important;
+    border: 1px solid rgba(96, 165, 250, 0.4) !important;
 }
 
 /* Reset & Base */
@@ -445,6 +529,60 @@ body.no-transition .main-content {
 body.no-transition .navbar {
     transform: translateY(0) !important;
     animation: none !important;
+}
+
+/* ============================================
+   MUTED ELEGANT BADGE DESIGN SYSTEM
+   ============================================ */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    font-family: var(--font-mono);
+    padding: 3px 10px;
+    border-radius: 6px;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+    text-transform: uppercase;
+    transition: all 0.2s ease;
+}
+
+.badge-critical {
+    background: rgba(239, 68, 68, 0.09) !important;
+    color: #f87171 !important;
+    border: 1px solid rgba(239, 68, 68, 0.25) !important;
+}
+
+.badge-high {
+    background: rgba(249, 115, 22, 0.09) !important;
+    color: #fb923c !important;
+    border: 1px solid rgba(249, 115, 22, 0.25) !important;
+}
+
+.badge-medium {
+    background: rgba(234, 179, 8, 0.09) !important;
+    color: #facc15 !important;
+    border: 1px solid rgba(234, 179, 8, 0.25) !important;
+}
+
+.badge-low {
+    background: rgba(59, 130, 246, 0.09) !important;
+    color: #60a5fa !important;
+    border: 1px solid rgba(59, 130, 246, 0.25) !important;
+}
+
+.badge-info {
+    background: rgba(148, 163, 184, 0.09) !important;
+    color: #94a3b8 !important;
+    border: 1px solid rgba(148, 163, 184, 0.20) !important;
+}
+
+.badge-purple {
+    background: rgba(168, 85, 247, 0.09) !important;
+    color: #c084fc !important;
+    border: 1px solid rgba(168, 85, 247, 0.25) !important;
 }
 
 /* ============================================
@@ -5831,6 +5969,12 @@ select.cyber-select-pill:focus, select.cyber-select:focus, select.scan-select:fo
     display: inline-block;
     user-select: none;
     vertical-align: middle;
+    z-index: 10;
+}
+
+.custom-select-wrapper.open {
+    z-index: 1000000 !important;
+    position: relative !important;
 }
 
 .custom-select-trigger {
@@ -5893,7 +6037,7 @@ select.cyber-select-pill:focus, select.cyber-select:focus, select.scan-select:fo
 
 .custom-select-menu {
     position: absolute;
-    top: calc(100% + 8px);
+    top: calc(100% + 6px);
     left: 0;
     min-width: 100%;
     width: max-content;
@@ -5904,15 +6048,30 @@ select.cyber-select-pill:focus, select.cyber-select:focus, select.scan-select:fo
     -webkit-backdrop-filter: none !important;
     border: 1px solid rgba(168, 85, 247, 0.45);
     border-radius: 12px;
-    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.95), 0 0 25px rgba(168, 85, 247, 0.25);
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.95), 0 0 30px rgba(168, 85, 247, 0.3);
     padding: 6px;
-    z-index: 99999 !important;
+    z-index: 1000001 !important;
     opacity: 1 !important;
     visibility: hidden;
-    transform: translateY(-8px) scale(0.96);
+    transform: translateY(-6px) scale(0.96);
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     max-height: 280px;
     overflow-y: auto;
+}
+
+.custom-select-wrapper.pop-up .custom-select-menu {
+    top: auto !important;
+    bottom: calc(100% + 6px) !important;
+    transform: translateY(6px) scale(0.96);
+    box-shadow: 0 -20px 45px rgba(0, 0, 0, 0.95), 0 0 30px rgba(168, 85, 247, 0.3);
+}
+
+.custom-select-wrapper.open.pop-up .custom-select-menu {
+    transform: translateY(0) scale(1);
+}
+
+.form-group {
+    overflow: visible;
 }
 
 .custom-select-menu::-webkit-scrollbar {

@@ -57,6 +57,9 @@ class AssetProcessor:
                 if resolved_ip in ("Not Resolved", "Unknown", "", None):
                     resolved_ip = None
 
+                is_resolved = bool(resolved_ip and resolved_ip not in ("Not Resolved", "Unknown", "", "None"))
+                sub_status = "active" if is_resolved else "inactive"
+
                 sub_asset = AssetProcessor._get_or_create_asset(
                     db=db,
                     project_id=project_id,
@@ -65,7 +68,8 @@ class AssetProcessor:
                     source_name="Subdomain Discovery",
                     scan_id=scan_id,
                     now=now,
-                    ip_address=resolved_ip
+                    ip_address=resolved_ip if is_resolved else None,
+                    status=sub_status
                 )
                 if sub_asset.id not in [a.id for a in processed_assets]:
                     processed_assets.append(sub_asset)
@@ -293,6 +297,48 @@ class AssetProcessor:
         except Exception as re:
             print(f"Risk recalculation warning: {str(re)}")
 
+        # Ingest explicit findings/vulnerabilities from scan results if present
+        vulnerabilities = results.get("vulnerabilities") or results.get("findings") or []
+        if isinstance(vulnerabilities, list):
+            for v in vulnerabilities:
+                if isinstance(v, dict) and v.get("title"):
+                    target_asset = primary_asset
+                    v_asset_name = v.get("asset_name") or v.get("target")
+                    if v_asset_name:
+                        matched = [a for a in processed_assets if a.name.lower() == str(v_asset_name).strip().lower()]
+                        if matched:
+                            target_asset = matched[0]
+
+                    v_title = v.get("title").strip()
+                    existing_f = db.query(Finding).filter_by(asset_id=target_asset.id, title=v_title).first()
+                    if not existing_f:
+                        new_f = Finding(
+                            asset_id=target_asset.id,
+                            scan_id=scan_id,
+                            title=v_title,
+                            severity=v.get("severity", "Medium"),
+                            cvss_score=float(v.get("cvss_score") or v.get("risk_score") or 0),
+                            risk_score=int(v.get("risk_score") or 0),
+                            description=v.get("description"),
+                            evidence=v.get("evidence"),
+                            recommendation=v.get("recommendation"),
+                            cve_id=v.get("cve_id"),
+                            port=v.get("port"),
+                            service_name=v.get("service_name"),
+                            technology=v.get("technology"),
+                            endpoint=v.get("endpoint"),
+                            status="open"
+                        )
+                        db.add(new_f)
+
+        # Execute Finding correlation & contextual prioritization pass
+        try:
+            from services.finding_correlator import FindingCorrelator
+            FindingCorrelator.correlate_project_findings(db, project_id)
+            FindingCorrelator.correlate_scan_findings(db, project_id, target, scan_id, results)
+        except Exception as fe:
+            print(f"Finding correlation warning: {str(fe)}")
+
         for a in processed_assets:
             db.refresh(a)
 
@@ -307,12 +353,13 @@ class AssetProcessor:
         scan_id: int,
         now: datetime,
         asset_type: str = "Domain",
-        ip_address: Optional[str] = None
+        ip_address: Optional[str] = None,
+        status: Optional[str] = None
     ) -> Asset:
         """
         Deduplicates assets per project_id and name.
-        If existing: preserves first_seen, updates last_seen, appends discovery_sources.
-        If new: creates asset record, sets first_seen & last_seen, appends initial timeline event.
+        If existing: preserves first_seen, updates last_seen, appends discovery_sources, updates status if provided.
+        If new: creates asset record with accurate active/inactive status, sets first_seen & last_seen.
         """
         name_clean = name.strip()
         asset = db.query(Asset).filter(
@@ -320,11 +367,25 @@ class AssetProcessor:
             Asset.name.ilike(name_clean)
         ).first()
 
+        # Determine accurate status and exposure
+        if status:
+            final_status = status.lower()
+        elif ip_address and ip_address not in ("Not Resolved", "Unknown", "", "None"):
+            final_status = "active"
+        elif asset_type == "Domain":
+            final_status = "active"
+        else:
+            final_status = "inactive"
+
+        final_exposure = "Unresolved" if final_status == "inactive" else ("Internet-Facing" if asset_type in ("Domain", "Subdomain", "IP Address") else "Internal")
+
         if asset:
-            # Asset exists - update last_seen and combine discovery sources
+            # Asset exists - update last_seen, status, exposure, and combine discovery sources
             asset.last_seen = now
             if ip_address and not asset.ip_address:
                 asset.ip_address = ip_address
+            asset.status = final_status
+            asset.exposure = final_exposure
             
             # Combine discovery sources (comma-separated text)
             sources = [s.strip() for s in (asset.discovery_sources or "").split(",") if s.strip()]
@@ -348,9 +409,9 @@ class AssetProcessor:
                 ip_address=ip_address,
                 first_seen=now,
                 last_seen=now,
-                exposure="Internet-Facing",
+                exposure=final_exposure,
                 discovery_sources=source_name,
-                status="active"
+                status=final_status
             )
             db.add(asset)
             db.flush()  # Generate asset.id
