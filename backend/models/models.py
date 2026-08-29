@@ -341,7 +341,7 @@ class Finding(Base):
             "priority_score": self.priority_score or 0,
             "priority_explanation": explanation_list,
             "risk_score": self.risk_score,
-            "cvss": self.cvss_score if self.cvss_score is not None else float(self.risk_score or 0),
+            "cvss": round(min(10.0, max(0.0, float(self.cvss_score) if self.cvss_score is not None else (float(self.risk_score or 0) / 10.0 if (self.risk_score or 0) > 10 else float(self.risk_score or 0)))), 1),
             "description": self.description,
             "evidence": self.evidence,
             "recommendation": self.recommendation,

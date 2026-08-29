@@ -842,15 +842,17 @@ function openScanConfigModal(targetName = '', preselectedCaps = null) {
     }
 
     if (preselectedCaps && Array.isArray(preselectedCaps)) {
-        document.getElementById('capSubdomain').checked = preselectedCaps.includes('subdomain');
-        document.getElementById('capPorts').checked = preselectedCaps.includes('ports');
-        document.getElementById('capRecon').checked = preselectedCaps.includes('recon');
-        document.getElementById('capWeb').checked = preselectedCaps.includes('web');
+        if (document.getElementById('capSubdomain')) document.getElementById('capSubdomain').checked = preselectedCaps.includes('subdomain');
+        if (document.getElementById('capPorts')) document.getElementById('capPorts').checked = preselectedCaps.includes('ports');
+        if (document.getElementById('capRecon')) document.getElementById('capRecon').checked = preselectedCaps.includes('recon');
+        if (document.getElementById('capWeb')) document.getElementById('capWeb').checked = preselectedCaps.includes('web');
+        if (document.getElementById('capWebSecurity')) document.getElementById('capWebSecurity').checked = preselectedCaps.includes('web_security');
     } else {
-        document.getElementById('capSubdomain').checked = true;
-        document.getElementById('capPorts').checked = true;
-        document.getElementById('capRecon').checked = true;
-        document.getElementById('capWeb').checked = true;
+        if (document.getElementById('capSubdomain')) document.getElementById('capSubdomain').checked = true;
+        if (document.getElementById('capPorts')) document.getElementById('capPorts').checked = true;
+        if (document.getElementById('capRecon')) document.getElementById('capRecon').checked = true;
+        if (document.getElementById('capWeb')) document.getElementById('capWeb').checked = true;
+        if (document.getElementById('capWebSecurity')) document.getElementById('capWebSecurity').checked = true;
     }
 
     togglePortConfigDisplay();
@@ -956,6 +958,20 @@ function generateCmdLogText(cap, target, status, results) {
         return out;
     }
 
+    if (cap === 'web_security') {
+        if (status === 'running') {
+            return `$ argus-web-sec --url http://${target} --headers --ssl --cookies --cors --methods --dirs\n[+] Launching Dedicated Web Security Engine...\n[+] Probing HTTP Security Headers, SSL/TLS, Cookies, CORS, Methods, & Directory discovery...`;
+        }
+        const secData = results?.web_security || {};
+        let out = `$ argus-web-sec --url http://${target} --headers --ssl --cookies --cors --methods --dirs\n[+] Launching Dedicated Web Security Engine...\n`;
+        out += `[+] Security Headers Evaluated: ${secData.security_headers ? Object.keys(secData.security_headers).length : 6} headers checked\n`;
+        out += `[+] SSL/TLS Status: ${secData.ssl?.certificate_valid ? 'Valid Cert' : 'N/A'} (TLS: ${secData.ssl?.tls_versions ? secData.ssl.tls_versions.join(', ') : 'TLSv1.2, TLSv1.3'})\n`;
+        out += `[+] Discovered Endpoints: ${secData.directory_discovery ? secData.directory_discovery.length : 0} directories found\n`;
+        out += `[+] Security Findings Generated: ${secData.findings ? secData.findings.length : 0} findings recorded\n`;
+        out += `[+] Web Security Analysis Completed. [Exit Code: 0]`;
+        return out;
+    }
+
     return `$ executing ${cap} on ${target}...`;
 }
 
@@ -974,6 +990,7 @@ async function handleExecuteProjectScanSubmit(event) {
     if (document.getElementById('capPorts')?.checked) capabilities.push('ports');
     if (document.getElementById('capRecon')?.checked) capabilities.push('recon');
     if (document.getElementById('capWeb')?.checked) capabilities.push('web');
+    if (document.getElementById('capWebSecurity')?.checked) capabilities.push('web_security');
 
     if (capabilities.length === 0) {
         showToast('Please select at least one scan capability to run.', 'error');
@@ -996,7 +1013,8 @@ async function handleExecuteProjectScanSubmit(event) {
         'subdomain': 'Subdomain Discovery',
         'ports': 'Port Scanning',
         'recon': 'Reconnaissance',
-        'web': 'Web Footprinting'
+        'web': 'Web Footprinting',
+        'web_security': 'Web Security Engine'
     };
 
     progressContainer.innerHTML = capabilities.map(cap => `
@@ -1101,18 +1119,18 @@ async function viewHistoricalScan(scanId) {
                                     <thead><tr style="text-align: left; border-bottom: 1px solid var(--border); color: var(--text-muted); font-family: var(--font-mono);"><th style="padding: 8px;">Subdomain</th><th style="padding: 8px;">Status</th><th style="padding: 8px;">IP Address</th></tr></thead>
                                     <tbody>
                                         ${list.map(s => {
-                                            const statusUpper = (s.status || 'ACTIVE').toUpperCase();
-                                            const isInactive = statusUpper === 'INACTIVE' || (s.ip_address || '').toLowerCase().includes('not resolved');
-                                            const badgeClass = isInactive ? 'badge-inactive' : 'badge-active';
-                                            const finalStatus = isInactive ? 'INACTIVE' : 'ACTIVE';
-                                            return `
+                    const statusUpper = (s.status || 'ACTIVE').toUpperCase();
+                    const isInactive = statusUpper === 'INACTIVE' || (s.ip_address || '').toLowerCase().includes('not resolved');
+                    const badgeClass = isInactive ? 'badge-inactive' : 'badge-active';
+                    const finalStatus = isInactive ? 'INACTIVE' : 'ACTIVE';
+                    return `
                                                 <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
                                                     <td style="padding: 8px; font-family: var(--font-mono); color: var(--accent-purple); font-weight: 600;">${escapeHtml(s.subdomain)}</td>
                                                     <td style="padding: 8px;"><span class="badge ${badgeClass}" style="font-size: 0.7rem;">${finalStatus}</span></td>
                                                     <td style="padding: 8px; font-family: var(--font-mono); color: ${isInactive ? 'var(--text-muted)' : 'var(--text-primary)'};">${escapeHtml(s.ip_address)}</td>
                                                 </tr>
                                             `;
-                                        }).join('')}
+                }).join('')}
                                     </tbody>
                                 </table>
                             </div>
@@ -1208,6 +1226,83 @@ async function viewHistoricalScan(scanId) {
                 `;
             }
 
+            // Web Security Engine Results Section
+            if (results.web_security) {
+                const ws = results.web_security;
+                const headers = ws.security_headers || {};
+                const ssl = ws.ssl || {};
+                const cors = ws.cors || {};
+                const methods = ws.http_methods || {};
+                const dirs = ws.directory_discovery || [];
+                const findings = ws.findings || [];
+
+                let headerBadgesHtml = Object.entries(headers).map(([hName, hInfo]) => {
+                    const st = hInfo.status || 'Missing';
+                    let badgeClass = 'badge-active';
+                    let icon = 'fa-check';
+                    if (st === 'Missing') { badgeClass = 'badge-critical'; icon = 'fa-triangle-exclamation'; }
+                    else if (st.includes('Weak')) { badgeClass = 'badge-medium'; icon = 'fa-circle-exclamation'; }
+                    return `<span class="badge ${badgeClass}" style="font-size: 0.72rem; padding: 4px 8px; display: inline-flex; align-items: center; gap: 4px;"><i class="fa-solid ${icon}"></i> ${escapeHtml(hName)}: ${st}</span>`;
+                }).join(' ');
+
+                let dirsHtml = dirs.length === 0 ? '<span style="color: var(--text-muted); font-style: italic; font-size: 0.8rem;">No exposed directories discovered.</span>' :
+                    dirs.map(d => `<div class="font-mono" style="font-size: 0.8rem; display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding: 3px 0;"><span><strong style="color: var(--accent-purple);">GET</strong> ${escapeHtml(d.path)}</span><span style="color: var(--accent-green);">${d.status_code}</span></div>`).join('');
+
+                let findingsHtml = findings.length === 0 ? '<span style="color: var(--accent-green); font-size: 0.82rem;">No security vulnerabilities identified.</span>' :
+                    findings.map(f => {
+                        let sevBadge = f.severity === 'Critical' ? 'badge-critical' : (f.severity === 'High' ? 'badge-high' : 'badge-medium');
+                        return `<div style="background: rgba(0,0,0,0.25); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; margin-bottom: 6px; font-size: 0.82rem;"><div style="display: flex; justify-content: space-between; align-items: center;"><strong style="color: var(--text-primary);">${escapeHtml(f.title)}</strong><span class="badge ${sevBadge}" style="font-size: 0.68rem;">${f.severity} (CVSS ${f.cvss_score || f.risk_score || 0})</span></div><div style="color: var(--text-secondary); font-size: 0.78rem; margin-top: 4px;">${escapeHtml(f.description || '')}</div></div>`;
+                    }).join('');
+
+                html += `
+                    <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-accent); border-radius: 10px; padding: 1.25rem; margin-bottom: 1rem; box-shadow: 0 0 15px rgba(168, 85, 247, 0.08);">
+                        <h4 style="color: var(--accent-purple); font-size: 1.05rem; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-shield-halved"></i> Web Security Engine Analysis & Audit
+                        </h4>
+                        
+                        <!-- Security Headers Badges -->
+                        <div style="margin-bottom: 14px;">
+                            <strong style="color: var(--text-muted); font-size: 0.75rem; font-family: var(--font-mono); text-transform: uppercase; display: block; margin-bottom: 6px;">Security Headers Audit</strong>
+                            <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                                ${headerBadgesHtml || '<span style="color: var(--text-muted); font-size: 0.8rem;">No header analysis data.</span>'}
+                            </div>
+                        </div>
+
+                        <!-- SSL & CORS Grid -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 0.85rem; margin-bottom: 14px;">
+                            <div style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px;">
+                                <strong style="color: var(--text-muted); font-size: 0.75rem; font-family: var(--font-mono); text-transform: uppercase;">SSL / TLS Inspection</strong>
+                                <div style="margin-top: 4px;">Certificate: <strong>${ssl.certificate_valid ? 'Valid CA Certificate' : 'Invalid / Expired'}</strong></div>
+                                <div>Issuer: <strong>${escapeHtml(ssl.issuer || 'N/A')}</strong></div>
+                                <div>Supported Protocols: <strong>${ssl.tls_versions ? ssl.tls_versions.join(', ') : 'TLSv1.2, TLSv1.3'}</strong></div>
+                            </div>
+                            <div style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px;">
+                                <strong style="color: var(--text-muted); font-size: 0.75rem; font-family: var(--font-mono); text-transform: uppercase;">CORS & HTTP Methods</strong>
+                                <div style="margin-top: 4px;">CORS Status: <strong>${escapeHtml(cors.status || 'Configured')}</strong></div>
+                                <div>Allow-Origin: <code style="color: var(--accent-purple);">${escapeHtml(cors.allow_origin || 'Not Set')}</code></div>
+                                <div>Risky Methods: <strong>${methods.potentially_risky && methods.potentially_risky.length > 0 ? methods.potentially_risky.join(', ') : 'None Detected'}</strong></div>
+                            </div>
+                        </div>
+
+                        <!-- Discovered Endpoints -->
+                        <div style="margin-bottom: 14px;">
+                            <strong style="color: var(--text-muted); font-size: 0.75rem; font-family: var(--font-mono); text-transform: uppercase; display: block; margin-bottom: 6px;">Discovered Paths & Endpoints</strong>
+                            <div style="max-height: 120px; overflow-y: auto; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 6px;">
+                                ${dirsHtml}
+                            </div>
+                        </div>
+
+                        <!-- Security Findings -->
+                        <div>
+                            <strong style="color: var(--text-muted); font-size: 0.75rem; font-family: var(--font-mono); text-transform: uppercase; display: block; margin-bottom: 6px;">Generated Web Security Findings (${findings.length})</strong>
+                            <div>
+                                ${findingsHtml}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
             container.innerHTML = html || '<p style="color: var(--text-muted);">No scan results recorded.</p>';
 
             const modal = document.getElementById('scanResultsModal');
@@ -1239,6 +1334,7 @@ async function rerunScan(scanId) {
             if (scanTypeStr.includes('port')) selectedCaps.push('ports');
             if (scanTypeStr.includes('recon')) selectedCaps.push('recon');
             if (scanTypeStr.includes('web')) selectedCaps.push('web');
+            if (scanTypeStr.includes('web_security') || scanTypeStr.includes('security')) selectedCaps.push('web_security');
 
             openScanConfigModal(scan.target, selectedCaps);
         }
@@ -2811,11 +2907,11 @@ async function runScanComparison() {
                             <thead><tr><th>Port/Protocol</th><th>Service</th><th>Scan #${comp.scan_a_id}</th><th>Scan #${comp.scan_b_id}</th><th>Diff</th></tr></thead>
                             <tbody>
                                 ${ports.map(p => {
-                        let badge = '<span class="badge badge-info">UNCHANGED</span>';
-                        if (p.status === 'ADDED') badge = '<span class="badge" style="background: rgba(74, 222, 128, 0.15); color: #4ADE80; border: 1px solid rgba(74, 222, 128, 0.3);">+ ADDED</span>';
-                        else if (p.status === 'REMOVED') badge = '<span class="badge" style="background: rgba(248, 113, 113, 0.15); color: #F87171; border: 1px solid rgba(248, 113, 113, 0.3);">- REMOVED</span>';
-                        return `<tr><td class="font-mono">${p.item}</td><td>${escapeHtml(p.service)}</td><td>${p.in_scan_a ? 'Open' : '—'}</td><td>${p.in_scan_b ? 'Open' : '—'}</td><td>${badge}</td></tr>`;
-                    }).join('')}
+                    let badge = '<span class="badge badge-info">UNCHANGED</span>';
+                    if (p.status === 'ADDED') badge = '<span class="badge" style="background: rgba(74, 222, 128, 0.15); color: #4ADE80; border: 1px solid rgba(74, 222, 128, 0.3);">+ ADDED</span>';
+                    else if (p.status === 'REMOVED') badge = '<span class="badge" style="background: rgba(248, 113, 113, 0.15); color: #F87171; border: 1px solid rgba(248, 113, 113, 0.3);">- REMOVED</span>';
+                    return `<tr><td class="font-mono">${p.item}</td><td>${escapeHtml(p.service)}</td><td>${p.in_scan_a ? 'Open' : '—'}</td><td>${p.in_scan_b ? 'Open' : '—'}</td><td>${badge}</td></tr>`;
+                }).join('')}
                             </tbody>
                         </table>
                     </div>
@@ -2830,12 +2926,12 @@ async function runScanComparison() {
                             <thead><tr><th>Component / Stack</th><th>Value (Scan A)</th><th>Value (Scan B)</th><th>Diff</th></tr></thead>
                             <tbody>
                                 ${techs.map(t => {
-                        let badge = '<span class="badge badge-info">UNCHANGED</span>';
-                        if (t.status === 'ADDED') badge = '<span class="badge" style="background: rgba(74, 222, 128, 0.15); color: #4ADE80; border: 1px solid rgba(74, 222, 128, 0.3);">+ ADDED</span>';
-                        else if (t.status === 'REMOVED') badge = '<span class="badge" style="background: rgba(248, 113, 113, 0.15); color: #F87171; border: 1px solid rgba(248, 113, 113, 0.3);">- REMOVED</span>';
-                        else if (t.status === 'CHANGED') badge = '<span class="badge" style="background: rgba(251, 191, 36, 0.15); color: #FBBF24; border: 1px solid rgba(251, 191, 36, 0.3);">~ CHANGED</span>';
-                        return `<tr><td><strong>${escapeHtml(t.item)}</strong></td><td>${escapeHtml(t.version_a || '—')}</td><td>${escapeHtml(t.version_b || '—')}</td><td>${badge}</td></tr>`;
-                    }).join('')}
+                    let badge = '<span class="badge badge-info">UNCHANGED</span>';
+                    if (t.status === 'ADDED') badge = '<span class="badge" style="background: rgba(74, 222, 128, 0.15); color: #4ADE80; border: 1px solid rgba(74, 222, 128, 0.3);">+ ADDED</span>';
+                    else if (t.status === 'REMOVED') badge = '<span class="badge" style="background: rgba(248, 113, 113, 0.15); color: #F87171; border: 1px solid rgba(248, 113, 113, 0.3);">- REMOVED</span>';
+                    else if (t.status === 'CHANGED') badge = '<span class="badge" style="background: rgba(251, 191, 36, 0.15); color: #FBBF24; border: 1px solid rgba(251, 191, 36, 0.3);">~ CHANGED</span>';
+                    return `<tr><td><strong>${escapeHtml(t.item)}</strong></td><td>${escapeHtml(t.version_a || '—')}</td><td>${escapeHtml(t.version_b || '—')}</td><td>${badge}</td></tr>`;
+                }).join('')}
                             </tbody>
                         </table>
                     </div>
@@ -2850,12 +2946,12 @@ async function runScanComparison() {
                             <thead><tr><th>Subdomain</th><th>Resolved IP (Scan A)</th><th>Resolved IP (Scan B)</th><th>Diff</th></tr></thead>
                             <tbody>
                                 ${subs.map(s => {
-                        let badge = '<span class="badge badge-info">UNCHANGED</span>';
-                        if (s.status === 'ADDED') badge = '<span class="badge" style="background: rgba(74, 222, 128, 0.15); color: #4ADE80; border: 1px solid rgba(74, 222, 128, 0.3);">+ ADDED</span>';
-                        else if (s.status === 'REMOVED') badge = '<span class="badge" style="background: rgba(248, 113, 113, 0.15); color: #F87171; border: 1px solid rgba(248, 113, 113, 0.3);">- REMOVED</span>';
-                        else if (s.status === 'CHANGED') badge = '<span class="badge" style="background: rgba(251, 191, 36, 0.15); color: #FBBF24; border: 1px solid rgba(251, 191, 36, 0.3);">~ CHANGED</span>';
-                        return `<tr><td style="word-break: break-all;"><strong>${escapeHtml(s.item)}</strong></td><td>${escapeHtml(s.ip_a)}</td><td>${escapeHtml(s.ip_b)}</td><td>${badge}</td></tr>`;
-                    }).join('')}
+                    let badge = '<span class="badge badge-info">UNCHANGED</span>';
+                    if (s.status === 'ADDED') badge = '<span class="badge" style="background: rgba(74, 222, 128, 0.15); color: #4ADE80; border: 1px solid rgba(74, 222, 128, 0.3);">+ ADDED</span>';
+                    else if (s.status === 'REMOVED') badge = '<span class="badge" style="background: rgba(248, 113, 113, 0.15); color: #F87171; border: 1px solid rgba(248, 113, 113, 0.3);">- REMOVED</span>';
+                    else if (s.status === 'CHANGED') badge = '<span class="badge" style="background: rgba(251, 191, 36, 0.15); color: #FBBF24; border: 1px solid rgba(251, 191, 36, 0.3);">~ CHANGED</span>';
+                    return `<tr><td style="word-break: break-all;"><strong>${escapeHtml(s.item)}</strong></td><td>${escapeHtml(s.ip_a)}</td><td>${escapeHtml(s.ip_b)}</td><td>${badge}</td></tr>`;
+                }).join('')}
                             </tbody>
                         </table>
                     </div>

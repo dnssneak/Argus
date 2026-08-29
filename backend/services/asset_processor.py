@@ -266,6 +266,141 @@ class AssetProcessor:
             if web_asset.id not in [a.id for a in processed_assets]:
                 processed_assets.append(web_asset)
 
+        # 6. Process Web Security Engine Results
+        sec_data = results.get("web_security", {})
+        if isinstance(sec_data, dict) and sec_data:
+            sec_raw_target = sec_data.get("url") or target.strip()
+            sec_target = sec_raw_target.replace("https://", "").replace("http://", "").split("/")[0].split(":")[0].strip()
+            if not sec_target:
+                sec_target = target.strip()
+
+            sec_asset = AssetProcessor._get_or_create_asset(
+                db=db,
+                project_id=project_id,
+                name=sec_target,
+                source_name="Web Security Engine",
+                scan_id=scan_id,
+                now=now
+            )
+
+            # Update identity and certificate fields
+            if sec_data.get("url"):
+                sec_asset.web_url = sec_data.get("url")
+            if sec_data.get("status_code"):
+                sec_asset.web_status_code = sec_data.get("status_code")
+
+            import json
+            sec_headers_info = sec_data.get("security_headers")
+            if sec_headers_info:
+                sec_asset.web_security_headers = json.dumps(sec_headers_info)
+
+            ssl_info = sec_data.get("ssl", {})
+            if isinstance(ssl_info, dict):
+                if ssl_info.get("issuer") and ssl_info.get("issuer") != "N/A":
+                    sec_asset.cert_issuer = str(ssl_info.get("issuer"))
+                if ssl_info.get("sans"):
+                    sans_val = ssl_info.get("sans")
+                    sec_asset.cert_sans = ", ".join(sans_val) if isinstance(sans_val, list) else str(sans_val)
+
+            # Ingest Technologies
+            techs = sec_data.get("technologies", [])
+            tech_names = []
+            for t in techs:
+                t_name = t.get("name") if isinstance(t, dict) else str(t)
+                if not t_name:
+                    continue
+                tech_names.append(t_name)
+                t_ver = t.get("version") if isinstance(t, dict) else None
+                t_cat = t.get("category") if isinstance(t, dict) else "Web Security"
+
+                existing_tech = db.query(Technology).filter_by(
+                    asset_id=sec_asset.id,
+                    name=t_name
+                ).first()
+
+                if not existing_tech:
+                    new_tech = Technology(
+                        asset_id=sec_asset.id,
+                        name=t_name,
+                        version=t_ver,
+                        category=t_cat,
+                        detection_source="Web Security Engine"
+                    )
+                    db.add(new_tech)
+                elif t_ver:
+                    existing_tech.version = t_ver
+
+            # Ingest Endpoints
+            endpoints = sec_data.get("endpoints", [])
+            for ep in endpoints:
+                ep_path = ep.get("path") if isinstance(ep, dict) else str(ep)
+                if not ep_path:
+                    continue
+                ep_method = ep.get("method", "GET") if isinstance(ep, dict) else "GET"
+                ep_code = ep.get("status_code") if isinstance(ep, dict) else None
+
+                existing_ep = db.query(Endpoint).filter_by(
+                    asset_id=sec_asset.id,
+                    path=ep_path
+                ).first()
+
+                if not existing_ep:
+                    new_ep = Endpoint(
+                        asset_id=sec_asset.id,
+                        method=ep_method,
+                        path=ep_path,
+                        status_code=ep_code,
+                        discovery_source="Web Security Engine"
+                    )
+                    db.add(new_ep)
+
+            # Ingest Web Security Findings directly
+            sec_findings = sec_data.get("findings", [])
+            if isinstance(sec_findings, list):
+                for f_item in sec_findings:
+                    if isinstance(f_item, dict) and f_item.get("title"):
+                        f_title = f_item.get("title").strip()
+                        existing_f = db.query(Finding).filter_by(asset_id=sec_asset.id, title=f_title).first()
+                        
+                        # Extract and clamp CVSS score to 0.0 - 10.0 scale
+                        raw_cvss = f_item.get("cvss_score")
+                        if raw_cvss is not None:
+                            calc_cvss = float(raw_cvss)
+                            calc_cvss = min(10.0, max(0.0, calc_cvss / 10.0 if calc_cvss > 10.0 else calc_cvss))
+                        else:
+                            r_score = float(f_item.get("risk_score") or 0)
+                            calc_cvss = min(10.0, max(0.0, r_score / 10.0 if r_score > 10.0 else r_score))
+
+                        if not existing_f:
+                            new_f = Finding(
+                                asset_id=sec_asset.id,
+                                scan_id=scan_id,
+                                title=f_title,
+                                severity=f_item.get("severity", "Medium"),
+                                cvss_score=calc_cvss,
+                                risk_score=int(f_item.get("risk_score") or 0),
+                                description=f_item.get("description"),
+                                evidence=f_item.get("evidence"),
+                                recommendation=f_item.get("recommendation"),
+                                discovery_source="Web Security Engine",
+                                status="open"
+                            )
+                            db.add(new_f)
+
+            # Add History Timeline Event for Web Security Scan
+            AssetProcessor._add_history_event(
+                db=db,
+                asset_id=sec_asset.id,
+                event_name="Web Security Scan Completed",
+                event_details=(
+                    f"Analyzed security headers, SSL/TLS, cookies, CORS, HTTP methods. "
+                    f"Discovered {len(endpoints)} endpoints and {len(sec_findings)} security findings. (Scan #{scan_id})"
+                )
+            )
+
+            if sec_asset.id not in [a.id for a in processed_assets]:
+                processed_assets.append(sec_asset)
+
         # Change Detection comparison pass for updated assets
         for a in processed_assets:
             prev_snap = asset_snapshots.get(a.id)
@@ -311,13 +446,22 @@ class AssetProcessor:
 
                     v_title = v.get("title").strip()
                     existing_f = db.query(Finding).filter_by(asset_id=target_asset.id, title=v_title).first()
+
+                    raw_cvss = v.get("cvss_score")
+                    if raw_cvss is not None:
+                        calc_cvss = float(raw_cvss)
+                        calc_cvss = min(10.0, max(0.0, calc_cvss / 10.0 if calc_cvss > 10.0 else calc_cvss))
+                    else:
+                        r_score = float(v.get("risk_score") or 0)
+                        calc_cvss = min(10.0, max(0.0, r_score / 10.0 if r_score > 10.0 else r_score))
+
                     if not existing_f:
                         new_f = Finding(
                             asset_id=target_asset.id,
                             scan_id=scan_id,
                             title=v_title,
                             severity=v.get("severity", "Medium"),
-                            cvss_score=float(v.get("cvss_score") or v.get("risk_score") or 0),
+                            cvss_score=calc_cvss,
                             risk_score=int(v.get("risk_score") or 0),
                             description=v.get("description"),
                             evidence=v.get("evidence"),

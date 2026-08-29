@@ -897,6 +897,7 @@ def execute_project_scan(project_id):
         from scanner import NetworkScanner
         from recon import TargetRecon
         from fingerprint import WebsiteFingerprinter
+        from web_security import WebSecurityEngine
 
         if "subdomain" in capabilities:
             new_scan.current_stage = "Subdomain Discovery"
@@ -915,7 +916,7 @@ def execute_project_scan(project_id):
 
         if "ports" in capabilities:
             new_scan.current_stage = "Port Scanning"
-            new_scan.progress = 50
+            new_scan.progress = 40
             db.commit()
             stage_logs.append("Executing Port Scan...")
             try:
@@ -931,7 +932,7 @@ def execute_project_scan(project_id):
 
         if "recon" in capabilities:
             new_scan.current_stage = "Reconnaissance"
-            new_scan.progress = 75
+            new_scan.progress = 60
             db.commit()
             stage_logs.append("Executing Reconnaissance...")
             try:
@@ -946,7 +947,7 @@ def execute_project_scan(project_id):
 
         if "web" in capabilities:
             new_scan.current_stage = "Web Footprinting"
-            new_scan.progress = 90
+            new_scan.progress = 80
             db.commit()
             stage_logs.append("Executing Web Footprinting...")
             try:
@@ -958,6 +959,21 @@ def execute_project_scan(project_id):
             except Exception as e:
                 results["web"] = {"error": str(e)}
                 stage_logs.append(f"Web Footprinting failed: {str(e)}")
+                has_failure = True
+
+        if "web_security" in capabilities:
+            new_scan.current_stage = "Web Security Engine"
+            new_scan.progress = 90
+            db.commit()
+            stage_logs.append("Executing Web Security Engine...")
+            try:
+                sec_engine = WebSecurityEngine(target_str)
+                sec_res = sec_engine.collect()
+                results["web_security"] = sec_res
+                stage_logs.append("Web Security Engine analysis completed.")
+            except Exception as e:
+                results["web_security"] = {"error": str(e)}
+                stage_logs.append(f"Web Security Engine analysis failed: {str(e)}")
                 has_failure = True
 
         # Finalize scan execution record

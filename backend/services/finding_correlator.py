@@ -68,8 +68,10 @@ class FindingCorrelator:
 
         # 2. CVSS Score (if available)
         cvss = finding.cvss_score
-        if cvss is None and finding.risk_score and finding.risk_score > 0:
-            cvss = float(finding.risk_score)
+        if cvss is not None and cvss > 10.0:
+            cvss = min(10.0, cvss / 10.0)
+        elif cvss is None and finding.risk_score and finding.risk_score > 0:
+            cvss = float(finding.risk_score) / 10.0 if finding.risk_score > 10 else float(finding.risk_score)
 
         if cvss is not None and cvss > 0:
             if cvss >= 9.0:
@@ -145,6 +147,20 @@ class FindingCorrelator:
             if final_score >= threshold:
                 priority_level = label
                 break
+
+        # Cap Priority Tier based on Finding Severity
+        # Prevents Low/Informational findings from being categorized as CRITICAL priority
+        max_priority_tier = {
+            "informational": "INFORMATIONAL",
+            "low": "MEDIUM",
+            "medium": "HIGH",
+            "high": "CRITICAL",
+            "critical": "CRITICAL"
+        }.get(sev, "CRITICAL")
+
+        tier_rank = {"CRITICAL": 4, "HIGH": 3, "MEDIUM": 2, "LOW": 1, "INFORMATIONAL": 0}
+        if tier_rank.get(priority_level, 0) > tier_rank.get(max_priority_tier, 4):
+            priority_level = max_priority_tier
 
         return priority_level, final_score, factors
 
