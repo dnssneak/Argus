@@ -21,6 +21,29 @@ def format_utc_iso(dt):
     return iso
 
 
+class User(Base):
+    """User entity for authentication and authorization."""
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(128), nullable=False)
+    email = Column(String(255), unique=True, nullable=False, index=True)
+    password_hash = Column(String(256), nullable=False)
+    is_active = Column(Boolean, default=True, nullable=False)
+    created_at = Column(DateTime, default=utc_now)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "email": self.email,
+            "is_active": self.is_active,
+            "created_at": format_utc_iso(self.created_at),
+            "updated_at": format_utc_iso(self.updated_at),
+        }
+
+
 class Project(Base):
     """Project entity representing a target scope or assessment campaign."""
     __tablename__ = "projects"

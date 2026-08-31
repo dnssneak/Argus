@@ -34,7 +34,7 @@ def get_db():
 
 def init_db():
     """Initialize database tables and create default workspace project if empty."""
-    from models.models import Project, Asset, Service, Technology, Endpoint, AssetHistory, AssetNote
+    from models.models import User, Project, Asset, Service, Technology, Endpoint, AssetHistory, AssetNote
 
     # Ensure relationships table is recreated if old NOT NULL schema is present
     with engine.begin() as conn:

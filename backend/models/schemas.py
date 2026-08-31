@@ -1,4 +1,5 @@
 from typing import Optional, List
+# pyrefly: ignore [missing-import]
 from pydantic import BaseModel, Field, ConfigDict
 
 
@@ -134,3 +135,28 @@ class ScanResponse(BaseModel):
     end_time: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+# --- Auth Schemas ---
+class UserSignup(BaseModel):
+    name: str = Field(..., min_length=2, max_length=128)
+    email: str = Field(..., min_length=3, max_length=255)
+    password: str = Field(..., min_length=8)
+    confirm_password: Optional[str] = None
+
+
+class UserLogin(BaseModel):
+    email: str = Field(..., min_length=3, max_length=255)
+    password: str = Field(..., min_length=1)
+    remember_me: Optional[bool] = False
+
+
+class UserResponse(BaseModel):
+    id: int
+    name: str
+    email: str
+    is_active: bool = True
+    created_at: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)
+

@@ -30,7 +30,8 @@
                     const cta = document.getElementById('homeHeroCta');
                     const ctaText = document.getElementById('homeHeroCtaText');
                     if (cta && ctaText) {
-                        const isLoggedIn = localStorage.getItem('argus_logged_in') === 'true';
+                        const token = localStorage.getItem('argus_token');
+                        const isLoggedIn = Boolean(token) && localStorage.getItem('argus_logged_in') === 'true';
                         if (isLoggedIn) {
                             cta.href = '/dashboard';
                             ctaText.textContent = 'Dashboard';

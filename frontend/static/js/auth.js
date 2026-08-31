@@ -116,7 +116,18 @@ function showTermsNotice(e) {
     showToast('Argus Terms: Account is for authorized security testing and education.', 'info');
 }
 
-// Form Validation & Submission
+function showAuthAlert(message) {
+    const alertEl = document.getElementById('auth-alert');
+    const alertText = document.getElementById('auth-alert-text');
+    if (alertEl && alertText) {
+        alertText.textContent = message;
+        alertEl.classList.add('visible');
+    } else {
+        showToast(message, 'error');
+    }
+}
+
+// Form Validation & Submission with Backend API
 function initAuthForms() {
     const loginForm = document.getElementById('login-form');
     const signupForm = document.getElementById('signup-form');
@@ -128,10 +139,12 @@ function initAuthForms() {
 
             const emailInput = document.getElementById('login-email');
             const passwordInput = document.getElementById('login-password');
+            const rememberMeCheckbox = document.getElementById('remember-me');
             const submitBtn = document.getElementById('login-submit-btn');
 
             const emailVal = emailInput ? emailInput.value.trim() : '';
             const passwordVal = passwordInput ? passwordInput.value : '';
+            const rememberMe = rememberMeCheckbox ? rememberMeCheckbox.checked : false;
 
             let hasError = false;
 
@@ -150,13 +163,36 @@ function initAuthForms() {
             setButtonLoading(submitBtn, true, 'Logging in...');
             disableFormInputs(loginForm, true);
 
-            setTimeout(() => {
-                localStorage.setItem('argus_logged_in', 'true');
-                showToast('Welcome back! Logged in successfully.', 'success');
-                setTimeout(() => {
-                    window.location.href = '/dashboard';
-                }, 600);
-            }, 1000);
+            fetch('/api/v1/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email: emailVal,
+                    password: passwordVal,
+                    remember_me: rememberMe
+                })
+            })
+            .then(res => res.json().then(data => ({ status: res.status, data })))
+            .then(({ status, data }) => {
+                if (data.success && data.token) {
+                    localStorage.setItem('argus_token', data.token);
+                    localStorage.setItem('argus_user', JSON.stringify(data.user));
+                    localStorage.setItem('argus_logged_in', 'true');
+                    showToast('Welcome back! Logged in successfully.', 'success');
+                    setTimeout(() => {
+                        window.location.href = '/dashboard';
+                    }, 500);
+                } else {
+                    setButtonLoading(submitBtn, false);
+                    disableFormInputs(loginForm, false);
+                    showAuthAlert(data.error || 'Invalid credentials.');
+                }
+            })
+            .catch(err => {
+                setButtonLoading(submitBtn, false);
+                disableFormInputs(loginForm, false);
+                showAuthAlert('Network error. Failed to connect to server.');
+            });
         });
     }
 
@@ -209,13 +245,37 @@ function initAuthForms() {
             setButtonLoading(submitBtn, true, 'Creating account...');
             disableFormInputs(signupForm, true);
 
-            setTimeout(() => {
-                localStorage.setItem('argus_logged_in', 'true');
-                showToast('Account created successfully! Redirecting...', 'success');
-                setTimeout(() => {
-                    window.location.href = '/dashboard';
-                }, 600);
-            }, 1000);
+            fetch('/api/v1/auth/signup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: nameVal,
+                    email: emailVal,
+                    password: passwordVal,
+                    confirm_password: confirmPasswordVal
+                })
+            })
+            .then(res => res.json().then(data => ({ status: res.status, data })))
+            .then(({ status, data }) => {
+                if (data.success && data.token) {
+                    localStorage.setItem('argus_token', data.token);
+                    localStorage.setItem('argus_user', JSON.stringify(data.user));
+                    localStorage.setItem('argus_logged_in', 'true');
+                    showToast('Account created successfully! Redirecting...', 'success');
+                    setTimeout(() => {
+                        window.location.href = '/dashboard';
+                    }, 500);
+                } else {
+                    setButtonLoading(submitBtn, false);
+                    disableFormInputs(signupForm, false);
+                    showAuthAlert(data.error || 'Registration failed.');
+                }
+            })
+            .catch(err => {
+                setButtonLoading(submitBtn, false);
+                disableFormInputs(signupForm, false);
+                showAuthAlert('Network error. Failed to connect to server.');
+            });
         });
     }
 }

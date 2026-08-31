@@ -1,8 +1,11 @@
 # pyrefly: ignore [missing-import]
-from flask import Blueprint, jsonify, request
+from functools import wraps
+from flask import Blueprint, jsonify, request, g, make_response
 from db.database import SessionLocal
-from models.models import Project, Target, Asset, Service, Technology, Finding, Scan, Relationship, Endpoint, AssetHistory, AssetNote, format_utc_iso
-from models.schemas import ProjectCreate, AssetCreate, FindingCreate
+from models.models import User, Project, Target, Asset, Service, Technology, Finding, Scan, Relationship, Endpoint, AssetHistory, AssetNote, format_utc_iso
+from models.schemas import ProjectCreate, AssetCreate, FindingCreate, UserSignup, UserLogin
+from services.auth_service import AuthService
+from services.project_service import ProjectService
 
 api_bp = Blueprint("api_v1", __name__, url_prefix="/api/v1")
 
@@ -12,7 +15,148 @@ def get_db():
     return SessionLocal()
 
 
-from services.project_service import ProjectService
+def get_current_user_from_req(db):
+    """Helper to extract user from Authorization header or cookie."""
+    auth_header = request.headers.get("Authorization", "")
+    token = None
+    if auth_header.startswith("Bearer "):
+        token = auth_header.split(" ", 1)[1].strip()
+    elif request.cookies.get("argus_token"):
+        token = request.cookies.get("argus_token")
+    elif request.args.get("token"):
+        token = request.args.get("token")
+
+    if not token:
+        return None
+
+    return AuthService.verify_token(db, token)
+
+
+def require_auth(f):
+    """Middleware decorator enforcing authentication for API endpoints."""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        db = get_db()
+        try:
+            user = get_current_user_from_req(db)
+            if not user:
+                return jsonify({"success": False, "error": "Authentication required. Please log in."}), 401
+            g.current_user = user
+            return f(*args, **kwargs)
+        finally:
+            db.close()
+    return decorated_function
+
+
+# --- AUTHENTICATION API ENDPOINTS ---
+
+@api_bp.route("/auth/signup", methods=["POST"])
+def auth_signup():
+    """Register a new user account."""
+    db = get_db()
+    try:
+        data = request.get_json() or {}
+        name = data.get("name")
+        email = data.get("email")
+        password = data.get("password")
+        confirm_password = data.get("confirm_password")
+
+        user = AuthService.register_user(
+            db=db,
+            name=name,
+            email=email,
+            password=password,
+            confirm_password=confirm_password
+        )
+
+        token = AuthService.generate_token(user)
+        response = make_response(jsonify({
+            "success": True,
+            "message": "Account created successfully.",
+            "token": token,
+            "user": user.to_dict()
+        }), 201)
+
+        response.set_cookie(
+            "argus_token",
+            token,
+            httponly=True,
+            samesite="Lax",
+            max_age=86400
+        )
+        return response
+
+    except ValueError as e:
+        db.rollback()
+        return jsonify({"success": False, "error": str(e)}), 400
+    except Exception as e:
+        db.rollback()
+        return jsonify({"success": False, "error": f"Registration failed: {str(e)}"}), 500
+    finally:
+        db.close()
+
+
+@api_bp.route("/auth/login", methods=["POST"])
+def auth_login():
+    """Authenticate user with email and password."""
+    db = get_db()
+    try:
+        data = request.get_json() or {}
+        email = data.get("email")
+        password = data.get("password")
+
+        user = AuthService.authenticate_user(db=db, email=email, password=password)
+        token = AuthService.generate_token(user)
+
+        response = make_response(jsonify({
+            "success": True,
+            "message": "Logged in successfully.",
+            "token": token,
+            "user": user.to_dict()
+        }), 200)
+
+        response.set_cookie(
+            "argus_token",
+            token,
+            httponly=True,
+            samesite="Lax",
+            max_age=86400
+        )
+        return response
+
+    except ValueError as e:
+        return jsonify({"success": False, "error": str(e)}), 401
+    except Exception as e:
+        return jsonify({"success": False, "error": f"Authentication failed: {str(e)}"}), 500
+    finally:
+        db.close()
+
+
+@api_bp.route("/auth/logout", methods=["POST"])
+def auth_logout():
+    """Log out current user and invalidate cookie."""
+    response = make_response(jsonify({
+        "success": True,
+        "message": "Logged out successfully."
+    }), 200)
+    response.set_cookie("argus_token", "", expires=0)
+    return response
+
+
+@api_bp.route("/auth/me", methods=["GET"])
+def auth_me():
+    """Return currently authenticated user profile."""
+    db = get_db()
+    try:
+        user = get_current_user_from_req(db)
+        if not user:
+            return jsonify({"success": False, "error": "Not authenticated."}), 401
+        return jsonify({
+            "success": True,
+            "user": user.to_dict()
+        })
+    finally:
+        db.close()
 
 
 # --- PROJECTS API ---
