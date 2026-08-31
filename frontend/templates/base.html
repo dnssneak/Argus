@@ -32,8 +32,9 @@
                 }
             }
 
+            // Apply no-transition to html element synchronously in head
             if (sessionStorage.getItem('argus_session_seen')) {
-                document.body.classList.add('no-transition');
+                document.documentElement.classList.add('no-transition');
             } else {
                 sessionStorage.setItem('argus_session_seen', 'true');
             }
@@ -43,10 +44,30 @@
         html.guest-mode .nav-protected-tab {
             display: none !important;
         }
+        html.no-transition .page-overlay,
+        body.no-transition .page-overlay {
+            display: none !important;
+            opacity: 0 !important;
+            visibility: hidden !important;
+            pointer-events: none !important;
+        }
+        html.no-transition .main-content,
+        body.no-transition .main-content,
+        html.no-transition .navbar,
+        body.no-transition .navbar {
+            animation: none !important;
+            opacity: 1 !important;
+            transform: none !important;
+        }
     </style>
 </head>
 
 <body>
+    <script>
+        if (sessionStorage.getItem('argus_session_seen')) {
+            document.body.classList.add('no-transition');
+        }
+    </script>
     <!-- Opening Transition -->
     <div class="page-overlay">
         <!-- Corner brackets -->
