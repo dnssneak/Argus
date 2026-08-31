@@ -30,6 +30,19 @@ def index():
     return render_template("index.html")
 
 
+@app.route("/login")
+def login():
+    """Argus Full-Screen Login Page."""
+    return render_template("login.html")
+
+
+@app.route("/signup")
+def signup():
+    """Argus Full-Screen Sign Up Page."""
+    return render_template("signup.html")
+
+
+
 @app.route("/dashboard")
 def dashboard():
     """System info & Security Overview dashboard."""

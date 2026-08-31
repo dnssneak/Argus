@@ -17,14 +17,30 @@
         <p class="hero-subtitle">Advanced Reconnaissance & Network Scanning Platform</p>
         <p class="hero-desc">Automated information gathering and network scanning for cybersecurity education. Built for
             students, enthusiasts, and professionals.</p>
-        <div class="hero-actions">
-            <a href="/dashboard" class="btn btn-primary btn-launch">
-                <span>Launch Dashboard</span>
+        <div class="hero-actions" style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+            <a href="/signup" class="btn btn-secondary btn-launch" id="homeHeroCta">
+                <span id="homeHeroCtaText">Get Started</span>
                 <svg class="btn-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                     stroke-width="2">
                     <path d="M5 12h14M12 5l7 7-7 7" />
                 </svg>
             </a>
+            <script>
+                (function() {
+                    const cta = document.getElementById('homeHeroCta');
+                    const ctaText = document.getElementById('homeHeroCtaText');
+                    if (cta && ctaText) {
+                        const isLoggedIn = localStorage.getItem('argus_logged_in') === 'true';
+                        if (isLoggedIn) {
+                            cta.href = '/dashboard';
+                            ctaText.textContent = 'Dashboard';
+                        } else {
+                            cta.href = '/signup';
+                            ctaText.textContent = 'Get Started';
+                        }
+                    }
+                })();
+            </script>
         </div>
     </div>
     <div class="hero-visual">

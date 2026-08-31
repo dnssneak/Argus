@@ -12,7 +12,7 @@
                     Assessment Containers</span>
             </div>
             <h1 class="page-title"
-                style="display: block; font-size: 2.2rem; font-weight: 700; background: linear-gradient(90deg, #ffffff, var(--accent-purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 0.5rem;">
+                style="display: block; font-size: 2.2rem; font-weight: 700; background: linear-gradient(90deg, #ffffff, var(--accent-purple)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 0.5rem;">
                 Security Assessment Projects</h1>
             <p class="page-desc" style="color: var(--text-secondary); font-size: 1.05rem;">Manage assessment scopes,
                 target boundaries, and project environments</p>
@@ -67,20 +67,20 @@
         <form id="createProjectForm" onsubmit="handleCreateProjectSubmit(event)">
             <div style="margin-bottom: 1.25rem;">
                 <label
-                    style="display: block; font-size: 0.8rem; font-family: var(--font-mono); color: var(--text-muted); uppercase; margin-bottom: 6px;">Project
+                    style="display: block; font-size: 0.8rem; font-family: var(--font-mono); color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;">Project
                     Name *</label>
                 <input type="text" id="projectName" required placeholder="e.g. ACME Security Assessment"
                     style="width: 100%; background: rgba(0,0,0,0.4); border: 1px solid var(--border); color: var(--text-primary); padding: 10px 14px; border-radius: 8px; outline: none; font-family: var(--font-sans);">
             </div>
             <div style="margin-bottom: 1.25rem;">
                 <label
-                    style="display: block; font-size: 0.8rem; font-family: var(--font-mono); color: var(--text-muted); uppercase; margin-bottom: 6px;">Description</label>
+                    style="display: block; font-size: 0.8rem; font-family: var(--font-mono); color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;">Description</label>
                 <textarea id="projectDesc" rows="3" placeholder="External attack surface assessment details..."
                     style="width: 100%; background: rgba(0,0,0,0.4); border: 1px solid var(--border); color: var(--text-primary); padding: 10px 14px; border-radius: 8px; outline: none; font-family: var(--font-sans);"></textarea>
             </div>
             <div style="margin-bottom: 1.5rem;">
                 <label
-                    style="display: block; font-size: 0.8rem; font-family: var(--font-mono); color: var(--text-muted); uppercase; margin-bottom: 6px;">Status
+                    style="display: block; font-size: 0.8rem; font-family: var(--font-mono); color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;">Status
                     *</label>
                 <select id="projectStatus" class="cyber-select" data-icon="fa-circle-dot"
                     style="width: 100%;">
@@ -107,20 +107,20 @@
             <input type="hidden" id="editProjectId">
             <div style="margin-bottom: 1.25rem;">
                 <label
-                    style="display: block; font-size: 0.8rem; font-family: var(--font-mono); color: var(--text-muted); uppercase; margin-bottom: 6px;">Project
+                    style="display: block; font-size: 0.8rem; font-family: var(--font-mono); color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;">Project
                     Name *</label>
                 <input type="text" id="editProjectName" required
                     style="width: 100%; background: rgba(0,0,0,0.4); border: 1px solid var(--border); color: var(--text-primary); padding: 10px 14px; border-radius: 8px; outline: none; font-family: var(--font-sans);">
             </div>
             <div style="margin-bottom: 1.25rem;">
                 <label
-                    style="display: block; font-size: 0.8rem; font-family: var(--font-mono); color: var(--text-muted); uppercase; margin-bottom: 6px;">Description</label>
+                    style="display: block; font-size: 0.8rem; font-family: var(--font-mono); color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;">Description</label>
                 <textarea id="editProjectDesc" rows="3"
                     style="width: 100%; background: rgba(0,0,0,0.4); border: 1px solid var(--border); color: var(--text-primary); padding: 10px 14px; border-radius: 8px; outline: none; font-family: var(--font-sans);"></textarea>
             </div>
             <div style="margin-bottom: 1.5rem;">
                 <label
-                    style="display: block; font-size: 0.8rem; font-family: var(--font-mono); color: var(--text-muted); uppercase; margin-bottom: 6px;">Status
+                    style="display: block; font-size: 0.8rem; font-family: var(--font-mono); color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;">Status
                     *</label>
                 <select id="editProjectStatus" class="cyber-select" data-icon="fa-circle-dot"
                     style="width: 100%;">
@@ -142,7 +142,7 @@
         <div style="font-size: 2.5rem; color: #F87171; margin-bottom: 1rem;">
             <i class="fa-solid fa-trash-can"></i>
         </div>
-        <h3 class="modal-title" style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem; justify-content: center;">
+        <h3 class="modal-title" style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem; display: flex; justify-content: center; text-align: center;">
             Delete Project?
         </h3>
         <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.5rem; line-height: 1.5;">

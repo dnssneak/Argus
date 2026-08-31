@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Argus — Log In</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=21.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=Outfit:wght@800;900&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="auth-page">
+
+
+        <!-- LEFT SIDE: Log In Form -->
+        <div class="auth-left auth-form-panel">
+            <div class="auth-form-wrapper">
+                <!-- Argus Brand Badge -->
+                <div class="auth-brand">
+                    <div class="auth-brand-logo">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                            <path d="M2 17l10 5 10-5" />
+                            <path d="M2 12l10 5 10-5" />
+                        </svg>
+                    </div>
+                    <span class="auth-brand-name">Argus</span>
+                </div>
+
+                <div class="auth-form-header">
+                    <h1 class="auth-title">Log in</h1>
+                    <p class="auth-subtitle">Welcome back. Enter your details to continue.</p>
+                </div>
+
+                <!-- Global Alert Box -->
+                <div class="auth-alert" id="auth-alert">
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                    <span id="auth-alert-text"></span>
+                </div>
+
+                <form class="auth-form" id="login-form" novalidate>
+                    <!-- Email Field -->
+                    <div class="auth-field">
+                        <label class="auth-label" for="login-email">Email</label>
+                        <div class="auth-input-wrapper">
+                            <input type="email" id="login-email" class="auth-input" placeholder="name@company.com" autocomplete="email" required>
+                        </div>
+                        <div class="field-error-msg" id="email-error">
+                            <i class="fa-solid fa-circle-exclamation"></i> <span>Please enter a valid email address.</span>
+                        </div>
+                    </div>
+
+                    <!-- Password Field -->
+                    <div class="auth-field">
+                        <label class="auth-label" for="login-password">Password</label>
+                        <div class="password-input-wrapper">
+                            <input type="password" id="login-password" class="auth-input" placeholder="••••••••" autocomplete="current-password" required>
+                            <button type="button" class="eye-toggle-btn" onclick="togglePasswordVisibility('login-password', this)" aria-label="Toggle password visibility">
+                                <i class="fa-regular fa-eye"></i>
+                            </button>
+                        </div>
+                        <div class="field-error-msg" id="password-error">
+                            <i class="fa-solid fa-circle-exclamation"></i> <span>Password is required.</span>
+                        </div>
+                    </div>
+
+                    <!-- Options Row -->
+                    <div class="auth-options-row">
+                        <label class="auth-checkbox-label">
+                            <input type="checkbox" id="remember-me">
+                            <span>Remember me</span>
+                        </label>
+                        <a href="#" class="auth-forgot-link" onclick="handleForgotPassword(event)">Forgot password?</a>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" class="auth-submit-btn" id="login-submit-btn">
+                        <span class="btn-text">Log In</span>
+                        <i class="fa-solid fa-spinner fa-spin btn-spinner" style="display: none;"></i>
+                    </button>
+                </form>
+
+                <!-- Footer Navigation Link -->
+                <div class="auth-footer-text">
+                    Don't have an account? <a href="/signup" class="auth-switch-link">Sign Up</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT SIDE: LetterGlitch Animation (Purple, Gray & Green) -->
+        <div class="auth-right auth-binary-panel" style="position: relative; overflow: hidden;">
+            <canvas id="authBinaryCanvas" class="auth-binary-canvas"></canvas>
+            <div class="hacker-quote-overlay">
+                <span class="hacker-quote-text">Am I finally a real hacker now,<br>mom?</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications Container -->
+    <div id="toastContainer" class="toast-container" style="position: fixed; bottom: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 10px;"></div>
+
+    <script src="{{ url_for('static', filename='js/auth.js') }}?v=21.0"></script>
+</body>
+</html>

@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Argus — Sign Up</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=24.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=Outfit:wght@800;900&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="auth-page">
+        <!-- Fullscreen Canvas for Whole-Screen Argus Particle Shatter -->
+        <canvas id="argusParticleCanvas" class="argus-particle-canvas"></canvas>
+
+        <!-- LEFT SIDE: Interactive Particle Text Visual Panel -->
+        <div class="auth-left auth-neon-panel" id="auth-left-panel">
+            <div class="scrambled-text-container" id="signupScrambledText">
+            </div>
+        </div>
+
+        <!-- RIGHT SIDE: Authentication Form -->
+        <div class="auth-right auth-form-panel">
+            <div class="auth-form-wrapper">
+                <!-- Argus Brand Badge -->
+                <div class="auth-brand">
+                    <div class="auth-brand-logo">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                            <path d="M2 17l10 5 10-5" />
+                            <path d="M2 12l10 5 10-5" />
+                        </svg>
+                    </div>
+                    <span class="auth-brand-name">Argus</span>
+                </div>
+
+                <div class="auth-form-header">
+                    <h1 class="auth-title">Create your account</h1>
+                    <p class="auth-subtitle">Enter your details to get started.</p>
+                </div>
+
+                <!-- Global Alert Box -->
+                <div class="auth-alert" id="auth-alert">
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                    <span id="auth-alert-text"></span>
+                </div>
+
+                <form class="auth-form" id="signup-form" novalidate>
+                    <!-- Name Field -->
+                    <div class="auth-field">
+                        <label class="auth-label" for="signup-name">Name</label>
+                        <div class="auth-input-wrapper">
+                            <input type="text" id="signup-name" class="auth-input" placeholder="Alex Morgan" autocomplete="name" required>
+                        </div>
+                        <div class="field-error-msg" id="name-error">
+                            <i class="fa-solid fa-circle-exclamation"></i> <span>Please enter your full name.</span>
+                        </div>
+                    </div>
+
+                    <!-- Email Field -->
+                    <div class="auth-field">
+                        <label class="auth-label" for="signup-email">Email</label>
+                        <div class="auth-input-wrapper">
+                            <input type="email" id="signup-email" class="auth-input" placeholder="name@company.com" autocomplete="email" required>
+                        </div>
+                        <div class="field-error-msg" id="email-error">
+                            <i class="fa-solid fa-circle-exclamation"></i> <span>Please enter a valid email address.</span>
+                        </div>
+                    </div>
+
+                    <!-- Password Field -->
+                    <div class="auth-field">
+                        <label class="auth-label" for="signup-password">Password</label>
+                        <div class="password-input-wrapper">
+                            <input type="password" id="signup-password" class="auth-input" placeholder="••••••••" autocomplete="new-password" required oninput="evaluatePasswordStrength(this.value)">
+                            <button type="button" class="eye-toggle-btn" onclick="togglePasswordVisibility('signup-password', this)" aria-label="Toggle password visibility">
+                                <i class="fa-regular fa-eye"></i>
+                            </button>
+                        </div>
+
+                        <!-- Password Strength Meter -->
+                        <div class="strength-indicator-wrap" id="strength-wrap" style="display: none;">
+                            <div class="strength-bar-track">
+                                <div class="strength-bar-fill" id="strength-bar"></div>
+                            </div>
+                            <div class="strength-meta">
+                                <span>Strength</span>
+                                <span class="strength-label" id="strength-label">Weak</span>
+                            </div>
+                        </div>
+
+                        <div class="field-error-msg" id="password-error">
+                            <i class="fa-solid fa-circle-exclamation"></i> <span>Password must be at least 8 characters.</span>
+                        </div>
+                    </div>
+
+                    <!-- Confirm Password Field -->
+                    <div class="auth-field">
+                        <label class="auth-label" for="signup-confirm-password">Confirm password</label>
+                        <div class="password-input-wrapper">
+                            <input type="password" id="signup-confirm-password" class="auth-input" placeholder="••••••••" autocomplete="new-password" required>
+                            <button type="button" class="eye-toggle-btn" onclick="togglePasswordVisibility('signup-confirm-password', this)" aria-label="Toggle password visibility">
+                                <i class="fa-regular fa-eye"></i>
+                            </button>
+                        </div>
+                        <div class="field-error-msg" id="confirm-password-error">
+                            <i class="fa-solid fa-circle-exclamation"></i> <span>Passwords do not match.</span>
+                        </div>
+                    </div>
+
+                    <!-- Terms Checkbox -->
+                    <div class="auth-field">
+                        <label class="auth-checkbox-label">
+                            <input type="checkbox" id="terms-checkbox" required>
+                            <span>I agree to the <a href="#" class="terms-link" onclick="showTermsNotice(event)">Terms & Conditions</a></span>
+                        </label>
+                        <div class="field-error-msg" id="terms-error">
+                            <i class="fa-solid fa-circle-exclamation"></i> <span>You must agree to the Terms & Conditions.</span>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" class="auth-submit-btn" id="signup-submit-btn">
+                        <span class="btn-text">Sign Up</span>
+                        <i class="fa-solid fa-spinner fa-spin btn-spinner" style="display: none;"></i>
+                    </button>
+                </form>
+
+                <!-- Footer Navigation Link -->
+                <div class="auth-footer-text">
+                    Already have an account? <a href="/login" class="auth-switch-link">Log In</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications Container -->
+    <div id="toastContainer" class="toast-container" style="position: fixed; bottom: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 10px;"></div>
+
+    <script src="{{ url_for('static', filename='js/auth.js') }}?v=24.0"></script>
+</body>
+</html>
