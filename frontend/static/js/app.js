@@ -1411,7 +1411,7 @@ async function viewHistoricalScan(scanId) {
                             <strong style="color: var(--text-muted); font-size: 0.75rem; font-family: var(--font-mono); text-transform: uppercase; display: block; margin-bottom: 6px;">Social Profiles & External Intelligence (${(wi.social_links || []).length})</strong>
                             <div style="max-height: 140px; overflow-y: auto;">
                                 ${(wi.social_links || []).length === 0 ? '<span style="color: var(--text-muted); font-style: italic; font-size: 0.8rem;">No social media profiles linked.</span>' :
-                                    (wi.social_links || []).map(s => `
+                        (wi.social_links || []).map(s => `
                                         <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; font-size: 0.82rem; margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center;">
                                             <div>
                                                 <strong style="color: var(--accent-cyan); font-family: var(--font-mono);">${escapeHtml(s.platform)}</strong>

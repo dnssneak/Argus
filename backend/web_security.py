@@ -595,8 +595,9 @@ class WebSecurityEngine:
                     "discovery_source": "Web Security Engine"
                 })
 
-                # Check for sensitive exposed files returning 200 OK
-                if st_code == 200 and path in sensitive_paths:
+                # Check for sensitive exposed files returning 200 OK (excluding soft-404 HTML landing pages)
+                is_html_response = "text/html" in content_type.lower() or "<html" in r.text[:300].lower() or "<!doctype html" in r.text[:300].lower()
+                if st_code == 200 and path in sensitive_paths and not is_html_response:
                     findings.append({
                         "title": f"Potentially Sensitive File Exposed ({path})",
                         "severity": "High",
