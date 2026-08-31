@@ -215,6 +215,7 @@ class WebSecurityEngine:
                     findings.append({
                         "title": f"Missing {header_name} Security Header",
                         "severity": spec["missing_severity"],
+                        "cvss_score": spec.get("cvss_score", 5.3 if spec["missing_severity"] == "Medium" else 2.0),
                         "risk_score": 30 if spec["missing_severity"] == "Medium" else 15,
                         "description": f"The HTTP response does not include the `{header_name}` security header. {spec['desc']}",
                         "evidence": f"Target URL: {current_url}\nResponse Headers:\n" + "\n".join(f"{k}: {v}" for k, v in headers.items()),

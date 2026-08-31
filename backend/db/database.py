@@ -126,6 +126,37 @@ def init_db():
             db.add(default_proj)
             db.commit()
             db.refresh(default_proj)
+
+        # Self-healing migration: Normalize legacy finding CVSS scores & recalculate priorities
+        from models.models import Finding
+        from services.finding_correlator import FindingCorrelator
+
+        legacy_findings = db.query(Finding).all()
+        for f in legacy_findings:
+            needs_update = False
+            if f.cvss_score is None:
+                if f.risk_score and f.risk_score > 10:
+                    f.cvss_score = round(f.risk_score / 10.0, 1)
+                elif f.risk_score and f.risk_score <= 10:
+                    f.cvss_score = float(f.risk_score)
+                else:
+                    s_lower = (f.severity or "").lower()
+                    if s_lower == "critical": f.cvss_score = 9.0
+                    elif s_lower == "high": f.cvss_score = 7.5
+                    elif s_lower == "medium": f.cvss_score = 5.3
+                    elif s_lower == "low": f.cvss_score = 2.5
+                    else: f.cvss_score = 0.0
+                needs_update = True
+            elif f.cvss_score > 10.0:
+                f.cvss_score = round(f.cvss_score / 10.0, 1)
+                needs_update = True
+
+            if needs_update:
+                FindingCorrelator.correlate_and_prioritize_finding(db, f)
+
+        db.commit()
+    except Exception as e:
+        print(f"Legacy database self-healing warning: {e}")
     finally:
         db.close()
 

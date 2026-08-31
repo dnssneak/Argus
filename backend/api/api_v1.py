@@ -564,12 +564,16 @@ def add_asset_finding(asset_id):
         if not title:
             return jsonify({"success": False, "error": "Finding title is required"}), 400
 
+        parsed_cvss = float(cvss_score) if (cvss_score is not None and str(cvss_score).strip() != "") else None
+        if parsed_cvss is not None and parsed_cvss > 10.0:
+            parsed_cvss = round(parsed_cvss / 10.0, 1)
+
         finding = Finding(
             asset_id=asset_id,
             title=title,
             severity=severity,
-            risk_score=cvss_score,
-            cvss_score=float(cvss_score) if cvss_score else None,
+            risk_score=int(parsed_cvss * 10) if parsed_cvss is not None else 20,
+            cvss_score=parsed_cvss,
             description=description,
             evidence=evidence,
             recommendation=recommendation,
