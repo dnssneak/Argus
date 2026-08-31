@@ -1594,6 +1594,7 @@ body.no-transition .navbar {
     margin-bottom: 0.5rem;
     background: linear-gradient(90deg, #ffffff, var(--accent-purple));
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
     display: inline-block;
 }
@@ -4478,6 +4479,7 @@ body.no-transition .navbar {
     margin-bottom: 0.5rem;
     background: linear-gradient(90deg, #ffffff, var(--accent-purple));
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
     display: inline-block;
 }
@@ -6387,6 +6389,7 @@ select.scan-select:focus {
     color: #ffffff;
     background: transparent;
     -webkit-background-clip: initial;
+    background-clip: initial;
     -webkit-text-fill-color: #ffffff;
     letter-spacing: -0.025em;
     margin-bottom: 0.5rem;
