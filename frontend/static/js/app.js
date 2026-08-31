@@ -847,12 +847,14 @@ function openScanConfigModal(targetName = '', preselectedCaps = null) {
         if (document.getElementById('capRecon')) document.getElementById('capRecon').checked = preselectedCaps.includes('recon');
         if (document.getElementById('capWeb')) document.getElementById('capWeb').checked = preselectedCaps.includes('web');
         if (document.getElementById('capWebSecurity')) document.getElementById('capWebSecurity').checked = preselectedCaps.includes('web_security');
+        if (document.getElementById('capWebIntelligence')) document.getElementById('capWebIntelligence').checked = preselectedCaps.includes('web_intelligence');
     } else {
         if (document.getElementById('capSubdomain')) document.getElementById('capSubdomain').checked = true;
         if (document.getElementById('capPorts')) document.getElementById('capPorts').checked = true;
         if (document.getElementById('capRecon')) document.getElementById('capRecon').checked = true;
         if (document.getElementById('capWeb')) document.getElementById('capWeb').checked = true;
         if (document.getElementById('capWebSecurity')) document.getElementById('capWebSecurity').checked = true;
+        if (document.getElementById('capWebIntelligence')) document.getElementById('capWebIntelligence').checked = true;
     }
 
     togglePortConfigDisplay();
@@ -972,6 +974,24 @@ function generateCmdLogText(cap, target, status, results) {
         return out;
     }
 
+    if (cap === 'web_intelligence') {
+        if (status === 'running') {
+            return `$ argus-web-intel --target ${target} --scrape --search-osint --wayback-archive --extract-docs --email-osint\n[+] Initializing Web Intelligence Engine (OSINT)...\n[+] Scraping in-scope HTML pages, harvesting public emails, and querying Internet Archive (Wayback Machine)...`;
+        }
+        const intelData = results?.web_intelligence || {};
+        let out = `$ argus-web-intel --target ${target} --scrape --search-osint --wayback-archive --extract-docs --email-osint\n[+] Initializing Web Intelligence Engine (OSINT)...\n`;
+        out += `[+] Discovered Subdomains: ${intelData.subdomains ? intelData.subdomains.length : 0}\n`;
+        out += `[+] Discovered Public Emails: ${intelData.emails ? intelData.emails.length : 0}\n`;
+        if (intelData.email_patterns && intelData.email_patterns.length > 0) {
+            out += `[+] Inferred Email Pattern: ${intelData.email_patterns.join(', ')}\n`;
+        }
+        out += `[+] Discovered Downloadable Documents: ${intelData.documents ? intelData.documents.length : 0}\n`;
+        out += `[+] Historical Wayback Archive URLs: ${intelData.historical_urls ? intelData.historical_urls.length : 0}\n`;
+        out += `[+] Extracted Endpoints: ${intelData.endpoints ? intelData.endpoints.length : 0}\n`;
+        out += `[+] Web Intelligence Analysis Completed. [Exit Code: 0]`;
+        return out;
+    }
+
     return `$ executing ${cap} on ${target}...`;
 }
 
@@ -991,6 +1011,7 @@ async function handleExecuteProjectScanSubmit(event) {
     if (document.getElementById('capRecon')?.checked) capabilities.push('recon');
     if (document.getElementById('capWeb')?.checked) capabilities.push('web');
     if (document.getElementById('capWebSecurity')?.checked) capabilities.push('web_security');
+    if (document.getElementById('capWebIntelligence')?.checked) capabilities.push('web_intelligence');
 
     if (capabilities.length === 0) {
         showToast('Please select at least one scan capability to run.', 'error');
@@ -1014,7 +1035,8 @@ async function handleExecuteProjectScanSubmit(event) {
         'ports': 'Port Scanning',
         'recon': 'Reconnaissance',
         'web': 'Web Footprinting',
-        'web_security': 'Web Security Engine'
+        'web_security': 'Web Security Engine',
+        'web_intelligence': 'Web Intelligence Engine (OSINT)'
     };
 
     progressContainer.innerHTML = capabilities.map(cap => `
@@ -1297,6 +1319,123 @@ async function viewHistoricalScan(scanId) {
                             <strong style="color: var(--text-muted); font-size: 0.75rem; font-family: var(--font-mono); text-transform: uppercase; display: block; margin-bottom: 6px;">Generated Web Security Findings (${findings.length})</strong>
                             <div>
                                 ${findingsHtml}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Web Intelligence Engine (OSINT) Result Section
+            if (results.web_intelligence) {
+                const wi = results.web_intelligence;
+                const emails = wi.emails || [];
+                const patterns = wi.email_patterns || [];
+                const docs = wi.documents || [];
+                const hist = wi.historical_urls || [];
+                const subdoms = wi.subdomains || [];
+                const pages = wi.pages_discovered || [];
+
+                let emailsHtml = emails.length === 0 ? '<span style="color: var(--text-muted); font-style: italic; font-size: 0.8rem;">No public emails harvested.</span>' :
+                    emails.map(e => `
+                        <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; font-size: 0.82rem; margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <strong style="color: var(--accent-purple); font-family: var(--font-mono);">${escapeHtml(e.email)}</strong>
+                                <span class="badge ${e.is_historical ? 'badge-yellow' : 'badge-purple'}" style="font-size: 0.68rem; margin-left: 6px;">${e.is_historical ? 'HISTORICAL ARCHIVE' : 'ACTIVE PUBLIC'}</span>
+                                ${e.role_category ? `<span class="badge badge-cyan" style="font-size: 0.68rem; margin-left: 4px;">Role: ${escapeHtml(e.role_category)}</span>` : ''}
+                                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">Source: ${escapeHtml(e.source || 'Scraped Page')} (${escapeHtml(e.module || 'Email OSINT')})</div>
+                            </div>
+                        </div>
+                    `).join('');
+
+                let docsHtml = docs.length === 0 ? '<span style="color: var(--text-muted); font-style: italic; font-size: 0.8rem;">No public downloadable documents discovered.</span>' :
+                    docs.map(d => `
+                        <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; font-size: 0.82rem; margin-bottom: 4px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <strong style="color: var(--text-primary); font-family: var(--font-mono);">${escapeHtml(d.filename || 'document')}</strong>
+                                <span class="badge badge-magenta" style="font-size: 0.68rem;">${escapeHtml(d.file_type || 'DOC')}</span>
+                            </div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">Title: ${escapeHtml(d.title || 'N/A')} | Source: ${escapeHtml(d.source || 'Web')}</div>
+                            ${d.metadata ? `<div style="font-size: 0.72rem; color: var(--accent-purple); margin-top: 2px;">Metadata: Author: ${escapeHtml(d.metadata.author || 'N/A')} | Software: ${escapeHtml(d.metadata.software || 'N/A')} | Created: ${escapeHtml(d.metadata.created || 'N/A')}</div>` : ''}
+                        </div>
+                    `).join('');
+
+                let histHtml = hist.length === 0 ? '<span style="color: var(--text-muted); font-style: italic; font-size: 0.8rem;">No historical Wayback archive URLs indexed.</span>' :
+                    hist.map(h => `
+                        <div class="font-mono" style="font-size: 0.78rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding: 3px 0; display: flex; justify-content: space-between;">
+                            <span style="color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 80%;">${escapeHtml(h.url)}</span>
+                            <span class="badge badge-yellow" style="font-size: 0.68rem;">Year: ${escapeHtml(h.timestamp || 'Historical')}</span>
+                        </div>
+                    `).join('');
+
+                html += `
+                    <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-accent); border-radius: 10px; padding: 1.25rem; margin-bottom: 1rem; box-shadow: 0 0 15px rgba(168, 85, 247, 0.08);">
+                        <h4 style="color: var(--accent-purple); font-size: 1.05rem; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-brain"></i> Web Intelligence Engine (OSINT)
+                        </h4>
+
+                        <!-- OSINT Overview Stats Grid -->
+                        <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; text-align: center; margin-bottom: 14px;">
+                            <div style="background: rgba(0,0,0,0.25); padding: 8px; border-radius: 6px; border: 1px solid var(--border);">
+                                <div style="font-family: var(--font-mono); font-size: 1.2rem; font-weight: 700; color: var(--accent-purple);">${subdoms.length}</div>
+                                <div style="font-size: 0.72rem; color: var(--text-muted);">Subdomains</div>
+                            </div>
+                            <div style="background: rgba(0,0,0,0.25); padding: 8px; border-radius: 6px; border: 1px solid var(--border);">
+                                <div style="font-family: var(--font-mono); font-size: 1.2rem; font-weight: 700; color: var(--accent-purple);">${emails.length}</div>
+                                <div style="font-size: 0.72rem; color: var(--text-muted);">Public Emails</div>
+                            </div>
+                            <div style="background: rgba(0,0,0,0.25); padding: 8px; border-radius: 6px; border: 1px solid var(--border);">
+                                <div style="font-family: var(--font-mono); font-size: 1.2rem; font-weight: 700; color: var(--accent-purple);">${docs.length}</div>
+                                <div style="font-size: 0.72rem; color: var(--text-muted);">Public Documents</div>
+                            </div>
+                            <div style="background: rgba(0,0,0,0.25); padding: 8px; border-radius: 6px; border: 1px solid var(--border);">
+                                <div style="font-family: var(--font-mono); font-size: 1.2rem; font-weight: 700; color: var(--accent-purple);">${hist.length}</div>
+                                <div style="font-size: 0.72rem; color: var(--text-muted);">Historical URLs</div>
+                            </div>
+                            <div style="background: rgba(0,0,0,0.25); padding: 8px; border-radius: 6px; border: 1px solid var(--border);">
+                                <div style="font-family: var(--font-mono); font-size: 1.2rem; font-weight: 700; color: var(--accent-purple);">${pages.length}</div>
+                                <div style="font-size: 0.72rem; color: var(--text-muted);">Pages Scraped</div>
+                            </div>
+                        </div>
+
+                        <!-- Email Patterns & Email OSINT -->
+                        <div style="margin-bottom: 14px;">
+                            <strong style="color: var(--text-muted); font-size: 0.75rem; font-family: var(--font-mono); text-transform: uppercase; display: block; margin-bottom: 6px;">Email OSINT & Organizational Pattern Analysis</strong>
+                            ${patterns.length > 0 ? `<div style="margin-bottom: 8px; font-size: 0.8rem; color: var(--text-secondary);">Inferred Email Pattern(s): ${patterns.map(p => `<code style="color: var(--accent-purple); background: rgba(168,85,247,0.12); padding: 2px 6px; border-radius: 4px;">${escapeHtml(p)}</code>`).join(' ')}</div>` : ''}
+                            <div style="max-height: 160px; overflow-y: auto;">
+                                ${emailsHtml}
+                            </div>
+                        </div>
+
+                        <!-- Social Profiles & External Intelligence -->
+                        <div style="margin-bottom: 14px;">
+                            <strong style="color: var(--text-muted); font-size: 0.75rem; font-family: var(--font-mono); text-transform: uppercase; display: block; margin-bottom: 6px;">Social Profiles & External Intelligence (${(wi.social_links || []).length})</strong>
+                            <div style="max-height: 140px; overflow-y: auto;">
+                                ${(wi.social_links || []).length === 0 ? '<span style="color: var(--text-muted); font-style: italic; font-size: 0.8rem;">No social media profiles linked.</span>' :
+                                    (wi.social_links || []).map(s => `
+                                        <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; font-size: 0.82rem; margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center;">
+                                            <div>
+                                                <strong style="color: var(--accent-cyan); font-family: var(--font-mono);">${escapeHtml(s.platform)}</strong>
+                                                <a href="${escapeHtml(s.url)}" target="_blank" style="color: var(--text-secondary); margin-left: 8px; font-size: 0.78rem;">${escapeHtml(s.url)}</a>
+                                            </div>
+                                            <span class="badge badge-cyan" style="font-size: 0.68rem;">SOCIAL</span>
+                                        </div>
+                                    `).join('')}
+                            </div>
+                        </div>
+
+                        <!-- Public Document Discovery -->
+                        <div style="margin-bottom: 14px;">
+                            <strong style="color: var(--text-muted); font-size: 0.75rem; font-family: var(--font-mono); text-transform: uppercase; display: block; margin-bottom: 6px;">Public Document Discovery & Metadata (${docs.length})</strong>
+                            <div style="max-height: 150px; overflow-y: auto;">
+                                ${docsHtml}
+                            </div>
+                        </div>
+
+                        <!-- Historical Archive Intelligence -->
+                        <div>
+                            <strong style="color: var(--text-muted); font-size: 0.75rem; font-family: var(--font-mono); text-transform: uppercase; display: block; margin-bottom: 6px;">Historical Archive Intelligence (Internet Archive / Wayback Machine) (${hist.length})</strong>
+                            <div style="max-height: 180px; overflow-y: auto; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 6px;">
+                                ${histHtml}
                             </div>
                         </div>
                     </div>

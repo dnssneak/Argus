@@ -354,14 +354,23 @@ class AssetProcessor:
                     )
                     db.add(new_ep)
 
-            # Ingest Web Security Findings directly
+            # Ingest Web Security & Nikto Findings with Deduplication
             sec_findings = sec_data.get("findings", [])
+            nikto_data = sec_data.get("nikto", {})
+            has_nikto = bool(nikto_data and isinstance(nikto_data, dict))
+            nikto_observations_cnt = len(nikto_data.get("observations", [])) if has_nikto else 0
+            nikto_findings_cnt = len(nikto_data.get("findings", [])) if has_nikto else 0
+
+            new_findings_count = 0
+            updated_findings_count = 0
+
             if isinstance(sec_findings, list):
                 for f_item in sec_findings:
                     if isinstance(f_item, dict) and f_item.get("title"):
                         f_title = f_item.get("title").strip()
+                        f_source = f_item.get("discovery_source") or "Web Security Engine"
                         existing_f = db.query(Finding).filter_by(asset_id=sec_asset.id, title=f_title).first()
-                        
+
                         # Extract and clamp CVSS score to 0.0 - 10.0 scale
                         raw_cvss = f_item.get("cvss_score")
                         if raw_cvss is not None:
@@ -382,24 +391,136 @@ class AssetProcessor:
                                 description=f_item.get("description"),
                                 evidence=f_item.get("evidence"),
                                 recommendation=f_item.get("recommendation"),
-                                discovery_source="Web Security Engine",
+                                endpoint=f_item.get("endpoint"),
+                                cve_id=f_item.get("cve_id"),
+                                discovery_source=f_source,
                                 status="open"
                             )
                             db.add(new_f)
+                            new_findings_count += 1
+                        else:
+                            # Deduplication: Associate source and append evidence if missing
+                            sources = [s.strip() for s in (existing_f.discovery_source or "").split(",") if s.strip()]
+                            if f_source not in sources:
+                                sources.append(f_source)
+                                existing_f.discovery_source = ", ".join(sources)
+                                updated_findings_count += 1
 
-            # Add History Timeline Event for Web Security Scan
-            AssetProcessor._add_history_event(
-                db=db,
-                asset_id=sec_asset.id,
-                event_name="Web Security Scan Completed",
-                event_details=(
-                    f"Analyzed security headers, SSL/TLS, cookies, CORS, HTTP methods. "
-                    f"Discovered {len(endpoints)} endpoints and {len(sec_findings)} security findings. (Scan #{scan_id})"
+                            if f_item.get("evidence") and (not existing_f.evidence or f_item["evidence"] not in existing_f.evidence):
+                                existing_f.evidence = f"{existing_f.evidence or ''}\n\n[Additional Evidence from {f_source}]:\n{f_item['evidence']}".strip()
+
+            # Add History Timeline Event for Web Security & Nikto Scan
+            if has_nikto:
+                AssetProcessor._add_history_event(
+                    db=db,
+                    asset_id=sec_asset.id,
+                    event_name="Nikto Web Security Scan Completed",
+                    event_details=(
+                        f"{nikto_observations_cnt} observations detected, "
+                        f"{nikto_findings_cnt} findings correlated, "
+                        f"{updated_findings_count} existing findings updated (Scan #{scan_id})"
+                    )
                 )
-            )
+            else:
+                AssetProcessor._add_history_event(
+                    db=db,
+                    asset_id=sec_asset.id,
+                    event_name="Web Security Scan Completed",
+                    event_details=(
+                        f"Analyzed security headers, SSL/TLS, cookies, CORS, HTTP methods. "
+                        f"Discovered {len(endpoints)} endpoints and {len(sec_findings)} security findings. (Scan #{scan_id})"
+                    )
+                )
 
             if sec_asset.id not in [a.id for a in processed_assets]:
                 processed_assets.append(sec_asset)
+
+        # 7. Process Web Intelligence (OSINT) Results
+        intel_data = results.get("web_intelligence", {})
+        if isinstance(intel_data, dict) and intel_data:
+            intel_target = (intel_data.get("target") or target).strip()
+            intel_asset = AssetProcessor._get_or_create_asset(
+                db=db,
+                project_id=project_id,
+                name=intel_target,
+                source_name="Web Intelligence Engine",
+                scan_id=scan_id,
+                now=now
+            )
+
+            # Process discovered subdomains
+            subs = intel_data.get("subdomains", [])
+            for sub_item in subs:
+                s_name = sub_item.get("subdomain") if isinstance(sub_item, dict) else str(sub_item)
+                if s_name and s_name.strip():
+                    sub_asset = AssetProcessor._get_or_create_asset(
+                        db=db,
+                        project_id=project_id,
+                        name=s_name.strip(),
+                        asset_type="Subdomain" if s_name.strip() != intel_target else "Domain",
+                        source_name="Web Intelligence OSINT",
+                        scan_id=scan_id,
+                        now=now
+                    )
+                    if sub_asset.id not in [a.id for a in processed_assets]:
+                        processed_assets.append(sub_asset)
+
+            # Ingest Endpoints
+            endpoints = intel_data.get("endpoints", [])
+            for ep in endpoints:
+                ep_path = ep.get("path") if isinstance(ep, dict) else str(ep)
+                if not ep_path:
+                    continue
+                existing_ep = db.query(Endpoint).filter_by(asset_id=intel_asset.id, path=ep_path).first()
+                if not existing_ep:
+                    db.add(Endpoint(
+                        asset_id=intel_asset.id,
+                        method=ep.get("method", "GET"),
+                        path=ep_path,
+                        status_code=ep.get("status_code", 200),
+                        discovery_source="Web Intelligence"
+                    ))
+
+            # Ingest Technologies
+            techs = intel_data.get("technologies", [])
+            for t in techs:
+                t_name = t.get("name") if isinstance(t, dict) else str(t)
+                if t_name:
+                    existing_t = db.query(Technology).filter_by(asset_id=intel_asset.id, name=t_name).first()
+                    if not existing_t:
+                        db.add(Technology(
+                            asset_id=intel_asset.id,
+                            name=t_name,
+                            category="OSINT Fingerprint",
+                            detection_source="Web Intelligence"
+                        ))
+
+            # Combine discovery sources on primary asset
+            sources = set([s.strip() for s in (intel_asset.discovery_sources or "").split(",") if s.strip()])
+            sources.add("Web Intelligence Engine")
+            sources.add("Wayback Archive OSINT")
+            intel_asset.discovery_sources = ", ".join(filter(None, sources))
+
+            # Append AssetHistory timeline event
+            emails_cnt = len(intel_data.get("emails", []))
+            docs_cnt = len(intel_data.get("documents", []))
+            subdom_cnt = len(subs)
+            hist_cnt = len(intel_data.get("historical_urls", []))
+            tech_cnt = len(techs)
+
+            AssetProcessor._add_history_event(
+                db=db,
+                asset_id=intel_asset.id,
+                event_name="Web Intelligence Scan Completed",
+                event_details=(
+                    f"{subdom_cnt} subdomains/domains, {emails_cnt} public emails, "
+                    f"{docs_cnt} public documents, {hist_cnt} historical URLs, "
+                    f"{tech_cnt} technologies identified (Scan #{scan_id})"
+                )
+            )
+
+            if intel_asset.id not in [a.id for a in processed_assets]:
+                processed_assets.append(intel_asset)
 
         # Change Detection comparison pass for updated assets
         for a in processed_assets:

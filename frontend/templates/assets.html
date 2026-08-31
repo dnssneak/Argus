@@ -3,7 +3,8 @@
 {% block title %}Asset Inventory — Argus 2.0{% endblock %}
 {% block page_tag %}
 <div style="margin-bottom: 0.6rem;">
-    <span class="page-tag" style="display: inline-block; font-family: var(--font-mono); font-size: 0.78rem; color: var(--accent-purple); text-transform: uppercase; letter-spacing: 0.1em; background: rgba(168, 85, 247, 0.1); padding: 5px 16px; border-radius: 30px; border: 1px solid var(--border-accent);">
+    <span class="page-tag"
+        style="display: inline-block; font-family: var(--font-mono); font-size: 0.78rem; color: var(--accent-purple); text-transform: uppercase; letter-spacing: 0.1em; background: rgba(168, 85, 247, 0.1); padding: 5px 16px; border-radius: 30px; border: 1px solid var(--border-accent);">
         DISCOVERED ATTACK SURFACE
     </span>
 </div>
@@ -17,13 +18,17 @@
 {% block content %}
 <div class="card-panel">
     <div class="panel-header" style="flex-wrap: wrap; gap: 20px 16px; margin-bottom: 1.75rem; align-items: center;">
-        <h2 class="panel-title" style="font-size: 1.5rem; font-weight: 700; margin-bottom: 12px; min-width: 220px;">Asset Repository</h2>
+        <h2 class="panel-title" style="font-size: 1.5rem; font-weight: 700; margin-bottom: 12px; min-width: 220px;">
+            Asset Repository</h2>
         <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 4px;">
             <div style="position: relative; display: inline-flex; align-items: center;">
-                <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 16px; color: var(--accent-purple); font-size: 0.85rem; pointer-events: none;"></i>
-                <input type="text" id="assetSearchInput" class="cyber-search-pill" placeholder="Search target, IP, domain..." onkeyup="filterAssets()">
+                <i class="fa-solid fa-magnifying-glass"
+                    style="position: absolute; left: 16px; color: var(--accent-purple); font-size: 0.85rem; pointer-events: none;"></i>
+                <input type="text" id="assetSearchInput" class="cyber-search-pill"
+                    placeholder="Search target, IP, domain..." onkeyup="filterAssets()">
             </div>
-            <select id="assetProjectFilter" class="cyber-select-pill" data-icon="fa-folder-tree" onchange="handleAssetProjectFilterChange()">
+            <select id="assetProjectFilter" class="cyber-select-pill" data-icon="fa-folder-tree"
+                onchange="handleAssetProjectFilterChange()">
                 <option value="">All Projects Scope</option>
             </select>
             <select id="assetTypeFilter" class="cyber-select-pill" data-icon="fa-shapes" onchange="filterAssets()">
@@ -34,7 +39,8 @@
                 <option value="Website">Website</option>
                 <option value="API">API</option>
             </select>
-            <select id="assetSeverityFilter" class="cyber-select-pill" data-icon="fa-shield-halved" onchange="loadAssetsPage()">
+            <select id="assetSeverityFilter" class="cyber-select-pill" data-icon="fa-shield-halved"
+                onchange="loadAssetsPage()">
                 <option value="">All Severities</option>
                 <option value="CRITICAL">CRITICAL (80-100)</option>
                 <option value="HIGH">HIGH (60-79)</option>
@@ -42,7 +48,8 @@
                 <option value="LOW">LOW (20-39)</option>
                 <option value="INFORMATIONAL">INFO (0-19)</option>
             </select>
-            <select id="assetSortFilter" class="cyber-select-pill" data-icon="fa-arrow-down-wide-short" onchange="loadAssetsPage()">
+            <select id="assetSortFilter" class="cyber-select-pill" data-icon="fa-arrow-down-wide-short"
+                onchange="loadAssetsPage()">
                 <option value="risk_desc">Risk: High → Low</option>
                 <option value="risk_asc">Risk: Low → High</option>
                 <option value="name_asc">Name: A → Z</option>
@@ -80,7 +87,8 @@
         <div class="modal-header" style="align-items: flex-start; gap: 16px;">
             <div style="flex: 1;">
                 <div style="display: flex; align-items: center; gap: 10px;">
-                    <h3 class="modal-title" id="detailAssetName" style="margin: 0; font-size: 1.5rem; word-break: break-all;">Asset Profile</h3>
+                    <h3 class="modal-title" id="detailAssetName"
+                        style="margin: 0; font-size: 1.5rem; word-break: break-all;">Asset Profile</h3>
                     <span id="detailAssetStatusBadge" class="badge">ACTIVE</span>
                 </div>
                 <div style="display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap;">
@@ -94,38 +102,57 @@
 
         <!-- Navigation Tabs -->
         <div class="modal-tabs">
-            <button id="tab-btn-overview" class="modal-tab-btn active" onclick="switchAssetTab('overview')"><i class="fa-solid fa-circle-info"></i> Overview</button>
-            <button id="tab-btn-infrastructure" class="modal-tab-btn" onclick="switchAssetTab('infrastructure')"><i class="fa-solid fa-server"></i> Infrastructure</button>
-            <button id="tab-btn-web" class="modal-tab-btn" onclick="switchAssetTab('web')"><i class="fa-solid fa-globe"></i> Web & Cert</button>
-            <button id="tab-btn-relationships" class="modal-tab-btn" onclick="switchAssetTab('relationships')"><i class="fa-solid fa-diagram-project"></i> Relationships</button>
-            <button id="tab-btn-findings" class="modal-tab-btn" onclick="switchAssetTab('findings')"><i class="fa-solid fa-shield-halved"></i> Findings</button>
-            <button id="tab-btn-history" class="modal-tab-btn" onclick="switchAssetTab('history')"><i class="fa-solid fa-clock-rotate-left"></i> History</button>
-            <button id="tab-btn-changes" class="modal-tab-btn" onclick="switchAssetTab('changes')"><i class="fa-solid fa-code-compare"></i> Changes & Monitoring</button>
-            <button id="tab-btn-notes" class="modal-tab-btn" onclick="switchAssetTab('notes')"><i class="fa-solid fa-pen-to-square"></i> Notes</button>
+            <button id="tab-btn-overview" class="modal-tab-btn active" onclick="switchAssetTab('overview')"><i
+                    class="fa-solid fa-circle-info"></i> Overview</button>
+            <button id="tab-btn-infrastructure" class="modal-tab-btn" onclick="switchAssetTab('infrastructure')"><i
+                    class="fa-solid fa-server"></i> Infrastructure</button>
+            <button id="tab-btn-web" class="modal-tab-btn" onclick="switchAssetTab('web')"><i
+                    class="fa-solid fa-globe"></i> Web & Cert</button>
+            <button id="tab-btn-relationships" class="modal-tab-btn" onclick="switchAssetTab('relationships')"><i
+                    class="fa-solid fa-diagram-project"></i> Relationships</button>
+            <button id="tab-btn-findings" class="modal-tab-btn" onclick="switchAssetTab('findings')"><i
+                    class="fa-solid fa-shield-halved"></i> Findings</button>
+            <button id="tab-btn-history" class="modal-tab-btn" onclick="switchAssetTab('history')"><i
+                    class="fa-solid fa-clock-rotate-left"></i> History</button>
+            <button id="tab-btn-changes" class="modal-tab-btn" onclick="switchAssetTab('changes')"><i
+                    class="fa-solid fa-code-compare"></i> Changes & Monitoring</button>
+            <button id="tab-btn-notes" class="modal-tab-btn" onclick="switchAssetTab('notes')"><i
+                    class="fa-solid fa-pen-to-square"></i> Notes</button>
         </div>
 
         <div id="assetDetailContent">
             <!-- Dynamic Tab Content Panels -->
-            
+
             <!-- 1. OVERVIEW PANEL -->
             <div id="panel-overview" class="tab-content-panel active">
                 <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px;">
                     <!-- Risk Score Section -->
-                    <div class="card-panel" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; text-align: center; position: relative;">
-                        <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-family: var(--font-mono); letter-spacing: 0.08em; margin-bottom: 8px;">Risk Score</span>
-                        <div style="position: relative; width: 120px; height: 120px; display: flex; align-items: center; justify-content: center; margin: 10px 0;">
+                    <div class="card-panel"
+                        style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; text-align: center; position: relative;">
+                        <span
+                            style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-family: var(--font-mono); letter-spacing: 0.08em; margin-bottom: 8px;">Risk
+                            Score</span>
+                        <div
+                            style="position: relative; width: 120px; height: 120px; display: flex; align-items: center; justify-content: center; margin: 10px 0;">
                             <svg width="120" height="120" viewBox="0 0 120 120" style="transform: rotate(-90deg);">
                                 <!-- Background circle -->
-                                <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="8"></circle>
+                                <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,0.05)"
+                                    stroke-width="8"></circle>
                                 <!-- Progress circle -->
-                                <circle id="riskProgressCircle" cx="60" cy="60" r="50" fill="none" stroke="var(--accent-purple)" stroke-width="8" 
-                                        stroke-dasharray="314.16" stroke-dashoffset="314.16" style="transition: stroke-dashoffset 0.8s ease-in-out; stroke-linecap: round; filter: drop-shadow(0 0 6px var(--accent-purple));"></circle>
+                                <circle id="riskProgressCircle" cx="60" cy="60" r="50" fill="none"
+                                    stroke="var(--accent-purple)" stroke-width="8" stroke-dasharray="314.16"
+                                    stroke-dashoffset="314.16"
+                                    style="transition: stroke-dashoffset 0.8s ease-in-out; stroke-linecap: round; filter: drop-shadow(0 0 6px var(--accent-purple));">
+                                </circle>
                             </svg>
-                            <div id="detailAssetRiskCircle" style="position: absolute; font-size: 2.2rem; font-weight: 700; color: var(--text-primary); font-family: var(--font-mono);">0</div>
+                            <div id="detailAssetRiskCircle"
+                                style="position: absolute; font-size: 2.2rem; font-weight: 700; color: var(--text-primary); font-family: var(--font-mono);">
+                                0</div>
                         </div>
-                        <span id="detailAssetRiskLabel" class="badge" style="font-size: 0.8rem; font-family: var(--font-mono); margin-top: 6px;">INFORMATIONAL</span>
+                        <span id="detailAssetRiskLabel" class="badge"
+                            style="font-size: 0.8rem; font-family: var(--font-mono); margin-top: 6px;">INFORMATIONAL</span>
                     </div>
-                    
+
                     <!-- Identity detail metrics -->
                     <div style="display: flex; flex-direction: column; gap: 12px;">
                         <div class="detail-grid">
@@ -146,16 +173,23 @@
                                 <div class="detail-value" id="detailAssetLastSeen">—</div>
                             </div>
                         </div>
-                        
+
                         <!-- Tags Edit Section -->
                         <div class="card-panel" style="padding: 12px 16px;">
-                            <h4 style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 8px; font-family: var(--font-mono); text-transform: uppercase;">Asset Scope Tags</h4>
-                            <div id="detailAssetTagsContainer" style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px;">
+                            <h4
+                                style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 8px; font-family: var(--font-mono); text-transform: uppercase;">
+                                Asset Scope Tags</h4>
+                            <div id="detailAssetTagsContainer"
+                                style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px;">
                                 <!-- tags -->
                             </div>
                             <div style="display: flex; gap: 8px;">
-                                <input type="text" id="assetTagInput" class="form-control" placeholder="Add tag (press Enter)" style="flex: 1; padding: 6px 10px; font-size: 12px;" onkeydown="handleAddTagKey(event)">
-                                <button class="btn btn-secondary" onclick="saveAssetTags()" style="padding: 6px 12px; font-size: 11px;">Save</button>
+                                <input type="text" id="assetTagInput" class="form-control"
+                                    placeholder="Add tag (press Enter)"
+                                    style="flex: 1; padding: 6px 10px; font-size: 12px;"
+                                    onkeydown="handleAddTagKey(event)">
+                                <button class="btn btn-secondary" onclick="saveAssetTags()"
+                                    style="padding: 6px 12px; font-size: 11px;">Save</button>
                             </div>
                         </div>
                     </div>
@@ -164,14 +198,20 @@
                 <!-- Contributing Risk Factors & Discovery Sources -->
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 16px;">
                     <div class="card-panel" style="padding: 16px;">
-                        <h4 style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 12px; font-family: var(--font-mono); text-transform: uppercase;">Contributing Risk Factors</h4>
-                        <div id="detailRiskFactorsList" style="display: flex; flex-direction: column; gap: 6px; font-size: 0.85rem;">
+                        <h4
+                            style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 12px; font-family: var(--font-mono); text-transform: uppercase;">
+                            Contributing Risk Factors</h4>
+                        <div id="detailRiskFactorsList"
+                            style="display: flex; flex-direction: column; gap: 6px; font-size: 0.85rem;">
                             <!-- risk factors -->
                         </div>
                     </div>
                     <div class="card-panel" style="padding: 16px;">
-                        <h4 style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 12px; font-family: var(--font-mono); text-transform: uppercase;">Discovery Sources</h4>
-                        <div id="detailDiscoverySourcesList" style="display: flex; flex-direction: column; gap: 8px; font-size: 0.85rem;">
+                        <h4
+                            style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 12px; font-family: var(--font-mono); text-transform: uppercase;">
+                            Discovery Sources</h4>
+                        <div id="detailDiscoverySourcesList"
+                            style="display: flex; flex-direction: column; gap: 8px; font-size: 0.85rem;">
                             <!-- discovery sources -->
                         </div>
                     </div>
@@ -183,7 +223,9 @@
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                     <!-- Services Section -->
                     <div class="card-panel" style="padding: 16px;">
-                        <h4 style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 12px; font-family: var(--font-mono); text-transform: uppercase;">Exposed Services & Ports</h4>
+                        <h4
+                            style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 12px; font-family: var(--font-mono); text-transform: uppercase;">
+                            Exposed Services & Ports</h4>
                         <div id="detailServicesContainer" style="display: flex; flex-direction: column; gap: 8px;">
                             <!-- services -->
                         </div>
@@ -191,7 +233,9 @@
 
                     <!-- Tech Stack Section -->
                     <div class="card-panel" style="padding: 16px;">
-                        <h4 style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 12px; font-family: var(--font-mono); text-transform: uppercase;">Technology Stack Fingerprints</h4>
+                        <h4
+                            style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 12px; font-family: var(--font-mono); text-transform: uppercase;">
+                            Technology Stack Fingerprints</h4>
                         <div id="detailTechContainer" style="display: flex; flex-direction: column; gap: 8px;">
                             <!-- technologies -->
                         </div>
@@ -204,7 +248,9 @@
                 <div style="display: flex; flex-direction: column; gap: 16px;">
                     <!-- Web Info -->
                     <div class="card-panel" style="padding: 16px;">
-                        <h4 style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 12px; font-family: var(--font-mono); text-transform: uppercase;">HTTP / Web Application Identity</h4>
+                        <h4
+                            style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 12px; font-family: var(--font-mono); text-transform: uppercase;">
+                            HTTP / Web Application Identity</h4>
                         <div class="detail-grid">
                             <div class="detail-item" style="grid-column: span 2;">
                                 <div class="detail-label">HTTP URL</div>
@@ -223,23 +269,32 @@
                                 <div class="detail-value font-mono" id="detailWebServerBanner">—</div>
                             </div>
                         </div>
-                        
+
                         <!-- Security Headers Breakdown -->
-                        <h5 style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 16px; margin-bottom: 8px; font-family: var(--font-mono); text-transform: uppercase;">HTTP Security Headers</h5>
-                        <div id="detailSecHeadersContainer" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
-                            <span style="color: var(--text-muted); font-style: italic; font-size: 0.8rem;">Run a Web Security Scan to analyze security headers.</span>
+                        <h5
+                            style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 16px; margin-bottom: 8px; font-family: var(--font-mono); text-transform: uppercase;">
+                            HTTP Security Headers</h5>
+                        <div id="detailSecHeadersContainer"
+                            style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
+                            <span style="color: var(--text-muted); font-style: italic; font-size: 0.8rem;">Run a Web
+                                Security Scan to analyze security headers.</span>
                         </div>
 
                         <!-- Endpoints list -->
-                        <h5 style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 16px; margin-bottom: 8px; font-family: var(--font-mono); text-transform: uppercase;">Discovered API & Web Endpoints</h5>
-                        <div id="detailEndpointsContainer" style="max-height: 150px; overflow-y: auto; font-size: 0.85rem; background: rgba(0,0,0,0.2); border-radius: 8px; padding: 10px;">
+                        <h5
+                            style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 16px; margin-bottom: 8px; font-family: var(--font-mono); text-transform: uppercase;">
+                            Discovered API & Web Endpoints</h5>
+                        <div id="detailEndpointsContainer"
+                            style="max-height: 150px; overflow-y: auto; font-size: 0.85rem; background: rgba(0,0,0,0.2); border-radius: 8px; padding: 10px;">
                             <!-- endpoints -->
                         </div>
                     </div>
 
                     <!-- SSL Certificate -->
                     <div class="card-panel" style="padding: 16px;">
-                        <h4 style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 12px; font-family: var(--font-mono); text-transform: uppercase;">SSL / TLS X.509 Certificate</h4>
+                        <h4
+                            style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 12px; font-family: var(--font-mono); text-transform: uppercase;">
+                            SSL / TLS X.509 Certificate</h4>
                         <div class="detail-grid">
                             <div class="detail-item" style="grid-column: span 2;">
                                 <div class="detail-label">Certificate Issuer CA</div>
@@ -255,7 +310,8 @@
                             </div>
                             <div class="detail-item" style="grid-column: span 2;">
                                 <div class="detail-label">Subject Alternative Names (SANs)</div>
-                                <div class="detail-value font-mono" id="detailCertSans" style="word-break: break-all; font-size: 0.8rem;">—</div>
+                                <div class="detail-value font-mono" id="detailCertSans"
+                                    style="word-break: break-all; font-size: 0.8rem;">—</div>
                             </div>
                         </div>
                     </div>
@@ -265,9 +321,13 @@
             <!-- 4. FINDINGS PANEL -->
             <div id="panel-findings" class="tab-content-panel">
                 <div class="card-panel" style="padding: 16px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
-                        <h4 style="font-size: 0.85rem; color: var(--text-secondary); margin: 0; font-family: var(--font-mono); text-transform: uppercase;">Vulnerability & Security Observations</h4>
-                        <button class="btn btn-primary" style="font-size: 0.8rem; padding: 6px 14px;" onclick="openAddFindingModal()">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+                        <h4
+                            style="font-size: 0.85rem; color: var(--text-secondary); margin: 0; font-family: var(--font-mono); text-transform: uppercase;">
+                            Vulnerability & Security Observations</h4>
+                        <button class="btn btn-primary" style="font-size: 0.8rem; padding: 6px 14px;"
+                            onclick="openAddFindingModal()">
                             <i class="fa-solid fa-plus"></i> Add Security Finding
                         </button>
                     </div>
@@ -280,7 +340,9 @@
             <!-- 5. HISTORY PANEL -->
             <div id="panel-history" class="tab-content-panel">
                 <div class="card-panel" style="padding: 16px;">
-                    <h4 style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 16px; font-family: var(--font-mono); text-transform: uppercase;">Asset Lifecycle Timeline</h4>
+                    <h4
+                        style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 16px; font-family: var(--font-mono); text-transform: uppercase;">
+                        Asset Lifecycle Timeline</h4>
                     <div class="timeline" id="detailHistoryTimeline">
                         <!-- timeline events -->
                     </div>
@@ -290,16 +352,23 @@
             <!-- 6. NOTES PANEL -->
             <div id="panel-notes" class="tab-content-panel">
                 <div class="card-panel" style="padding: 16px; margin-bottom: 16px;">
-                    <h4 style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 12px; font-family: var(--font-mono); text-transform: uppercase;">Analyst Investigations Notes</h4>
-                    <div id="detailNotesContainer" style="max-height: 250px; overflow-y: auto; margin-bottom: 16px; display: flex; flex-direction: column; gap: 8px;">
+                    <h4
+                        style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 12px; font-family: var(--font-mono); text-transform: uppercase;">
+                        Analyst Investigations Notes</h4>
+                    <div id="detailNotesContainer"
+                        style="max-height: 250px; overflow-y: auto; margin-bottom: 16px; display: flex; flex-direction: column; gap: 8px;">
                         <!-- notes -->
                     </div>
                 </div>
-                
+
                 <div class="card-panel" style="padding: 16px;">
-                    <h4 style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 12px; font-family: var(--font-mono); text-transform: uppercase;">Add Note</h4>
+                    <h4
+                        style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 12px; font-family: var(--font-mono); text-transform: uppercase;">
+                        Add Note</h4>
                     <div class="form-group">
-                        <textarea id="newAssetNoteContent" class="form-control" placeholder="Write internal assessment observation or notes..." rows="3" style="resize: vertical;"></textarea>
+                        <textarea id="newAssetNoteContent" class="form-control"
+                            placeholder="Write internal assessment observation or notes..." rows="3"
+                            style="resize: vertical;"></textarea>
                     </div>
                     <button class="btn btn-primary" onclick="submitAssetNote()">Add Note Entry</button>
                 </div>
@@ -309,49 +378,63 @@
             <div id="panel-relationships" class="tab-content-panel">
                 <div class="card-panel" style="padding: 16px;">
                     <div class="graph-toolbar" style="margin-bottom: 12px;">
-                        <h4 style="font-size: 0.85rem; color: var(--text-secondary); margin: 0; font-family: var(--font-mono); text-transform: uppercase; flex-shrink: 0;">Asset Connection Graph & Topology</h4>
+                        <h4
+                            style="font-size: 0.85rem; color: var(--text-secondary); margin: 0; font-family: var(--font-mono); text-transform: uppercase; flex-shrink: 0;">
+                            Asset Connection Graph & Topology</h4>
                         <div style="display: flex; gap: 8px; align-items: center; flex: 0 0 auto; margin-left: auto;">
-                            <button class="cyber-btn cyber-btn-accent" onclick="openFullscreenGraphModal('asset')"><i class="fa-solid fa-up-right-and-down-left-from-center"></i> Expand Window</button>
-                            <button class="cyber-btn" onclick="resetAssetGraphZoom()"><i class="fa-solid fa-expand"></i> Reset View</button>
-                            <button class="cyber-btn" onclick="triggerAssetGraphRecorrelate()"><i class="fa-solid fa-arrows-rotate"></i> Re-Correlate</button>
+                            <button class="cyber-btn cyber-btn-accent" onclick="openFullscreenGraphModal('asset')"><i
+                                    class="fa-solid fa-up-right-and-down-left-from-center"></i> Expand Window</button>
+                            <button class="cyber-btn" onclick="resetAssetGraphZoom()"><i class="fa-solid fa-expand"></i>
+                                Reset View</button>
+                            <button class="cyber-btn" onclick="triggerAssetGraphRecorrelate()"><i
+                                    class="fa-solid fa-arrows-rotate"></i> Re-Correlate</button>
                         </div>
                     </div>
 
                     <!-- Cyber Filter Pills Bar -->
                     <div class="graph-filter-pills" style="margin-bottom: 12px;">
-                        <span style="color: var(--text-muted); font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 0.05em; display: flex; align-items: center; gap: 4px; margin-right: 4px;">
+                        <span
+                            style="color: var(--text-muted); font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 0.05em; display: flex; align-items: center; gap: 4px; margin-right: 4px;">
                             <i class="fa-solid fa-filter" style="color: var(--accent-purple);"></i> SHOW:
                         </span>
-                        
+
                         <label class="filter-chip chip-subdomains active">
-                            <input type="checkbox" id="graphFilterSubdomains" checked onchange="toggleFilterChip(this); updateAssetGraphFilters();">
+                            <input type="checkbox" id="graphFilterSubdomains" checked
+                                onchange="toggleFilterChip(this); updateAssetGraphFilters();">
                             <i class="fa-solid fa-sitemap"></i> Subdomains
                         </label>
                         <label class="filter-chip chip-ips active">
-                            <input type="checkbox" id="graphFilterIPs" checked onchange="toggleFilterChip(this); updateAssetGraphFilters();">
+                            <input type="checkbox" id="graphFilterIPs" checked
+                                onchange="toggleFilterChip(this); updateAssetGraphFilters();">
                             <i class="fa-solid fa-network-wired"></i> IPs
                         </label>
                         <label class="filter-chip chip-ports active">
-                            <input type="checkbox" id="graphFilterPorts" checked onchange="toggleFilterChip(this); updateAssetGraphFilters();">
+                            <input type="checkbox" id="graphFilterPorts" checked
+                                onchange="toggleFilterChip(this); updateAssetGraphFilters();">
                             <i class="fa-solid fa-plug"></i> Ports/Services
                         </label>
                         <label class="filter-chip chip-tech active">
-                            <input type="checkbox" id="graphFilterTech" checked onchange="toggleFilterChip(this); updateAssetGraphFilters();">
+                            <input type="checkbox" id="graphFilterTech" checked
+                                onchange="toggleFilterChip(this); updateAssetGraphFilters();">
                             <i class="fa-solid fa-layer-group"></i> Tech Stack
                         </label>
                         <label class="filter-chip chip-endpoints active">
-                            <input type="checkbox" id="graphFilterEndpoints" checked onchange="toggleFilterChip(this); updateAssetGraphFilters();">
+                            <input type="checkbox" id="graphFilterEndpoints" checked
+                                onchange="toggleFilterChip(this); updateAssetGraphFilters();">
                             <i class="fa-solid fa-code"></i> Endpoints
                         </label>
                         <label class="filter-chip chip-findings active">
-                            <input type="checkbox" id="graphFilterFindings" checked onchange="toggleFilterChip(this); updateAssetGraphFilters();">
+                            <input type="checkbox" id="graphFilterFindings" checked
+                                onchange="toggleFilterChip(this); updateAssetGraphFilters();">
                             <i class="fa-solid fa-triangle-exclamation"></i> Findings
                         </label>
                     </div>
 
                     <!-- Visual Graph Container -->
-                    <div id="assetGraphContainer" style="width: 100%; height: 420px; position: relative; background: rgba(10, 10, 18, 0.85); border: 1px solid var(--border); border-radius: 10px; overflow: hidden;">
-                        <div id="assetGraphSpinner" style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--accent-purple); font-family: var(--font-mono); background: rgba(10, 10, 18, 0.9); z-index: 5;">
+                    <div id="assetGraphContainer"
+                        style="width: 100%; height: 420px; position: relative; background: rgba(10, 10, 18, 0.85); border: 1px solid var(--border); border-radius: 10px; overflow: hidden;">
+                        <div id="assetGraphSpinner"
+                            style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--accent-purple); font-family: var(--font-mono); background: rgba(10, 10, 18, 0.9); z-index: 5;">
                             <i class="fa-solid fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: 8px;"></i>
                             <span>Building Relationship Graph...</span>
                         </div>
@@ -359,12 +442,17 @@
                     </div>
 
                     <!-- Inspector Drawer for Node / Edge Context -->
-                    <div id="graphInspectorPanel" style="display: none; margin-top: 12px; padding: 12px 16px; background: rgba(0,0,0,0.4); border: 1px solid var(--border-accent); border-radius: 8px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                            <span id="inspectorTitle" style="font-weight: 700; font-family: var(--font-mono); color: var(--text-primary); font-size: 0.95rem;">Node Details</span>
+                    <div id="graphInspectorPanel"
+                        style="display: none; margin-top: 12px; padding: 12px 16px; background: rgba(0,0,0,0.4); border: 1px solid var(--border-accent); border-radius: 8px;">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                            <span id="inspectorTitle"
+                                style="font-weight: 700; font-family: var(--font-mono); color: var(--text-primary); font-size: 0.95rem;">Node
+                                Details</span>
                             <span id="inspectorBadge" class="badge badge-purple">Entity</span>
                         </div>
-                        <div id="inspectorContent" style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
+                        <div id="inspectorContent"
+                            style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
                             <!-- Node/edge details populated on click -->
                         </div>
                     </div>
@@ -375,42 +463,56 @@
             <div id="panel-changes" class="tab-content-panel">
                 <div style="display: flex; flex-direction: column; gap: 16px;">
                     <!-- Monitoring Banner -->
-                    <div class="card-panel" style="display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; background: rgba(168, 85, 247, 0.05); border: 1px solid var(--border-accent); border-radius: 10px;">
+                    <div class="card-panel"
+                        style="display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; background: rgba(168, 85, 247, 0.05); border: 1px solid var(--border-accent); border-radius: 10px;">
                         <div>
                             <div style="display: flex; align-items: center; gap: 8px;">
                                 <span class="pulse-dot" id="monitoringPulseDot"></span>
-                                <strong id="detailMonitoringStatus" style="font-size: 1.1rem; color: var(--text-primary);">Monitoring: Active</strong>
+                                <strong id="detailMonitoringStatus"
+                                    style="font-size: 1.1rem; color: var(--text-primary);">Monitoring: Active</strong>
                             </div>
-                            <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;" id="detailMonitoringMeta">Last scan evaluated change detection pass</div>
+                            <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;"
+                                id="detailMonitoringMeta">Last scan evaluated change detection pass</div>
                         </div>
                         <div style="text-align: right;">
-                            <span id="detailTotalChangesBadge" class="badge badge-purple" style="font-size: 0.85rem;">0 Changes Detected</span>
+                            <span id="detailTotalChangesBadge" class="badge badge-purple" style="font-size: 0.85rem;">0
+                                Changes Detected</span>
                         </div>
                     </div>
 
                     <!-- Scan-to-Scan Comparison Tool -->
                     <div class="card-panel" style="padding: 16px; position: relative; z-index: 50;">
-                        <h4 style="margin: 0 0 12px 0; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--accent-purple); font-family: var(--font-mono);"><i class="fa-solid fa-code-compare"></i> Compare Asset Scans</h4>
+                        <h4
+                            style="margin: 0 0 12px 0; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--accent-purple); font-family: var(--font-mono);">
+                            <i class="fa-solid fa-code-compare"></i> Compare Asset Scans</h4>
                         <div class="compare-toolbar">
                             <div style="flex: 1 1 240px; min-width: 0;">
-                                <select id="compareScanA" class="cyber-select" data-icon="fa-clock" style="width: 100%;">
+                                <select id="compareScanA" class="cyber-select" data-icon="fa-clock"
+                                    style="width: 100%;">
                                     <option value="">Select Baseline Scan (A)...</option>
                                 </select>
                             </div>
-                            <span style="font-weight: 700; color: var(--text-muted); flex-shrink: 0; padding: 0 2px;">vs</span>
+                            <span
+                                style="font-weight: 700; color: var(--text-muted); flex-shrink: 0; padding: 0 2px;">vs</span>
                             <div style="flex: 1 1 240px; min-width: 0;">
-                                <select id="compareScanB" class="cyber-select" data-icon="fa-clock-rotate-left" style="width: 100%;">
+                                <select id="compareScanB" class="cyber-select" data-icon="fa-clock-rotate-left"
+                                    style="width: 100%;">
                                     <option value="">Select Comparison Scan (B)...</option>
                                 </select>
                             </div>
-                            <button class="btn btn-primary" onclick="runScanComparison()" style="padding: 9px 18px; font-size: 0.85rem; flex-shrink: 0; white-space: nowrap;"><i class="fa-solid fa-scale-balanced"></i> Compare</button>
+                            <button class="btn btn-primary" onclick="runScanComparison()"
+                                style="padding: 9px 18px; font-size: 0.85rem; flex-shrink: 0; white-space: nowrap;"><i
+                                    class="fa-solid fa-scale-balanced"></i> Compare</button>
                         </div>
-                        <div id="compareResultsContainer" style="margin-top: 14px; display: none; width: 100%; overflow: hidden;"></div>
+                        <div id="compareResultsContainer"
+                            style="margin-top: 14px; display: none; width: 100%; overflow: hidden;"></div>
                     </div>
 
                     <!-- Chronological Changes Feed -->
                     <div>
-                        <h4 style="margin: 0 0 10px 0; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); font-family: var(--font-mono);"><i class="fa-solid fa-list-check"></i> Detected Changes History</h4>
+                        <h4
+                            style="margin: 0 0 10px 0; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); font-family: var(--font-mono);">
+                            <i class="fa-solid fa-list-check"></i> Detected Changes History</h4>
                         <div id="detailChangesFeed" class="timeline" style="padding-left: 8px;">
                             <!-- Populated dynamically via JS -->
                         </div>
@@ -420,9 +522,11 @@
         </div>
 
         <!-- Actions footer -->
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border);">
+        <div
+            style="display: flex; justify-content: space-between; align-items: center; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border);">
             <div style="display: flex; gap: 10px;">
-                <button class="btn btn-primary" id="btnDetailScan" onclick="triggerAssetOnDemandScan()"><i class="fa-solid fa-radar"></i> Scan Asset</button>
+                <button class="btn btn-primary" id="btnDetailScan" onclick="triggerAssetOnDemandScan()"><i
+                        class="fa-solid fa-radar"></i> Scan Asset</button>
             </div>
             <button class="btn btn-secondary" onclick="closeAssetDetailModal()">Close Profile</button>
         </div>
@@ -433,18 +537,24 @@
 <div id="addFindingModal" class="modal-overlay">
     <div class="modal-box" style="max-width: 540px;">
         <div class="modal-header">
-            <h3 class="modal-title"><i class="fa-solid fa-shield-halved" style="color: var(--accent-magenta);"></i> Add Security Finding</h3>
+            <h3 class="modal-title"><i class="fa-solid fa-shield-halved" style="color: var(--accent-magenta);"></i> Add
+                Security Finding</h3>
             <button class="modal-close" onclick="closeAddFindingModal()">&times;</button>
         </div>
         <form id="addFindingForm" onsubmit="handleAddFindingSubmit(event)">
             <div style="margin-bottom: 1rem;">
-                <label style="display: block; font-size: 0.8rem; font-family: var(--font-mono); color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;">Finding Title *</label>
-                <input type="text" id="afTitle" required placeholder="e.g. Authentication Bypass, Outdated OpenSSL" class="form-control" style="width: 100%;">
+                <label
+                    style="display: block; font-size: 0.8rem; font-family: var(--font-mono); color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;">Finding
+                    Title *</label>
+                <input type="text" id="afTitle" required placeholder="e.g. Authentication Bypass, Outdated OpenSSL"
+                    class="form-control" style="width: 100%;">
             </div>
-            
+
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1rem;">
                 <div>
-                    <label style="display: block; font-size: 0.8rem; font-family: var(--font-mono); color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;">Original Severity *</label>
+                    <label
+                        style="display: block; font-size: 0.8rem; font-family: var(--font-mono); color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;">Original
+                        Severity *</label>
                     <select id="afSeverity" class="cyber-select" style="width: 100%;">
                         <option value="Critical">Critical</option>
                         <option value="High" selected>High</option>
@@ -454,30 +564,44 @@
                     </select>
                 </div>
                 <div>
-                    <label style="display: block; font-size: 0.8rem; font-family: var(--font-mono); color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;">CVSS Score (0.0 - 10.0)</label>
-                    <input type="number" id="afCvss" step="0.1" min="0" max="10" placeholder="e.g. 8.8" class="form-control" style="width: 100%;">
+                    <label
+                        style="display: block; font-size: 0.8rem; font-family: var(--font-mono); color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;">CVSS
+                        Score (0.0 - 10.0)</label>
+                    <input type="number" id="afCvss" step="0.1" min="0" max="10" placeholder="e.g. 8.8"
+                        class="form-control" style="width: 100%;">
                 </div>
             </div>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1rem;">
                 <div>
-                    <label style="display: block; font-size: 0.8rem; font-family: var(--font-mono); color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;">Port</label>
+                    <label
+                        style="display: block; font-size: 0.8rem; font-family: var(--font-mono); color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;">Port</label>
                     <input type="number" id="afPort" placeholder="e.g. 443" class="form-control" style="width: 100%;">
                 </div>
                 <div>
-                    <label style="display: block; font-size: 0.8rem; font-family: var(--font-mono); color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;">Endpoint Path</label>
-                    <input type="text" id="afEndpoint" placeholder="e.g. /api/login" class="form-control" style="width: 100%;">
+                    <label
+                        style="display: block; font-size: 0.8rem; font-family: var(--font-mono); color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;">Endpoint
+                        Path</label>
+                    <input type="text" id="afEndpoint" placeholder="e.g. /api/login" class="form-control"
+                        style="width: 100%;">
                 </div>
             </div>
 
             <div style="margin-bottom: 1rem;">
-                <label style="display: block; font-size: 0.8rem; font-family: var(--font-mono); color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;">Vulnerability Description</label>
-                <textarea id="afDescription" rows="3" class="form-control" placeholder="Describe the vulnerability observation..." style="width: 100%; resize: vertical;"></textarea>
+                <label
+                    style="display: block; font-size: 0.8rem; font-family: var(--font-mono); color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;">Vulnerability
+                    Description</label>
+                <textarea id="afDescription" rows="3" class="form-control"
+                    placeholder="Describe the vulnerability observation..."
+                    style="width: 100%; resize: vertical;"></textarea>
             </div>
 
             <div style="margin-bottom: 1.25rem;">
-                <label style="display: block; font-size: 0.8rem; font-family: var(--font-mono); color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;">Remediation Recommendation</label>
-                <textarea id="afRecommendation" rows="2" class="form-control" placeholder="Recommended fix or patch..." style="width: 100%; resize: vertical;"></textarea>
+                <label
+                    style="display: block; font-size: 0.8rem; font-family: var(--font-mono); color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;">Remediation
+                    Recommendation</label>
+                <textarea id="afRecommendation" rows="2" class="form-control" placeholder="Recommended fix or patch..."
+                    style="width: 100%; resize: vertical;"></textarea>
             </div>
 
             <div style="display: flex; justify-content: flex-end; gap: 12px;">
