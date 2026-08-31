@@ -902,10 +902,11 @@ def execute_project_scan(project_id):
         from recon import TargetRecon
         from fingerprint import WebsiteFingerprinter
         from web_security import WebSecurityEngine
+        from web_intelligence import WebIntelligenceEngine
 
         if "subdomain" in capabilities:
             new_scan.current_stage = "Subdomain Discovery"
-            new_scan.progress = 20
+            new_scan.progress = 15
             db.commit()
             stage_logs.append("Executing Subdomain Discovery...")
             try:
@@ -920,7 +921,7 @@ def execute_project_scan(project_id):
 
         if "ports" in capabilities:
             new_scan.current_stage = "Port Scanning"
-            new_scan.progress = 40
+            new_scan.progress = 30
             db.commit()
             stage_logs.append("Executing Port Scan...")
             try:
@@ -936,7 +937,7 @@ def execute_project_scan(project_id):
 
         if "recon" in capabilities:
             new_scan.current_stage = "Reconnaissance"
-            new_scan.progress = 60
+            new_scan.progress = 50
             db.commit()
             stage_logs.append("Executing Reconnaissance...")
             try:
@@ -951,7 +952,7 @@ def execute_project_scan(project_id):
 
         if "web" in capabilities:
             new_scan.current_stage = "Web Footprinting"
-            new_scan.progress = 80
+            new_scan.progress = 70
             db.commit()
             stage_logs.append("Executing Web Footprinting...")
             try:
@@ -965,19 +966,34 @@ def execute_project_scan(project_id):
                 stage_logs.append(f"Web Footprinting failed: {str(e)}")
                 has_failure = True
 
-        if "web_security" in capabilities:
+        if "web_security" in capabilities or "nikto" in capabilities:
             new_scan.current_stage = "Web Security Engine"
-            new_scan.progress = 90
+            new_scan.progress = 85
             db.commit()
-            stage_logs.append("Executing Web Security Engine...")
+            stage_logs.append("Executing Web Security Engine (Headers, SSL/TLS, Cookies, CORS, Methods, Dirs & Nikto)...")
             try:
                 sec_engine = WebSecurityEngine(target_str)
-                sec_res = sec_engine.collect()
+                sec_res = sec_engine.collect(include_nikto=True)
                 results["web_security"] = sec_res
-                stage_logs.append("Web Security Engine analysis completed.")
+                stage_logs.append("Web Security Engine analysis (including Nikto scan) completed.")
             except Exception as e:
                 results["web_security"] = {"error": str(e)}
                 stage_logs.append(f"Web Security Engine analysis failed: {str(e)}")
+                has_failure = True
+
+        if "web_intelligence" in capabilities:
+            new_scan.current_stage = "Web Intelligence Engine"
+            new_scan.progress = 95
+            db.commit()
+            stage_logs.append("Executing Web Intelligence Engine (Scraping, OSINT, Wayback Archives, Documents & Email OSINT)...")
+            try:
+                intel_engine = WebIntelligenceEngine(target_str)
+                intel_res = intel_engine.collect()
+                results["web_intelligence"] = intel_res
+                stage_logs.append("Web Intelligence Engine OSINT analysis completed successfully.")
+            except Exception as e:
+                results["web_intelligence"] = {"error": str(e)}
+                stage_logs.append(f"Web Intelligence Engine OSINT analysis failed: {str(e)}")
                 has_failure = True
 
         # Finalize scan execution record
