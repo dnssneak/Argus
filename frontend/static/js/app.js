@@ -2862,6 +2862,14 @@ async function loadAssetChanges(assetId) {
     }
 }
 
+function closeScanComparison() {
+    const container = document.getElementById('compareResultsContainer');
+    if (container) {
+        container.style.display = 'none';
+        container.innerHTML = '';
+    }
+}
+
 async function runScanComparison() {
     const scanA = document.getElementById('compareScanA')?.value;
     const scanB = document.getElementById('compareScanB')?.value;
@@ -2893,9 +2901,14 @@ async function runScanComparison() {
             const subs = comp.subdomains_diff || [];
 
             let html = `
-                <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-accent); border-radius: 8px; padding: 12px; margin-top: 10px;">
-                    <div style="font-weight: 700; font-family: var(--font-mono); color: var(--accent-purple); font-size: 0.85rem; margin-bottom: 8px;">
-                        COMPARISON: SCAN #${comp.scan_a_id} vs SCAN #${comp.scan_b_id}
+                <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-accent); border-radius: 8px; padding: 14px; margin-top: 10px; position: relative;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 8px;">
+                        <div style="font-weight: 700; font-family: var(--font-mono); color: var(--accent-purple); font-size: 0.88rem; display: flex; align-items: center; gap: 6px;">
+                            <i class="fa-solid fa-scale-balanced"></i> COMPARISON: SCAN #${comp.scan_a_id} vs SCAN #${comp.scan_b_id}
+                        </div>
+                        <button type="button" class="btn btn-secondary" onclick="closeScanComparison()" style="padding: 4px 12px; font-size: 0.78rem; display: inline-flex; align-items: center; gap: 6px; border-radius: 6px; cursor: pointer; background: rgba(255,255,255,0.05); border: 1px solid var(--border);">
+                            <i class="fa-solid fa-xmark"></i> Close Comparison
+                        </button>
                     </div>
             `;
 

@@ -205,3 +205,51 @@ class NetworkScanner:
             result["host_status"] = "Up (No open ports found)"
 
         return result
+
+    def _run_socket_fallback(self):
+        """Fallback TCP port scanner using native Python sockets if Nmap is not installed."""
+        import socket
+        from concurrent.futures import ThreadPoolExecutor
+
+        # Full 1-1024 range + sensitive database & web application ports
+        common_ports = sorted(list(set(list(range(1, 1025)) + [1433, 1521, 3306, 3389, 5432, 5900, 6379, 8080, 8443, 9200, 11211, 27017])))
+        open_ports = []
+        services = []
+
+        def check_port(port):
+            try:
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                    s.settimeout(0.6)
+                    res = s.connect_ex((self.target, port))
+                    if res == 0:
+                        try:
+                            svc_name = socket.getservbyport(port, "tcp")
+                        except Exception:
+                            svc_name = "unknown"
+                        return {
+                            "port": port,
+                            "protocol": "TCP",
+                            "name": svc_name,
+                            "version": "Fallback Socket Probe"
+                        }
+            except Exception:
+                pass
+            return None
+
+        with ThreadPoolExecutor(max_workers=50) as executor:
+            results = executor.map(check_port, common_ports)
+            for r in results:
+                if r:
+                    open_ports.append({"port": r["port"], "protocol": "TCP", "state": "Open"})
+                    services.append(r)
+
+        return {
+            "target": self.raw_target,
+            "host_status": "Up" if (open_ports or self.target) else "Down",
+            "open_ports": open_ports,
+            "services": services,
+            "scan_status": "Completed (Python Socket Fallback)",
+            "ping_output": f"[+] Native Python Socket Fallback Scanner\n[+] Probed {len(common_ports)} TCP ports (1-1024 + Database/Web ports) for {self.target}\n[+] Found {len(open_ports)} open port(s)",
+            "raw_output": f"Python Socket Fallback: Discovered {len(open_ports)} open ports.",
+            "fallback_used": True
+        }
