@@ -14,10 +14,24 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
-<body>
     <script>
-        // Check if user has already seen the opening transition in this session
         (function () {
+            // Instant client-side route guard for protected pages (including Dashboard)
+            var path = window.location.pathname;
+            var protectedRoutes = ['/dashboard', '/projects-page', '/assets-page', '/findings-page'];
+            var isProtected = protectedRoutes.includes(path) || path.indexOf('/projects/') === 0;
+            var token = localStorage.getItem('argus_token');
+
+            if (!token) {
+                document.documentElement.classList.add('guest-mode');
+                localStorage.removeItem('argus_logged_in');
+                localStorage.removeItem('argus_user');
+                if (isProtected) {
+                    window.location.replace('/login');
+                    return;
+                }
+            }
+
             if (sessionStorage.getItem('argus_session_seen')) {
                 document.body.classList.add('no-transition');
             } else {
@@ -25,7 +39,14 @@
             }
         })();
     </script>
+    <style>
+        html.guest-mode .nav-protected-tab {
+            display: none !important;
+        }
+    </style>
+</head>
 
+<body>
     <!-- Opening Transition -->
     <div class="page-overlay">
         <!-- Corner brackets -->
@@ -78,11 +99,14 @@
         </div>
         <div class="nav-links">
             <a href="/" class="nav-link {% if request.path == '/' %}active{% endif %}">Home</a>
-            <a href="/dashboard" class="nav-link {% if request.path == '/dashboard' %}active{% endif %}">Dashboard</a>
+            <a href="/dashboard" class="nav-link nav-protected-tab {% if request.path == '/dashboard' %}active{% endif %}">Dashboard</a>
             <a href="/projects-page"
-                class="nav-link {% if request.path.startswith('/projects') %}active{% endif %}">Projects</a>
-            <a href="/assets-page" class="nav-link {% if request.path == '/assets-page' %}active{% endif %}">Assets</a>
-            <a href="/findings-page" class="nav-link {% if request.path == '/findings-page' %}active{% endif %}">Findings</a>
+                class="nav-link nav-protected-tab {% if request.path.startswith('/projects') %}active{% endif %}">Projects</a>
+            <a href="/assets-page" class="nav-link nav-protected-tab {% if request.path == '/assets-page' %}active{% endif %}">Assets</a>
+            <a href="/findings-page" class="nav-link nav-protected-tab {% if request.path == '/findings-page' %}active{% endif %}">Findings</a>
+            <span id="nav-user-badge" class="nav-link" style="color: var(--accent-purple); font-size: 0.85rem; font-weight: 600; display: none;"><i class="fa-solid fa-user-shield"></i> <span id="nav-user-name">User</span></span>
+            <a href="#" onclick="handleArgusLogout(event)" class="nav-link" id="nav-logout-btn" style="display: none;" title="Log Out"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+            <a href="/login" class="nav-link {% if request.path == '/login' %}active{% endif %}" id="nav-login-btn">Log In</a>
         </div>
         <div class="nav-toggle" onclick="toggleMenu()">
             <span></span>

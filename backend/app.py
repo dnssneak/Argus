@@ -15,6 +15,7 @@ from fingerprint import WebsiteFingerprinter
 from subdomain import SubdomainFinder
 
 app = Flask(__name__, template_folder='../frontend/templates', static_folder='../frontend/static')
+app.config['SECRET_KEY'] = os.environ.get("SECRET_KEY", "argus-cyber-security-secret-key-2026-v2")
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 
 # Initialize DB tables on startup
@@ -43,9 +44,28 @@ def signup():
 
 
 
+def is_authenticated():
+    """Helper to check if request has valid argus_token cookie or header."""
+    token = request.cookies.get("argus_token")
+    if not token and request.headers.get("Authorization", "").startswith("Bearer "):
+        token = request.headers.get("Authorization", "").split(" ", 1)[1].strip()
+    if not token:
+        return False
+    from db.database import SessionLocal
+    from services.auth_service import AuthService
+    db = SessionLocal()
+    try:
+        user = AuthService.verify_token(db, token)
+        return user is not None
+    finally:
+        db.close()
+
+
 @app.route("/dashboard")
 def dashboard():
-    """System info & Security Overview dashboard."""
+    """System info & Security Overview dashboard (Protected)."""
+    if not is_authenticated():
+        return redirect(url_for("login"))
     sys_info = SystemInfo()
     system_data = sys_info.collect()
     return render_template("dashboard.html", system=system_data)
@@ -53,25 +73,33 @@ def dashboard():
 
 @app.route("/projects-page")
 def projects_page():
-    """Projects list view."""
+    """Projects list view (Protected)."""
+    if not is_authenticated():
+        return redirect(url_for("login"))
     return render_template("projects.html")
 
 
 @app.route("/projects/<int:project_id>")
 def project_detail_page(project_id):
-    """Dedicated Project Dashboard view."""
+    """Dedicated Project Dashboard view (Protected)."""
+    if not is_authenticated():
+        return redirect(url_for("login"))
     return render_template("project_detail.html", project_id=project_id)
 
 
 @app.route("/assets-page")
 def assets_page():
-    """Asset inventory view."""
+    """Asset inventory view (Protected)."""
+    if not is_authenticated():
+        return redirect(url_for("login"))
     return render_template("assets.html")
 
 
 @app.route("/findings-page")
 def findings_page():
-    """Global Prioritized Findings view."""
+    """Global Prioritized Findings view (Protected)."""
+    if not is_authenticated():
+        return redirect(url_for("login"))
     return render_template("findings.html")
 
 

@@ -1,10 +1,93 @@
 /* ARGUS 2.0 - Core Frontend API Client & View Controller */
 
+// Global Fetch Interceptor to attach Authorization Bearer Token
+(function() {
+    const originalFetch = window.fetch;
+    window.fetch = function(url, options) {
+        options = options || {};
+        options.headers = options.headers || {};
+        const token = localStorage.getItem('argus_token');
+        if (token && typeof url === 'string' && url.includes('/api/v1/')) {
+            if (options.headers instanceof Headers) {
+                if (!options.headers.has('Authorization')) {
+                    options.headers.set('Authorization', 'Bearer ' + token);
+                }
+            } else if (Array.isArray(options.headers)) {
+                options.headers.push(['Authorization', 'Bearer ' + token]);
+            } else {
+                if (!options.headers['Authorization']) {
+                    options.headers['Authorization'] = 'Bearer ' + token;
+                }
+            }
+        }
+        return originalFetch(url, options);
+    };
+})();
+
 let currentProjectId = null;
 let allAssetsCache = [];
 let activeStatusFilter = 'ALL';
 let currentDeleteProjectId = null;
 let loadedProjectsList = [];
+
+function checkNavbarAuth() {
+    const token = localStorage.getItem('argus_token');
+    const userJson = localStorage.getItem('argus_user');
+    const badge = document.getElementById('nav-user-badge');
+    const nameEl = document.getElementById('nav-user-name');
+    const logoutBtn = document.getElementById('nav-logout-btn');
+    const loginBtn = document.getElementById('nav-login-btn');
+    const protectedTabs = document.querySelectorAll('.nav-protected-tab');
+
+    const path = window.location.pathname;
+    const protectedPaths = ['/dashboard', '/projects-page', '/assets-page', '/findings-page'];
+    const isProtected = protectedPaths.includes(path) || path.startsWith('/projects/');
+
+    if (!token && isProtected) {
+        window.location.href = '/login';
+        return;
+    }
+
+    if (!token) {
+        // Guest user: Argus Logo & Name and Log In button remain visible. Protected tabs are hidden.
+        document.documentElement.classList.add('guest-mode');
+        protectedTabs.forEach(tab => tab.style.display = 'none');
+        if (badge) badge.style.display = 'none';
+        if (logoutBtn) logoutBtn.style.display = 'none';
+        if (loginBtn) loginBtn.style.display = 'inline-flex';
+    } else {
+        // Authenticated user: show protected tabs, User profile badge & Logout button
+        document.documentElement.classList.remove('guest-mode');
+        protectedTabs.forEach(tab => tab.style.display = 'inline-flex');
+        if (userJson) {
+            try {
+                const user = JSON.parse(userJson);
+                if (badge && nameEl) {
+                    nameEl.textContent = user.name || user.email;
+                    badge.style.display = 'inline-flex';
+                }
+                if (logoutBtn) logoutBtn.style.display = 'inline-flex';
+                if (loginBtn) loginBtn.style.display = 'none';
+            } catch (e) {
+                console.error('Error parsing stored user:', e);
+            }
+        }
+    }
+}
+
+function handleArgusLogout(e) {
+    if (e) e.preventDefault();
+    fetch('/api/v1/auth/logout', { method: 'POST' })
+        .finally(() => {
+            localStorage.removeItem('argus_token');
+            localStorage.removeItem('argus_user');
+            localStorage.setItem('argus_logged_in', 'false');
+            showToast('Logged out successfully.', 'info');
+            setTimeout(() => {
+                window.location.href = '/login';
+            }, 400);
+        });
+}
 
 // Timezone-aware date helpers
 function parseUtcDate(dateStr) {
@@ -28,6 +111,7 @@ function formatDateTimeLocal(dateStr) {
 
 // Initialize application state
 document.addEventListener('DOMContentLoaded', () => {
+    checkNavbarAuth();
     loadProjectSelector();
 });
 
