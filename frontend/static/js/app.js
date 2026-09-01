@@ -32,6 +32,7 @@ let loadedProjectsList = [];
 
 function checkNavbarAuth() {
     const token = localStorage.getItem('argus_token');
+    const hasCookie = document.cookie.indexOf('argus_token=') !== -1;
     const userJson = localStorage.getItem('argus_user');
     const badge = document.getElementById('nav-user-badge');
     const nameEl = document.getElementById('nav-user-name');
@@ -43,12 +44,12 @@ function checkNavbarAuth() {
     const protectedPaths = ['/dashboard', '/projects-page', '/assets-page', '/findings-page'];
     const isProtected = protectedPaths.includes(path) || path.startsWith('/projects/');
 
-    if (!token && isProtected) {
+    if (!token && !hasCookie && isProtected) {
         window.location.href = '/login';
         return;
     }
 
-    if (!token) {
+    if (!token && !hasCookie) {
         // Guest user: Argus Logo & Name and Log In button remain visible. Protected tabs are hidden.
         document.documentElement.classList.add('guest-mode');
         protectedTabs.forEach(tab => tab.style.display = 'none');

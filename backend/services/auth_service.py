@@ -19,13 +19,8 @@ except ImportError:
 
 import secrets
 
-SECRET_KEY = os.environ.get("SECRET_KEY")
-if not SECRET_KEY:
-    SECRET_KEY = os.environ.get("SECRET_KEY", secrets.token_hex(32))
-
-SECURITY_SALT = os.environ.get("SECURITY_SALT")
-if not SECURITY_SALT:
-    SECURITY_SALT = secrets.token_hex(16)
+SECRET_KEY = os.environ.get("SECRET_KEY") or "argus-master-production-secret-key-2026-v1"
+SECURITY_SALT = os.environ.get("SECURITY_SALT") or "argus-master-production-salt-2026-v1"
 
 serializer = URLSafeTimedSerializer(SECRET_KEY, salt=SECURITY_SALT)
 EMAIL_REGEX = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")

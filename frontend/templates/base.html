@@ -20,13 +20,14 @@
 
     <script>
         (function () {
-            // Instant client-side route guard for protected pages (including Dashboard)
+            // Instant client-side route guard for protected pages
             var path = window.location.pathname;
             var protectedRoutes = ['/dashboard', '/projects-page', '/assets-page', '/findings-page'];
             var isProtected = protectedRoutes.includes(path) || path.indexOf('/projects/') === 0;
             var token = localStorage.getItem('argus_token');
+            var hasCookie = document.cookie.indexOf('argus_token=') !== -1;
 
-            if (!token) {
+            if (!token && !hasCookie) {
                 document.documentElement.classList.add('guest-mode');
                 localStorage.removeItem('argus_logged_in');
                 localStorage.removeItem('argus_user');

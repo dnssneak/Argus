@@ -94,7 +94,8 @@ def auth_signup():
             token,
             httponly=True,
             samesite="Lax",
-            max_age=86400
+            max_age=86400,
+            path="/"
         )
         return response
 
@@ -132,7 +133,8 @@ def auth_login():
             token,
             httponly=True,
             samesite="Lax",
-            max_age=86400
+            max_age=86400,
+            path="/"
         )
         return response
 
@@ -151,7 +153,7 @@ def auth_logout():
         "success": True,
         "message": "Logged out successfully."
     }), 200)
-    response.set_cookie("argus_token", "", expires=0)
+    response.set_cookie("argus_token", "", expires=0, path="/")
     return response
 
 
