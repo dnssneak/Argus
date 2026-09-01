@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Project Workspace — Argus 2.0{% endblock %}
+{% block title %}Project Overview — Argus{% endblock %}
 
 {% block content %}
 <input type="hidden" id="currentProjectId" value="{{ project_id }}">
@@ -21,7 +21,7 @@
                     #<span id="projIdText">{{ project_id }}</span></span>
             </div>
             <h1 id="projNameText" class="page-title"
-                style="font-size: 2.2rem; font-weight: 700; background: linear-gradient(90deg, #ffffff, var(--accent-purple)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">
+                style="font-size: 2.2rem; font-weight: 700; color: #ffffff;">
                 Loading Project...
             </h1>
             <p id="projDescText" class="page-desc"
@@ -32,7 +32,7 @@
 
         <div>
             <a href="/projects-page"
-                style="display: inline-flex; align-items: center; gap: 8px; background: rgba(168, 85, 247, 0.1); border: 1px solid var(--border-accent); color: var(--accent-purple); padding: 9px 16px; border-radius: 8px; font-weight: 600; font-size: 0.85rem; text-decoration: none; transition: all 0.2s ease;"
+                style="display: inline-flex; align-items: center; gap: 8px; background: rgba(168, 85, 247, 0.1); border: 1px solid var(--border-accent); color: var(--accent-purple); padding: 9px 16px; border-radius: 50px; font-weight: 600; font-size: 0.85rem; text-decoration: none; transition: all 0.2s ease;"
                 onmouseover="this.style.background='rgba(168, 85, 247, 0.2)'; this.style.transform='translateY(-1px)';"
                 onmouseout="this.style.background='rgba(168, 85, 247, 0.1)'; this.style.transform='none';">
                 <i class="fa-solid fa-arrow-left"></i> Back to Projects
@@ -244,125 +244,130 @@
 
 <!-- DEDICATED SCAN CONFIGURATION & EXECUTION CARD (MODAL) -->
 <div id="scanConfigModal" class="modal-overlay">
-    <div class="modal-box" style="max-width: 650px; width: 90%;">
-        <div class="modal-header">
-            <h3 class="modal-title" style="display: flex; align-items: center; gap: 10px;">
-                <i class="fa-solid fa-crosshairs" style="color: var(--accent-magenta);"></i> New Target Scan
+    <div class="modal-box" style="max-width: 780px; width: 95%; max-height: 90vh; overflow-y: auto;">
+        <div class="modal-header" style="position: sticky; top: 0; background: var(--bg-card); z-index: 10; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border);">
+            <h3 class="modal-title" style="display: flex; align-items: center; gap: 10px; margin: 0;">
+                <i class="fa-solid fa-crosshairs" style="color: var(--accent-purple);"></i> New Target Scan
             </h3>
             <button class="modal-close" onclick="closeScanConfigModal()">&times;</button>
         </div>
 
-        <div id="scanConfigStep" style="display: block;">
+        <div id="scanConfigStep" style="display: block; padding-top: 1rem;">
             <form id="scanConfigForm" onsubmit="handleExecuteProjectScanSubmit(event)">
                 <!-- Target Header -->
                 <div
-                    style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; margin-bottom: 1.25rem;">
-                    <span
-                        style="font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono); text-transform: uppercase; display: block; margin-bottom: 2px;">Selected
-                        Target</span>
-                    <div id="scanConfigTargetText"
-                        style="font-family: var(--font-mono); font-size: 1.1rem; font-weight: 700; color: var(--accent-purple);">
-                        example.com</div>
+                    style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; padding: 10px 16px; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <span
+                            style="font-size: 0.72rem; color: var(--text-muted); font-family: var(--font-mono); text-transform: uppercase; display: block; margin-bottom: 2px;">Selected Target</span>
+                        <div id="scanConfigTargetText"
+                            style="font-family: var(--font-mono); font-size: 1.1rem; font-weight: 700; color: var(--accent-purple);">
+                            example.com</div>
+                    </div>
                     <input type="hidden" id="scanConfigTargetInput" value="">
+                    <span class="badge badge-purple" style="font-size: 0.75rem;">Active Target</span>
                 </div>
 
-                <!-- Select Capabilities -->
+                <!-- Select Capabilities Grid (2 Columns) -->
                 <div style="margin-bottom: 1.25rem;">
                     <label
-                        style="display: block; font-size: 0.82rem; font-family: var(--font-mono); color: var(--text-muted); text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.05em;">Select
-                        Scans to Run</label>
-                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                        style="display: block; font-size: 0.8rem; font-family: var(--font-mono); color: var(--text-muted); text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.05em;">
+                        Select Scans to Run
+                    </label>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px;">
 
-                        <!-- Capability: Subdomain Discovery -->
+                        <!-- Capability 1: Subdomain Discovery -->
                         <div class="scan-capability-item"
-                            style="background: rgba(0,0,0,0.25); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; display: flex; align-items: flex-start; gap: 12px;">
+                            style="background: rgba(0,0,0,0.25); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; display: flex; align-items: flex-start; gap: 12px; transition: all 0.2s ease;">
                             <input type="checkbox" id="capSubdomain" checked
-                                style="margin-top: 4px; accent-color: var(--accent-purple); transform: scale(1.2);">
-                            <div>
+                                style="margin-top: 3px; accent-color: var(--accent-purple); width: 16px; height: 16px; cursor: pointer;">
+                            <div style="flex: 1;">
                                 <label for="capSubdomain"
-                                    style="font-weight: 600; color: var(--text-primary); cursor: pointer;">Subdomain
-                                    Discovery</label>
-                                <p style="font-size: 0.8rem; color: var(--text-muted); margin: 2px 0 0 0;">Enumerates
-                                    active subdomains and resolves target IP addresses via public DNS.</p>
+                                    style="font-weight: 600; color: var(--text-primary); cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.88rem;">
+                                    <i class="fa-solid fa-sitemap" style="color: var(--accent-purple); font-size: 0.85rem;"></i> Subdomain Discovery
+                                </label>
+                                <p style="font-size: 0.78rem; color: var(--text-muted); margin: 4px 0 0 0; line-height: 1.4;">Enumerates active subdomains and resolves IP addresses via DNS.</p>
                             </div>
                         </div>
 
-                        <!-- Capability: Port Scanning -->
+                        <!-- Capability 2: Port Scanning -->
                         <div class="scan-capability-item"
-                            style="background: rgba(0,0,0,0.25); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px;">
+                            style="background: rgba(0,0,0,0.25); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; transition: all 0.2s ease;">
                             <div style="display: flex; align-items: flex-start; gap: 12px;">
                                 <input type="checkbox" id="capPorts" checked
-                                    style="margin-top: 4px; accent-color: var(--accent-purple); transform: scale(1.2);"
+                                    style="margin-top: 3px; accent-color: var(--accent-purple); width: 16px; height: 16px; cursor: pointer;"
                                     onchange="togglePortConfigDisplay()">
                                 <div style="flex: 1;">
                                     <label for="capPorts"
-                                        style="font-weight: 600; color: var(--text-primary); cursor: pointer;">Port
-                                        Scanning</label>
-                                    <p style="font-size: 0.8rem; color: var(--text-muted); margin: 2px 0 0 0;">Executes
-                                        network port discovery and service version detection using Nmap.</p>
+                                        style="font-weight: 600; color: var(--text-primary); cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.88rem;">
+                                        <i class="fa-solid fa-network-wired" style="color: var(--accent-purple); font-size: 0.85rem;"></i> Port Scanning
+                                    </label>
+                                    <p style="font-size: 0.78rem; color: var(--text-muted); margin: 4px 0 0 0; line-height: 1.4;">Discovers open ports and service versions via Nmap.</p>
                                 </div>
                             </div>
                             <!-- Port Scan Configuration -->
-                            <div id="portConfigOptions" style="margin-top: 10px; padding-left: 28px;">
-                                <label
-                                    style="font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono);">NMAP
-                                    SCAN PRESET</label>
-                                <select id="portScanTypeSelect" class="cyber-select" data-icon="fa-network-wired"
+                            <div id="portConfigOptions" style="margin-top: 8px; padding-left: 24px;">
+                                <select id="portScanTypeSelect" class="cyber-select cyber-select-sm" data-icon="fa-network-wired"
                                     style="width: 100%;">
-                                    <option value="full">Full Port & Service Version Scan (-sV open ports)</option>
-                                    <option value="ping">Ping Host Status Probe (-sn)</option>
+                                    <option value="full">Full Port & Service Scan (-sV)</option>
+                                    <option value="ping">Ping Host Probe (-sn)</option>
                                 </select>
                             </div>
                         </div>
 
-                        <!-- Capability: Reconnaissance -->
+                        <!-- Capability 3: Reconnaissance -->
                         <div class="scan-capability-item"
-                            style="background: rgba(0,0,0,0.25); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; display: flex; align-items: flex-start; gap: 12px;">
+                            style="background: rgba(0,0,0,0.25); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; display: flex; align-items: flex-start; gap: 12px; transition: all 0.2s ease;">
                             <input type="checkbox" id="capRecon" checked
-                                style="margin-top: 4px; accent-color: var(--accent-purple); transform: scale(1.2);">
-                            <div>
+                                style="margin-top: 3px; accent-color: var(--accent-purple); width: 16px; height: 16px; cursor: pointer;">
+                            <div style="flex: 1;">
                                 <label for="capRecon"
-                                    style="font-weight: 600; color: var(--text-primary); cursor: pointer;">Reconnaissance</label>
-                                <p style="font-size: 0.8rem; color: var(--text-muted); margin: 2px 0 0 0;">Performs
-                                    WHOIS lookups, DNS record harvesting, IP Geolocation, and HTTP header checks.</p>
+                                    style="font-weight: 600; color: var(--text-primary); cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.88rem;">
+                                    <i class="fa-solid fa-eye" style="color: var(--accent-purple); font-size: 0.85rem;"></i> Reconnaissance
+                                </label>
+                                <p style="font-size: 0.78rem; color: var(--text-muted); margin: 4px 0 0 0; line-height: 1.4;">Performs WHOIS, DNS record harvesting, IP Geolocation & HTTP headers.</p>
                             </div>
                         </div>
 
-                        <!-- Capability: Web Footprinting -->
+                        <!-- Capability 4: Web Footprinting -->
                         <div class="scan-capability-item"
-                            style="background: rgba(0,0,0,0.25); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; display: flex; align-items: flex-start; gap: 12px;">
+                            style="background: rgba(0,0,0,0.25); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; display: flex; align-items: flex-start; gap: 12px; transition: all 0.2s ease;">
                             <input type="checkbox" id="capWeb" checked
-                                style="margin-top: 4px; accent-color: var(--accent-purple); transform: scale(1.2);">
-                            <div>
+                                style="margin-top: 3px; accent-color: var(--accent-purple); width: 16px; height: 16px; cursor: pointer;">
+                            <div style="flex: 1;">
                                 <label for="capWeb"
-                                    style="font-weight: 600; color: var(--text-primary); cursor: pointer;">Web
-                                    Footprinting</label>
-                                <p style="font-size: 0.8rem; color: var(--text-muted); margin: 2px 0 0 0;">Fingerprints
-                                    web server, backend stack, CMS, frameworks, metadata, and security headers.</p>
+                                    style="font-weight: 600; color: var(--text-primary); cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.88rem;">
+                                    <i class="fa-solid fa-layer-group" style="color: var(--accent-purple); font-size: 0.85rem;"></i> Web Footprinting
+                                </label>
+                                <p style="font-size: 0.78rem; color: var(--text-muted); margin: 4px 0 0 0; line-height: 1.4;">Fingerprints web server, backend stack, CMS, frameworks & headers.</p>
                             </div>
                         </div>
 
-                        <!-- Capability: Web Security Engine -->
+                        <!-- Capability 5: Web Security Engine -->
                         <div class="scan-capability-item"
-                            style="background: rgba(0,0,0,0.25); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; display: flex; align-items: flex-start; gap: 12px;">
+                            style="background: rgba(0,0,0,0.25); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; display: flex; align-items: flex-start; gap: 12px; transition: all 0.2s ease;">
                             <input type="checkbox" id="capWebSecurity" checked
-                                style="margin-top: 4px; accent-color: var(--accent-purple); transform: scale(1.2);">
-                            <div>
+                                style="margin-top: 3px; accent-color: var(--accent-purple); width: 16px; height: 16px; cursor: pointer;">
+                            <div style="flex: 1;">
                                 <label for="capWebSecurity"
-                                    style="font-weight: 600; color: var(--text-primary); cursor: pointer;">Web Security Engine</label>
-                                <p style="font-size: 0.8rem; color: var(--text-muted); margin: 2px 0 0 0;">Performs Security Headers, SSL/TLS, Cookies, CORS, HTTP Methods, Directory Discovery, Web Fingerprinting & Nikto Web Server Scan.</p>
+                                    style="font-weight: 600; color: var(--text-primary); cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.88rem;">
+                                    <i class="fa-solid fa-shield-halved" style="color: var(--accent-purple); font-size: 0.85rem;"></i> Web Security Engine
+                                </label>
+                                <p style="font-size: 0.78rem; color: var(--text-muted); margin: 4px 0 0 0; line-height: 1.4;">Security Headers, SSL/TLS, CORS, HTTP Methods & Nikto Scan.</p>
                             </div>
                         </div>
 
-                        <!-- Capability: Web Intelligence Engine -->
+                        <!-- Capability 6: Web Intelligence Engine -->
                         <div class="scan-capability-item"
-                            style="background: rgba(0,0,0,0.25); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; display: flex; align-items: flex-start; gap: 12px;">
+                            style="background: rgba(0,0,0,0.25); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; display: flex; align-items: flex-start; gap: 12px; transition: all 0.2s ease;">
                             <input type="checkbox" id="capWebIntelligence" checked
-                                style="margin-top: 4px; accent-color: var(--accent-purple); transform: scale(1.2);">
-                            <div>
+                                style="margin-top: 3px; accent-color: var(--accent-purple); width: 16px; height: 16px; cursor: pointer;">
+                            <div style="flex: 1;">
                                 <label for="capWebIntelligence"
-                                    style="font-weight: 600; color: var(--text-primary); cursor: pointer;">Web Intelligence Engine (OSINT)</label>
-                                <p style="font-size: 0.8rem; color: var(--text-muted); margin: 2px 0 0 0;">Performs Web Scraping, Search OSINT, Historical Archive Intelligence (Wayback Machine), Public Document Discovery & Email OSINT.</p>
+                                    style="font-weight: 600; color: var(--text-primary); cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.88rem;">
+                                    <i class="fa-solid fa-globe" style="color: var(--accent-purple); font-size: 0.85rem;"></i> Web Intelligence (OSINT)
+                                </label>
+                                <p style="font-size: 0.78rem; color: var(--text-muted); margin: 4px 0 0 0; line-height: 1.4;">Web Scraping, Search OSINT, Wayback Archive & Email Discovery.</p>
                             </div>
                         </div>
 
@@ -370,7 +375,7 @@
                 </div>
 
                 <div
-                    style="display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid var(--border); padding-top: 1.25rem;">
+                    style="display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid var(--border); padding-top: 1rem;">
                     <button type="button" class="btn btn-secondary" onclick="closeScanConfigModal()">Cancel</button>
                     <button type="submit" class="btn btn-primary" style="display: flex; align-items: center; gap: 8px;">
                         <i class="fa-solid fa-play"></i> Start Scan
@@ -398,7 +403,7 @@
                 style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 1.25rem;">
                 <span id="overallStatusBadge" class="badge"
                     style="background: rgba(168,85,247,0.15); color: var(--accent-purple); border: 1px solid var(--border-accent);">Overall
-                    Status: Running...</span>
+                    Status: Running<span class="animated-dots"><span>.</span><span>.</span><span>.</span></span></span>
                 <button id="viewResultsBtn" class="btn btn-primary" style="display: none;"
                     onclick="openScanResultsFromProgress()">
                     <i class="fa-solid fa-eye"></i> View Results
@@ -469,7 +474,7 @@
             <button type="button" class="btn btn-secondary" onclick="closeClearScanHistoryModal()"
                 style="padding: 8px 18px;">Cancel</button>
             <button type="button" class="btn" onclick="executeClearScanHistory()"
-                style="background: #F87171; color: #ffffff; border: none; padding: 8px 18px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                style="background: #F87171; color: #ffffff; border: none; padding: 8px 18px; border-radius: 50px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;">
                 <i class="fa-solid fa-trash-can"></i> Yes, Clear History
             </button>
         </div>

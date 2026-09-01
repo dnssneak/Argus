@@ -432,7 +432,8 @@ class FindingCorrelator:
         priority: Optional[str] = None,
         status: Optional[str] = None,
         lifecycle_status: Optional[str] = None,
-        search: Optional[str] = None
+        search: Optional[str] = None,
+        owner_id: Optional[str] = None
     ) -> List[Dict[str, Any]]:
         """
         Queries findings across existing assets, ordered by contextual priority tier and priority score.
@@ -440,6 +441,8 @@ class FindingCorrelator:
         """
         query = db.query(Finding).join(Asset, Finding.asset_id == Asset.id)
 
+        if owner_id:
+            query = query.join(Project, Asset.project_id == Project.id).filter(Project.owner_id == str(owner_id))
         if project_id:
             query = query.filter(Asset.project_id == project_id)
         if asset_id:

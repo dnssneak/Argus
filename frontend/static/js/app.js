@@ -65,8 +65,14 @@ function checkNavbarAuth() {
                 if (badge && nameEl) {
                     nameEl.textContent = user.name || user.email;
                     badge.style.display = 'inline-flex';
+                    badge.style.alignItems = 'center';
+                    badge.style.gap = '0.5rem';
                 }
-                if (logoutBtn) logoutBtn.style.display = 'inline-flex';
+                if (logoutBtn) {
+                    logoutBtn.style.display = 'inline-flex';
+                    logoutBtn.style.alignItems = 'center';
+                    logoutBtn.style.gap = '0.5rem';
+                }
                 if (loginBtn) loginBtn.style.display = 'none';
             } catch (e) {
                 console.error('Error parsing stored user:', e);
@@ -81,6 +87,7 @@ function handleArgusLogout(e) {
         .finally(() => {
             localStorage.removeItem('argus_token');
             localStorage.removeItem('argus_user');
+            localStorage.removeItem('currentProjectId');
             localStorage.setItem('argus_logged_in', 'false');
             showToast('Logged out successfully.', 'info');
             setTimeout(() => {
@@ -248,7 +255,7 @@ function renderProjectsGrid(projects) {
 
     if (projects.length === 0) {
         grid.innerHTML = `
-            <div style="grid-column: 1/-1; background: var(--bg-card); border: 1px dashed var(--border); border-radius: 16px; padding: 4rem 2rem; text-align: center;">
+            <div style="grid-column: 1/-1; background: rgba(22, 22, 38, 0.6); border: 1px dashed rgba(168, 85, 247, 0.25); border-radius: 16px; padding: 4rem 2rem; text-align: center; backdrop-filter: blur(8px);">
                 <div style="font-size: 3rem; color: var(--accent-purple); margin-bottom: 1rem;"><i class="fa-solid fa-folder-open"></i></div>
                 <h3 style="font-size: 1.3rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">No Projects Found</h3>
                 <p style="color: var(--text-muted); max-width: 450px; margin: 0 auto 1.5rem auto; font-size: 0.95rem;">
@@ -1128,7 +1135,7 @@ async function handleExecuteProjectScanSubmit(event) {
             <div style="padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2);">
                 <span style="font-weight: 600; color: var(--text-primary); font-size: 0.92rem;">${capNames[cap]}</span>
                 <div style="display: flex; align-items: center; gap: 12px;">
-                    <span class="prog-status-badge badge" style="background: rgba(251, 191, 36, 0.15); color: #FBBF24; font-size: 0.75rem; border: 1px solid rgba(251, 191, 36, 0.3);">RUNNING...</span>
+                    <span class="prog-status-badge badge" style="background: rgba(251, 191, 36, 0.15); color: #FBBF24; font-size: 0.75rem; border: 1px solid rgba(251, 191, 36, 0.3);">RUNNING<span class="animated-dots"><span>.</span><span>.</span><span>.</span></span></span>
                     <button type="button" onclick="toggleCmdOutput('${cap}')" id="cmdToggleBtn-${cap}" style="background: rgba(168, 85, 247, 0.12); border: 1px solid var(--border-accent); color: var(--accent-purple); width: 32px; height: 32px; border-radius: 8px; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease;" title="Toggle Command Execution Console">
                         <i class="fa-solid fa-chevron-down" id="cmdChevron-${cap}"></i>
                     </button>
@@ -1969,17 +1976,39 @@ async function viewAssetDetail(assetId) {
 
             // Discovery Sources
             const discoverySourcesList = document.getElementById('detailDiscoverySourcesList');
-            const possibleSources = ["Subdomain Discovery", "DNS Enumeration", "Certificate Transparency", "IP Resolution", "Port Scan", "HTTP Probe", "Technology Fingerprint"];
+            const possibleSources = [
+                "Subdomain Discovery",
+                "DNS Enumeration",
+                "Certificate Transparency",
+                "IP Resolution & WHOIS",
+                "Port Scan (Nmap)",
+                "HTTP Probe & Web Footprinting",
+                "Technology Fingerprint",
+                "Web Security Engine",
+                "Web Intelligence Engine (OSINT)"
+            ];
             const sourcesArr = Array.isArray(asset.discovery_sources) ? asset.discovery_sources : (typeof asset.discovery_sources === 'string' ? asset.discovery_sources.split(',') : []);
-            discoverySourcesList.innerHTML = possibleSources.map(src => {
-                const found = sourcesArr.some(s => s.trim().toLowerCase().includes(src.split(' ')[0].toLowerCase()));
-                return `
-                    <div style="display: flex; align-items: center; gap: 10px; color: ${found ? 'var(--text-primary)' : 'var(--text-muted)'}; margin-bottom: 4px;">
-                        <i class="fa-solid ${found ? 'fa-square-check' : 'fa-square'}" style="color: ${found ? 'var(--accent-purple)' : 'var(--text-muted)'}; font-size: 1.1rem;"></i>
-                        <span>${src}</span>
-                    </div>
-                `;
-            }).join('');
+            if (discoverySourcesList) {
+                discoverySourcesList.innerHTML = possibleSources.map(src => {
+                    const found = sourcesArr.some(s => {
+                        const cleanS = s.trim().toLowerCase();
+                        const cleanSrc = src.toLowerCase();
+                        return cleanS.includes(cleanSrc.split(' ')[0]) || cleanSrc.includes(cleanS) ||
+                               (cleanS.includes('dns') && cleanSrc.includes('dns')) ||
+                               (cleanS.includes('cert') && cleanSrc.includes('certificate')) ||
+                               (cleanS.includes('port') && cleanSrc.includes('port')) ||
+                               (cleanS.includes('web') && cleanSrc.includes('web')) ||
+                               (cleanS.includes('osint') && cleanSrc.includes('osint')) ||
+                               (cleanS.includes('nikto') && cleanSrc.includes('security'));
+                    });
+                    return `
+                        <div style="display: flex; align-items: center; gap: 10px; color: ${found ? 'var(--text-primary)' : 'var(--text-muted)'}; margin-bottom: 4px;">
+                            <i class="fa-solid ${found ? 'fa-square-check' : 'fa-square'}" style="color: ${found ? 'var(--accent-purple)' : 'var(--text-muted)'}; font-size: 1.1rem;"></i>
+                            <span>${src}</span>
+                        </div>
+                    `;
+                }).join('');
+            }
 
             // Infrastructure Tab
             // Services

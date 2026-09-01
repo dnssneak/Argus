@@ -1,7 +1,7 @@
 # pyrefly: ignore [missing-import]
 from functools import wraps
 from flask import Blueprint, jsonify, request, g, make_response
-from db.database import SessionLocal
+import db.database as db_module
 from models.models import User, Project, Target, Asset, Service, Technology, Finding, Scan, Relationship, Endpoint, AssetHistory, AssetNote, format_utc_iso
 from models.schemas import ProjectCreate, AssetCreate, FindingCreate, UserSignup, UserLogin
 from services.auth_service import AuthService
@@ -12,7 +12,7 @@ api_bp = Blueprint("api_v1", __name__, url_prefix="/api/v1")
 
 # Helper for DB session management in Flask routes
 def get_db():
-    return SessionLocal()
+    return db_module.SessionLocal()
 
 
 def get_current_user_from_req(db):
@@ -30,6 +30,14 @@ def get_current_user_from_req(db):
         return None
 
     return AuthService.verify_token(db, token)
+
+
+def get_user_owner_id(db):
+    """Helper to extract current authenticated user ID string or default to 'local-user'."""
+    user = get_current_user_from_req(db)
+    if user:
+        return str(user.id)
+    return "local-user"
 
 
 def require_auth(f):
@@ -167,7 +175,7 @@ def list_projects():
     try:
         search = request.args.get("search")
         status = request.args.get("status")
-        owner_id = request.args.get("owner_id", "local-user")
+        owner_id = get_user_owner_id(db)
 
         projects = ProjectService.list_projects(db, owner_id=owner_id, search=search, status=status)
         return jsonify({"success": True, "count": len(projects), "projects": [p.to_dict() for p in projects]})
@@ -183,7 +191,7 @@ def create_project():
         name = data.get("name")
         description = data.get("description")
         status = data.get("status", "ACTIVE")
-        owner_id = data.get("owner_id", "local-user")
+        owner_id = get_user_owner_id(db)
 
         project = ProjectService.create_project(
             db=db,
@@ -207,8 +215,9 @@ def create_project():
 def get_project(project_id):
     db = get_db()
     try:
+        owner_id = get_user_owner_id(db)
         project = ProjectService.get_project(db, project_id)
-        if not project:
+        if not project or project.owner_id != owner_id:
             return jsonify({"success": False, "error": "Project not found"}), 404
 
         data = project.to_dict()
@@ -224,6 +233,11 @@ def get_project(project_id):
 def update_project(project_id):
     db = get_db()
     try:
+        owner_id = get_user_owner_id(db)
+        existing_proj = ProjectService.get_project(db, project_id)
+        if not existing_proj or existing_proj.owner_id != owner_id:
+            return jsonify({"success": False, "error": "Project not found"}), 404
+
         data = request.get_json() or {}
         project = ProjectService.update_project(
             db=db,
@@ -247,6 +261,11 @@ def update_project(project_id):
 def archive_project(project_id):
     db = get_db()
     try:
+        owner_id = get_user_owner_id(db)
+        existing_proj = ProjectService.get_project(db, project_id)
+        if not existing_proj or existing_proj.owner_id != owner_id:
+            return jsonify({"success": False, "error": "Project not found"}), 404
+
         project = ProjectService.archive_project(db, project_id)
         action_str = "archived" if project.status == "ARCHIVED" else "activated"
         return jsonify({"success": True, "project": project.to_dict(), "message": f"Project '{project.name}' {action_str}."})
@@ -261,6 +280,11 @@ def archive_project(project_id):
 def delete_project(project_id):
     db = get_db()
     try:
+        owner_id = get_user_owner_id(db)
+        existing_proj = ProjectService.get_project(db, project_id)
+        if not existing_proj or existing_proj.owner_id != owner_id:
+            return jsonify({"success": False, "error": "Project not found"}), 404
+
         force = request.args.get("force", "").lower() == "true"
         success, message, counts = ProjectService.delete_project(db, project_id, force=force)
 
@@ -284,6 +308,11 @@ def delete_project(project_id):
 def add_project_target(project_id):
     db = get_db()
     try:
+        owner_id = get_user_owner_id(db)
+        existing_proj = ProjectService.get_project(db, project_id)
+        if not existing_proj or existing_proj.owner_id != owner_id:
+            return jsonify({"success": False, "error": "Project not found"}), 404
+
         data = request.get_json() or {}
         target_str = data.get("target")
         target_type = data.get("target_type")
@@ -301,6 +330,11 @@ def add_project_target(project_id):
 def get_project_dashboard_api(project_id):
     db = get_db()
     try:
+        owner_id = get_user_owner_id(db)
+        existing_proj = ProjectService.get_project(db, project_id)
+        if not existing_proj or existing_proj.owner_id != owner_id:
+            return jsonify({"success": False, "error": "Project not found"}), 404
+
         dashboard_data = ProjectService.get_project_dashboard(db, project_id)
         return jsonify({"success": True, "data": dashboard_data})
     except ValueError as e:
@@ -317,6 +351,7 @@ def list_assets():
     try:
         from services.risk_engine import RiskEngine
 
+        owner_id = get_user_owner_id(db)
         project_id = request.args.get("project_id", type=int)
         asset_type = request.args.get("type")
         severity_filter = request.args.get("severity")
@@ -326,7 +361,7 @@ def list_assets():
         sort_by = request.args.get("sort_by", "risk_score")  # risk_score, name, last_seen, first_seen
         sort_order = request.args.get("sort_order", "desc")  # desc, asc
 
-        query = db.query(Asset)
+        query = db.query(Asset).join(Project, Asset.project_id == Project.id).filter(Project.owner_id == owner_id)
 
         if project_id:
             query = query.filter(Asset.project_id == project_id)
@@ -388,6 +423,7 @@ def create_asset():
     try:
         from services.risk_engine import RiskEngine
 
+        owner_id = get_user_owner_id(db)
         data = request.get_json() or {}
         name = data.get("name", "").strip()
         project_id = data.get("project_id")
@@ -399,15 +435,19 @@ def create_asset():
         if not name:
             return jsonify({"success": False, "error": "Asset name is required"}), 400
 
-        # If project_id not provided, assign to default project
+        # If project_id not provided, assign to default project for current owner
         if not project_id:
-            default_proj = db.query(Project).filter_by(name="Default Project").first()
+            default_proj = db.query(Project).filter_by(owner_id=owner_id, name="Default Project").first()
             if not default_proj:
-                default_proj = Project(name="Default Project", description="Default security project")
+                default_proj = Project(name="Default Project", description="Default security project", owner_id=owner_id)
                 db.add(default_proj)
                 db.commit()
                 db.refresh(default_proj)
             project_id = default_proj.id
+        else:
+            proj = db.get(Project, project_id)
+            if not proj or proj.owner_id != owner_id:
+                return jsonify({"success": False, "error": "Project not found"}), 404
 
         # Deduplicate asset within project
         existing = db.query(Asset).filter_by(project_id=project_id, name=name).first()
@@ -457,8 +497,9 @@ def get_asset_detail(asset_id):
     try:
         from services.risk_engine import RiskEngine
 
+        owner_id = get_user_owner_id(db)
         asset = db.get(Asset, asset_id)
-        if not asset:
+        if not asset or asset.project.owner_id != owner_id:
             return jsonify({"success": False, "error": "Asset not found"}), 404
 
         # Compute full risk analysis
@@ -491,6 +532,11 @@ def get_asset_detail(asset_id):
 def get_asset_relationship_graph(asset_id):
     db = get_db()
     try:
+        owner_id = get_user_owner_id(db)
+        asset = db.get(Asset, asset_id)
+        if not asset or asset.project.owner_id != owner_id:
+            return jsonify({"success": False, "error": "Asset not found"}), 404
+
         max_depth = request.args.get("depth", default=2, type=int)
         from services.asset_correlator import AssetCorrelator
         graph_data = AssetCorrelator.get_asset_graph(db, asset_id=asset_id, max_depth=max_depth)
@@ -505,6 +551,11 @@ def get_asset_relationship_graph(asset_id):
 def get_project_relationship_graph(project_id):
     db = get_db()
     try:
+        owner_id = get_user_owner_id(db)
+        project = db.get(Project, project_id)
+        if not project or project.owner_id != owner_id:
+            return jsonify({"success": False, "error": "Project not found"}), 404
+
         from services.asset_correlator import AssetCorrelator
         graph_data = AssetCorrelator.get_project_graph(db, project_id=project_id)
         return jsonify({"success": True, "graph": graph_data})
@@ -518,6 +569,11 @@ def get_project_relationship_graph(project_id):
 def trigger_project_correlation(project_id):
     db = get_db()
     try:
+        owner_id = get_user_owner_id(db)
+        project = db.get(Project, project_id)
+        if not project or project.owner_id != owner_id:
+            return jsonify({"success": False, "error": "Project not found"}), 404
+
         from services.asset_correlator import AssetCorrelator
         count = AssetCorrelator.correlate_project_assets(db, project_id=project_id)
         return jsonify({"success": True, "message": f"Correlation pass completed successfully. {count} active relationships established.", "relationship_count": count})
@@ -532,8 +588,9 @@ def trigger_project_correlation(project_id):
 def delete_asset(asset_id):
     db = get_db()
     try:
+        owner_id = get_user_owner_id(db)
         asset = db.get(Asset, asset_id)
-        if not asset:
+        if not asset or asset.project.owner_id != owner_id:
             return jsonify({"success": False, "error": "Asset not found"}), 404
 
         db.delete(asset)
@@ -550,16 +607,17 @@ def delete_asset(asset_id):
 def add_asset_note(asset_id):
     db = get_db()
     try:
+        owner_id = get_user_owner_id(db)
+        asset = db.get(Asset, asset_id)
+        if not asset or asset.project.owner_id != owner_id:
+            return jsonify({"success": False, "error": "Asset not found"}), 404
+
         data = request.get_json() or {}
         content = data.get("content", "").strip()
         author = data.get("author", "Analyst").strip() or "Analyst"
 
         if not content:
             return jsonify({"success": False, "error": "Content is required"}), 400
-
-        asset = db.get(Asset, asset_id)
-        if not asset:
-            return jsonify({"success": False, "error": "Asset not found"}), 404
 
         note = AssetNote(asset_id=asset_id, author=author, content=content)
         db.add(note)
@@ -587,13 +645,14 @@ def add_asset_note(asset_id):
 def update_asset_tags(asset_id):
     db = get_db()
     try:
+        owner_id = get_user_owner_id(db)
+        asset = db.get(Asset, asset_id)
+        if not asset or asset.project.owner_id != owner_id:
+            return jsonify({"success": False, "error": "Asset not found"}), 404
+
         data = request.get_json() or {}
         tags_list = data.get("tags", [])
         tags_str = ",".join([t.strip() for t in tags_list if t.strip()])
-
-        asset = db.get(Asset, asset_id)
-        if not asset:
-            return jsonify({"success": False, "error": "Asset not found"}), 404
 
         old_tags = asset.tags or ""
         asset.tags = tags_str
@@ -621,6 +680,7 @@ def list_findings():
     try:
         from services.finding_correlator import FindingCorrelator
 
+        owner_id = get_user_owner_id(db)
         project_id = request.args.get("project_id", type=int)
         asset_id = request.args.get("asset_id", type=int)
         severity = request.args.get("severity")
@@ -637,7 +697,8 @@ def list_findings():
             priority=priority,
             status=status,
             lifecycle_status=lifecycle_status,
-            search=search
+            search=search,
+            owner_id=owner_id
         )
 
         return jsonify({"success": True, "count": len(findings), "findings": findings})
@@ -648,8 +709,9 @@ def correlate_project_findings_api(project_id):
     db = get_db()
     try:
         from services.finding_correlator import FindingCorrelator
+        owner_id = get_user_owner_id(db)
         project = db.get(Project, project_id)
-        if not project:
+        if not project or project.owner_id != owner_id:
             return jsonify({"success": False, "error": "Project not found"}), 404
 
         findings = FindingCorrelator.correlate_project_findings(db, project_id)
@@ -669,8 +731,9 @@ def correlate_project_findings_api(project_id):
 def get_finding_detail(finding_id):
     db = get_db()
     try:
+        owner_id = get_user_owner_id(db)
         finding = db.get(Finding, finding_id)
-        if not finding:
+        if not finding or (finding.asset and finding.asset.project.owner_id != owner_id):
             return jsonify({"success": False, "error": "Finding not found"}), 404
 
         if not finding.recommendation or not finding.recommendation.strip():
@@ -688,8 +751,9 @@ def get_finding_detail(finding_id):
 def add_asset_finding(asset_id):
     db = get_db()
     try:
+        owner_id = get_user_owner_id(db)
         asset = db.get(Asset, asset_id)
-        if not asset:
+        if not asset or asset.project.owner_id != owner_id:
             return jsonify({"success": False, "error": "Asset not found"}), 404
 
         data = request.get_json() or {}
@@ -753,8 +817,9 @@ def add_asset_finding(asset_id):
 def update_finding_status(finding_id):
     db = get_db()
     try:
+        owner_id = get_user_owner_id(db)
         finding = db.get(Finding, finding_id)
-        if not finding:
+        if not finding or (finding.asset and finding.asset.project.owner_id != owner_id):
             return jsonify({"success": False, "error": "Finding not found"}), 404
 
         data = request.get_json() or {}
@@ -785,8 +850,9 @@ def update_finding_status(finding_id):
 def scan_single_asset(asset_id):
     db = get_db()
     try:
+        owner_id = get_user_owner_id(db)
         asset = db.get(Asset, asset_id)
-        if not asset:
+        if not asset or asset.project.owner_id != owner_id:
             return jsonify({"success": False, "error": "Asset not found"}), 404
 
         from recon import TargetRecon
@@ -901,16 +967,17 @@ def scan_single_asset(asset_id):
 def get_stats():
     db = get_db()
     try:
+        owner_id = get_user_owner_id(db)
         project_id = request.args.get("project_id", type=int)
 
-        asset_query = db.query(Asset)
-        scan_query = db.query(Scan)
-        finding_query = db.query(Finding)
+        asset_query = db.query(Asset).join(Project, Asset.project_id == Project.id).filter(Project.owner_id == owner_id)
+        scan_query = db.query(Scan).join(Project, Scan.project_id == Project.id).filter(Project.owner_id == owner_id)
+        finding_query = db.query(Finding).join(Asset, Finding.asset_id == Asset.id).join(Project, Asset.project_id == Project.id).filter(Project.owner_id == owner_id)
 
         if project_id:
             asset_query = asset_query.filter(Asset.project_id == project_id)
             scan_query = scan_query.filter(Scan.project_id == project_id)
-            finding_query = finding_query.join(Asset).filter(Asset.project_id == project_id)
+            finding_query = finding_query.filter(Asset.project_id == project_id)
 
         total_assets = asset_query.count()
         internet_facing = asset_query.filter(Asset.ip_address.isnot(None)).count()
@@ -955,8 +1022,9 @@ from datetime import datetime, timezone
 def list_project_scans(project_id):
     db = get_db()
     try:
+        owner_id = get_user_owner_id(db)
         project = db.get(Project, project_id)
-        if not project:
+        if not project or project.owner_id != owner_id:
             return jsonify({"success": False, "error": "Project not found"}), 404
 
         scans = db.query(Scan).filter_by(project_id=project_id).order_by(Scan.start_time.desc()).all()
@@ -982,8 +1050,11 @@ def list_project_scans(project_id):
 def get_project_scan_detail(scan_id, project_id=None):
     db = get_db()
     try:
+        owner_id = get_user_owner_id(db)
         scan = db.get(Scan, scan_id)
-        if not scan or (project_id and scan.project_id != project_id):
+        if not scan or scan.project.owner_id != owner_id:
+            return jsonify({"success": False, "error": "Scan not found"}), 404
+        if project_id and scan.project_id != project_id:
             return jsonify({"success": False, "error": "Scan not found"}), 404
 
         s_dict = scan.to_dict()
@@ -1004,8 +1075,9 @@ def get_project_scan_detail(scan_id, project_id=None):
 def execute_project_scan(project_id):
     db = get_db()
     try:
+        owner_id = get_user_owner_id(db)
         project = db.get(Project, project_id)
-        if not project:
+        if not project or project.owner_id != owner_id:
             return jsonify({"success": False, "error": "Project not found"}), 404
 
         data = request.get_json() or {}
@@ -1186,6 +1258,11 @@ def execute_project_scan(project_id):
 def generate_project_scan_report(project_id, scan_id):
     db = get_db()
     try:
+        owner_id = get_user_owner_id(db)
+        project = db.get(Project, project_id)
+        if not project or project.owner_id != owner_id:
+            return jsonify({"success": False, "error": "Project not found"}), 404
+
         scan = db.get(Scan, scan_id)
         if not scan or scan.project_id != project_id:
             return jsonify({"success": False, "error": "Scan record not found"}), 404
@@ -1234,6 +1311,18 @@ def generate_project_scan_report(project_id, scan_id):
 
 @api_bp.route("/projects/<int:project_id>/scans/<int:scan_id>/download-report", methods=["GET"])
 def download_project_scan_report(project_id, scan_id):
+    db = get_db()
+    try:
+        owner_id = get_user_owner_id(db)
+        project = db.get(Project, project_id)
+        if not project or project.owner_id != owner_id:
+            return jsonify({"success": False, "error": "Project not found"}), 404
+        scan = db.get(Scan, scan_id)
+        if not scan or scan.project_id != project_id:
+            return jsonify({"success": False, "error": "Scan not found"}), 404
+    finally:
+        db.close()
+
     filename = request.args.get("filename")
     if not filename:
         return jsonify({"success": False, "error": "Filename required"}), 400
@@ -1247,8 +1336,9 @@ def download_project_scan_report(project_id, scan_id):
 def clear_project_scans_history(project_id):
     db = get_db()
     try:
+        owner_id = get_user_owner_id(db)
         project = db.get(Project, project_id)
-        if not project:
+        if not project or project.owner_id != owner_id:
             return jsonify({"success": False, "error": "Project not found"}), 404
 
         deleted_count = db.query(Scan).filter_by(project_id=project_id).delete()
@@ -1282,8 +1372,9 @@ def get_asset_changes(asset_id):
     """
     db = get_db()
     try:
+        owner_id = get_user_owner_id(db)
         asset = db.get(Asset, asset_id)
-        if not asset:
+        if not asset or asset.project.owner_id != owner_id:
             return jsonify({"success": False, "error": "Asset not found"}), 404
 
         # Query history events for change detections
@@ -1349,6 +1440,11 @@ def compare_asset_scans(asset_id):
     """
     db = get_db()
     try:
+        owner_id = get_user_owner_id(db)
+        asset = db.get(Asset, asset_id)
+        if not asset or asset.project.owner_id != owner_id:
+            return jsonify({"success": False, "error": "Asset not found"}), 404
+
         scan_a_id = request.args.get("scan_a", type=int)
         scan_b_id = request.args.get("scan_b", type=int)
 
@@ -1358,7 +1454,7 @@ def compare_asset_scans(asset_id):
         scan_a = db.get(Scan, scan_a_id)
         scan_b = db.get(Scan, scan_b_id)
 
-        if not scan_a or not scan_b:
+        if not scan_a or not scan_b or scan_a.project_id != asset.project_id or scan_b.project_id != asset.project_id:
             return jsonify({"success": False, "error": "One or both specified scans were not found"}), 404
 
         from services.change_detector import ChangeDetector
@@ -1384,8 +1480,9 @@ def get_scan_changes(scan_id):
     """
     db = get_db()
     try:
+        owner_id = get_user_owner_id(db)
         scan = db.get(Scan, scan_id)
-        if not scan:
+        if not scan or scan.project.owner_id != owner_id:
             return jsonify({"success": False, "error": "Scan not found"}), 404
 
         # Query history events associated with this scan ID

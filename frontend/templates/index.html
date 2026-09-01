@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Argus - Home{% endblock %}
+{% block title %}Argus — Advanced Reconnaissance Platform{% endblock %}
 
 {% block content %}
 <!-- Particle Background Canvas for landing page only -->
@@ -11,7 +11,7 @@
     <div class="hero-content">
         <div class="hero-badge" id="hero-badge-click" style="cursor: pointer;" title="Click to ping security telemetry">
             <span class="pulse-dot"></span>
-            <span id="hero-badge-text">v2.0 Active • Click to Ping</span>
+            <span id="hero-badge-text">Engine Active • Click to Ping</span>
         </div>
         <h1 class="hero-title">Argus</h1>
         <p class="hero-subtitle">Advanced Reconnaissance & Network Scanning Platform</p>
@@ -117,6 +117,40 @@
             <div class="engine-card">
                 <div class="engine-card-header">
                     <div class="engine-icon-wrapper">
+                        <i class="fa-solid fa-shield-virus"></i>
+                    </div>
+                    <span class="engine-status-badge active"><span class="badge-dot"></span> Nikto & CORS</span>
+                </div>
+                <div class="engine-card-body">
+                    <h4 class="engine-name">Web Security Engine</h4>
+                    <p class="engine-desc">Nikto web server vulnerability scanning, CORS policy audits, SSL/TLS & directory discovery.</p>
+                </div>
+                <div class="engine-card-footer">
+                    <span class="engine-meta">Nikto Ready</span>
+                    <span class="engine-tag">Security Engine</span>
+                </div>
+            </div>
+
+            <div class="engine-card">
+                <div class="engine-card-header">
+                    <div class="engine-icon-wrapper">
+                        <i class="fa-solid fa-globe"></i>
+                    </div>
+                    <span class="engine-status-badge active"><span class="badge-dot"></span> Wayback OSINT</span>
+                </div>
+                <div class="engine-card-body">
+                    <h4 class="engine-name">OSINT Intelligence Engine</h4>
+                    <p class="engine-desc">Wayback Machine URL archive harvesting, search OSINT leaks, public document disclosures & emails.</p>
+                </div>
+                <div class="engine-card-footer">
+                    <span class="engine-meta">1400+ Records</span>
+                    <span class="engine-tag">OSINT Pipeline</span>
+                </div>
+            </div>
+
+            <div class="engine-card">
+                <div class="engine-card-header">
+                    <div class="engine-icon-wrapper">
                         <i class="fa-solid fa-shield-halved"></i>
                     </div>
                     <span class="engine-status-badge passive"><span class="badge-dot"></span> Passive Stream</span>
@@ -157,8 +191,7 @@
                 </div>
                 <div class="engine-card-body">
                     <h4 class="engine-name">HTTP Header Sentinel</h4>
-                    <p class="engine-desc">Security header assessment, server stack fingerprinting, and CMS detection.
-                    </p>
+                    <p class="engine-desc">Security header assessment, server stack fingerprinting, and CMS detection.</p>
                 </div>
                 <div class="engine-card-footer">
                     <span class="engine-meta">Score: A+</span>
@@ -204,6 +237,40 @@
             <div class="engine-card">
                 <div class="engine-card-header">
                     <div class="engine-icon-wrapper">
+                        <i class="fa-solid fa-shield-virus"></i>
+                    </div>
+                    <span class="engine-status-badge active"><span class="badge-dot"></span> Nikto & CORS</span>
+                </div>
+                <div class="engine-card-body">
+                    <h4 class="engine-name">Web Security Engine</h4>
+                    <p class="engine-desc">Nikto web server vulnerability scanning, CORS policy audits, SSL/TLS & directory discovery.</p>
+                </div>
+                <div class="engine-card-footer">
+                    <span class="engine-meta">Nikto Ready</span>
+                    <span class="engine-tag">Security Engine</span>
+                </div>
+            </div>
+
+            <div class="engine-card">
+                <div class="engine-card-header">
+                    <div class="engine-icon-wrapper">
+                        <i class="fa-solid fa-globe"></i>
+                    </div>
+                    <span class="engine-status-badge active"><span class="badge-dot"></span> Wayback OSINT</span>
+                </div>
+                <div class="engine-card-body">
+                    <h4 class="engine-name">OSINT Intelligence Engine</h4>
+                    <p class="engine-desc">Wayback Machine URL archive harvesting, search OSINT leaks, public document disclosures & emails.</p>
+                </div>
+                <div class="engine-card-footer">
+                    <span class="engine-meta">1400+ Records</span>
+                    <span class="engine-tag">OSINT Pipeline</span>
+                </div>
+            </div>
+
+            <div class="engine-card">
+                <div class="engine-card-header">
+                    <div class="engine-icon-wrapper">
                         <i class="fa-solid fa-shield-halved"></i>
                     </div>
                     <span class="engine-status-badge passive"><span class="badge-dot"></span> Passive Stream</span>
@@ -244,8 +311,7 @@
                 </div>
                 <div class="engine-card-body">
                     <h4 class="engine-name">HTTP Header Sentinel</h4>
-                    <p class="engine-desc">Security header assessment, server stack fingerprinting, and CMS detection.
-                    </p>
+                    <p class="engine-desc">Security header assessment, server stack fingerprinting, and CMS detection.</p>
                 </div>
                 <div class="engine-card-footer">
                     <span class="engine-meta">Score: A+</span>
@@ -266,7 +332,7 @@
                 <span class="title-gradient">Reconnaissance Workflow</span>
             </h2>
             <p class="section-desc">Argus coordinates multi-layered target profiling, passive subdomain harvesting, port
-                service verification, and PDF auditing.</p>
+                service verification, Web Security Engine scans, OSINT intelligence, and PDF auditing.</p>
         </div>
 
         <div class="workflow-container">
@@ -299,13 +365,19 @@
                 <div class="step-item" data-step="4">
                     <div class="step-num">04</div>
                     <div class="step-content">
-                        <h3>Web Stack Fingerprinting</h3>
-                        <p>Scan application layers to map HTTP server software, CDNs, content management frameworks,
-                            programming modules, and missing security flags.</p>
+                        <h3>Web Security Engine Scan</h3>
+                        <p>Perform Nikto web server vulnerability scans, SSL/TLS validation, CORS policy audits, HTTP security header checks & directory discovery.</p>
                     </div>
                 </div>
                 <div class="step-item" data-step="5">
                     <div class="step-num">05</div>
+                    <div class="step-content">
+                        <h3>Web Intelligence Engine (OSINT)</h3>
+                        <p>Harvest historical endpoint archives via Wayback Machine, search OSINT leaks, public document disclosures & target email intelligence.</p>
+                    </div>
+                </div>
+                <div class="step-item" data-step="6">
+                    <div class="step-num">06</div>
                     <div class="step-content">
                         <h3>Download Audit Reports</h3>
                         <p>Compile assessment results and export structured, compliance-ready reports in PDF, HTML, or

@@ -4,7 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Argus — Cyber Security Platform{% endblock %}</title>
+    <title>{% block title %}Argus — Cybersecurity Platform{% endblock %}</title>
+    <!-- Argus Favicons -->
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <link rel="alternate icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='apple-touch-icon.png') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=15.0">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link
@@ -88,7 +92,7 @@
         </div>
 
         <!-- Glitch text -->
-        <div class="glitch-loader" data-text="ARGUS 2.0">ARGUS 2.0</div>
+        <div class="glitch-loader" data-text="ARGUS">ARGUS</div>
 
         <!-- Animated bar -->
         <div class="loader-bar-container">
@@ -125,8 +129,8 @@
                 class="nav-link nav-protected-tab {% if request.path.startswith('/projects') %}active{% endif %}">Projects</a>
             <a href="/assets-page" class="nav-link nav-protected-tab {% if request.path == '/assets-page' %}active{% endif %}">Assets</a>
             <a href="/findings-page" class="nav-link nav-protected-tab {% if request.path == '/findings-page' %}active{% endif %}">Findings</a>
-            <span id="nav-user-badge" class="nav-link" style="color: var(--accent-purple); font-size: 0.85rem; font-weight: 600; display: none;"><i class="fa-solid fa-user-shield"></i> <span id="nav-user-name">User</span></span>
-            <a href="#" onclick="handleArgusLogout(event)" class="nav-link" id="nav-logout-btn" style="display: none;" title="Log Out"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+            <span id="nav-user-badge" class="nav-link" style="color: var(--accent-purple); font-size: 0.85rem; font-weight: 600; display: none; align-items: center; gap: 0.5rem;"><i class="fa-solid fa-user-shield"></i> <span id="nav-user-name">User</span></span>
+            <a href="#" onclick="handleArgusLogout(event)" class="nav-link" id="nav-logout-btn" style="display: none; align-items: center; gap: 0.5rem;" title="Log Out"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
             <a href="/login" class="nav-link {% if request.path == '/login' %}active{% endif %}" id="nav-login-btn">Log In</a>
         </div>
         <div class="nav-toggle" onclick="toggleMenu()">

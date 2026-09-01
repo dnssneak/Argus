@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Projects — Argus 2.0{% endblock %}
+{% block title %}Security Projects — Argus{% endblock %}
 
 {% block content %}
 <section class="page-header" style="margin-bottom: 2rem;">
@@ -12,14 +12,14 @@
                     Assessment Containers</span>
             </div>
             <h1 class="page-title"
-                style="display: block; font-size: 2.2rem; font-weight: 700; background: linear-gradient(90deg, #ffffff, var(--accent-purple)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 0.5rem;">
+                style="display: block; font-size: 2.2rem; font-weight: 700; color: #ffffff; margin-bottom: 0.5rem;">
                 Security Assessment Projects</h1>
             <p class="page-desc" style="color: var(--text-secondary); font-size: 1.05rem;">Manage assessment scopes,
                 target boundaries, and project environments</p>
         </div>
         <div>
             <button class="btn btn-primary" onclick="openCreateProjectModal()"
-                style="background: linear-gradient(135deg, var(--accent-purple), var(--accent-magenta)); color: #fff; border: none; padding: 12px 20px; border-radius: 8px; font-weight: 600; font-family: var(--font-sans); cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                style="background: linear-gradient(135deg, var(--accent-purple), var(--accent-magenta)); color: #fff; border: none; padding: 12px 20px; border-radius: 50px; font-weight: 600; font-family: var(--font-sans); cursor: pointer; display: flex; align-items: center; gap: 8px;">
                 <i class="fa-solid fa-plus"></i> Create Project
             </button>
         </div>
@@ -28,7 +28,7 @@
 
 <!-- Filter & Search Controls Bar -->
 <div class="card"
-    style="width: 100%; background: var(--bg-card); border: 1px solid var(--border); border-radius: 50px; padding: 12px 24px; margin-bottom: 2rem; box-shadow: var(--shadow);">
+    style="width: 100%; background: rgba(22, 22, 38, 0.6); border: 1px solid rgba(168, 85, 247, 0.15); border-radius: 50px; padding: 12px 24px; margin-bottom: 2rem; box-shadow: var(--shadow); backdrop-filter: blur(8px);">
     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
         <!-- Status Filter Tabs (Reordered to All, Active, Archived) -->
         <div style="display: flex; gap: 10px;">
@@ -150,7 +150,7 @@
         </p>
         <div style="display: flex; justify-content: center; gap: 12px;">
             <button type="button" class="btn btn-secondary" onclick="closeConfirmDeleteProjectModal()" style="padding: 8px 18px;">Cancel</button>
-            <button type="button" class="btn" onclick="proceedDeleteProject()" style="background: #F87171; color: #ffffff; border: none; padding: 8px 18px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+            <button type="button" class="btn" onclick="proceedDeleteProject()" style="background: #F87171; color: #ffffff; border: none; padding: 8px 18px; border-radius: 50px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;">
                 <i class="fa-solid fa-trash"></i> Yes, Delete Project
             </button>
         </div>

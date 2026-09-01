@@ -370,23 +370,33 @@ targets:
 </host>`
         },
         '4': {
-            filename: 'web_fingerprint.json',
+            filename: 'web_security_audit.json',
             code: `{
   "target": "https://target.com",
-  "server": "nginx/1.18.0",
-  "powered_by": "PHP/8.1.2",
-  "cms": "WordPress 6.4",
-  "security_headers": {"HSTS": true, "CSP": false}
+  "nikto_scan": "Completed (0 critical vulnerabilities)",
+  "security_headers": {"HSTS": true, "CSP": true, "X-Frame-Options": "SAMEORIGIN"},
+  "ssl_tls": "TLS 1.3 (Strong Ciphers)",
+  "cors_policy": "Restricted (*)"
 }`
         },
         '5': {
+            filename: 'osint_intelligence.json',
+            code: `{
+  "wayback_machine": "1,420 historical URLs harvested",
+  "search_osint": "8 public document leaks found",
+  "email_harvest": ["security@target.com", "admin@target.com"],
+  "archived_endpoints": ["/api/v1/beta", "/backup.zip"]
+}`
+        },
+        '6': {
             filename: 'audit_summary.txt',
             code: `===========================================
 ARGUS AUDIT REPORT SUMMARY
 ===========================================
 Target Domain : target.com (104.244.42.1)
 Open Ports    : 22/tcp, 80/tcp, 443/tcp
-Risk Rating   : LOW (2 advisories)
+Nikto Status  : Clean (Header & TLS Verified)
+OSINT Records : 1,420 archived endpoints
 Report PDF    : /api/v1/projects/report.pdf`
         }
     };
@@ -520,6 +530,9 @@ function initCustomSelects() {
         if (select.classList.contains('cyber-select-pill')) {
             wrapper.classList.add('pill-mode');
         }
+        if (select.classList.contains('cyber-select-sm')) {
+            wrapper.classList.add('sm-mode');
+        }
 
         // Inherit width / flex properties from select inline styles or classes
         if (select.style.width === '100%' || select.classList.contains('form-control')) {
@@ -555,15 +568,13 @@ function initCustomSelects() {
 
         const menu = document.createElement('div');
         menu.className = 'custom-select-menu';
-        menu.style.background = '#090714';
-        menu.style.backgroundColor = '#090714';
-        menu.style.opacity = '1';
-        menu.style.zIndex = '99999';
-        if (select.style.width === '100%' || select.classList.contains('form-control')) {
-            menu.style.width = '100%';
-        }
 
-        buildCustomSelectMenuOptions(select, menu, trigger);
+        wrapper._menu = menu;
+        menu._wrapper = wrapper;
+        menu._select = select;
+        menu._trigger = trigger;
+
+        buildCustomSelectMenuOptions(select, menu, trigger, wrapper);
 
         wrapper.appendChild(trigger);
         wrapper.appendChild(menu);
@@ -572,32 +583,20 @@ function initCustomSelects() {
 
         trigger.addEventListener('click', (e) => {
             e.stopPropagation();
-            document.querySelectorAll('.custom-select-wrapper.open').forEach(other => {
-                if (other !== wrapper) {
-                    other.classList.remove('open', 'pop-up');
-                    other.style.zIndex = '';
-                }
-            });
-            const isOpen = wrapper.classList.toggle('open');
-            if (isOpen) {
-                wrapper.style.zIndex = '1000000';
-                
-                // Smart viewport positioning: pop up if close to bottom of screen
-                const rect = trigger.getBoundingClientRect();
-                const spaceBelow = window.innerHeight - rect.bottom;
-                if (spaceBelow < 260 && rect.top > 260) {
-                    wrapper.classList.add('pop-up');
-                } else {
-                    wrapper.classList.remove('pop-up');
-                }
-            } else {
-                wrapper.style.zIndex = '';
-                wrapper.classList.remove('pop-up');
+            const isCurrentlyOpen = wrapper.classList.contains('open');
+
+            closeAllCustomSelects();
+
+            if (!isCurrentlyOpen) {
+                openCustomSelect(wrapper);
             }
         });
 
         const observer = new MutationObserver(() => {
-            buildCustomSelectMenuOptions(select, menu, trigger);
+            buildCustomSelectMenuOptions(select, menu, trigger, wrapper);
+            if (wrapper.classList.contains('open')) {
+                positionCustomSelectMenu(wrapper);
+            }
         });
         observer.observe(select, { childList: true, subtree: true, attributes: true });
 
@@ -606,6 +605,67 @@ function initCustomSelects() {
             highlightSelectedOption(select, menu);
         });
     });
+}
+
+function openCustomSelect(wrapper) {
+    if (!wrapper || !wrapper._menu) return;
+    const menu = wrapper._menu;
+
+    wrapper.classList.add('open');
+
+    // Move menu to document.body so it is completely free of card/modal transforms & overflow scrollbars
+    if (menu.parentNode !== document.body) {
+        document.body.appendChild(menu);
+    }
+
+    positionCustomSelectMenu(wrapper);
+
+    menu.style.display = 'block';
+    menu.style.opacity = '1';
+    menu.style.visibility = 'visible';
+    menu.style.pointerEvents = 'auto';
+}
+
+function closeCustomSelect(wrapper) {
+    if (!wrapper) return;
+    wrapper.classList.remove('open');
+    wrapper.style.zIndex = '';
+
+    const menu = wrapper._menu;
+    if (menu) {
+        menu.style.display = 'none';
+        menu.style.opacity = '0';
+        menu.style.visibility = 'hidden';
+        menu.style.pointerEvents = 'none';
+
+        if (menu.parentNode === document.body) {
+            wrapper.appendChild(menu);
+        }
+    }
+}
+
+function closeAllCustomSelects() {
+    document.querySelectorAll('.custom-select-wrapper.open').forEach(w => closeCustomSelect(w));
+    document.querySelectorAll('body > .custom-select-menu').forEach(menu => {
+        if (menu._wrapper) {
+            closeCustomSelect(menu._wrapper);
+        }
+    });
+}
+
+function positionCustomSelectMenu(wrapper) {
+    if (!wrapper || !wrapper._menu) return;
+    const trigger = wrapper.querySelector('.custom-select-trigger');
+    const menu = wrapper._menu;
+    if (!trigger || !menu) return;
+
+    const rect = trigger.getBoundingClientRect();
+    menu.style.position = 'fixed';
+    menu.style.top = (rect.bottom + 6) + 'px';
+    menu.style.left = rect.left + 'px';
+    menu.style.width = Math.max(rect.width, 180) + 'px';
+    menu.style.minWidth = rect.width + 'px';
+    menu.style.zIndex = '99999999';
 }
 
 function getSelectIconClass(select) {
@@ -644,14 +704,17 @@ function updateCustomSelectWrapper(select) {
     const wrapper = select.previousElementSibling;
     if (wrapper && wrapper.classList.contains('custom-select-wrapper')) {
         const trigger = wrapper.querySelector('.custom-select-trigger');
-        const menu = wrapper.querySelector('.custom-select-menu');
+        const menu = wrapper._menu || wrapper.querySelector('.custom-select-menu');
         if (trigger && menu) {
-            buildCustomSelectMenuOptions(select, menu, trigger);
+            buildCustomSelectMenuOptions(select, menu, trigger, wrapper);
+            if (wrapper.classList.contains('open')) {
+                positionCustomSelectMenu(wrapper);
+            }
         }
     }
 }
 
-function buildCustomSelectMenuOptions(select, menu, trigger) {
+function buildCustomSelectMenuOptions(select, menu, trigger, wrapper) {
     menu.innerHTML = '';
     const currentVal = select.value;
 
@@ -690,11 +753,7 @@ function buildCustomSelectMenuOptions(select, menu, trigger) {
             select.dispatchEvent(new Event('change', { bubbles: true }));
             updateCustomSelectTriggerLabel(select, trigger);
             highlightSelectedOption(select, menu);
-            const parentWrap = wrapperClosest(item, 'custom-select-wrapper');
-            if (parentWrap) {
-                parentWrap.classList.remove('open');
-                parentWrap.style.zIndex = '';
-            }
+            closeCustomSelect(wrapper);
         });
 
         menu.appendChild(item);
@@ -711,10 +770,20 @@ function wrapperClosest(el, className) {
     return null;
 }
 
+// Reposition open menu on scroll or resize
+window.addEventListener('scroll', () => {
+    document.querySelectorAll('.custom-select-wrapper.open').forEach(wrapper => {
+        positionCustomSelectMenu(wrapper);
+    });
+}, true);
+
+window.addEventListener('resize', () => {
+    document.querySelectorAll('.custom-select-wrapper.open').forEach(wrapper => {
+        positionCustomSelectMenu(wrapper);
+    });
+});
+
 // Global click to close custom dropdowns
 document.addEventListener('click', () => {
-    document.querySelectorAll('.custom-select-wrapper.open').forEach(wrapper => {
-        wrapper.classList.remove('open', 'pop-up');
-        wrapper.style.zIndex = '';
-    });
+    closeAllCustomSelects();
 });

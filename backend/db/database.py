@@ -112,16 +112,25 @@ def init_db():
         add_col("findings", "first_seen", "DATETIME")
         add_col("findings", "last_seen", "DATETIME")
 
-    # Ensure default project exists
+    # Ensure default project exists and migrate legacy unowned projects
     db = SessionLocal()
     try:
+        first_user = db.query(User).order_by(User.id.asc()).first()
+        if first_user:
+            unowned_projects = db.query(Project).filter(Project.owner_id == "local-user").all()
+            for up in unowned_projects:
+                up.owner_id = str(first_user.id)
+            if unowned_projects:
+                db.commit()
+
         default_proj = db.query(Project).filter_by(name="Default Project").first()
         if not default_proj:
+            owner_id = str(first_user.id) if first_user else "local-user"
             default_proj = Project(
                 name="Default Project",
                 description="Default security assessment project for Argus 2.0",
                 status="ACTIVE",
-                owner_id="local-user"
+                owner_id=owner_id
             )
             db.add(default_proj)
             db.commit()
