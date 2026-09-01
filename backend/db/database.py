@@ -53,9 +53,11 @@ engine_kwargs = {
 }
 if not is_sqlite:
     engine_kwargs["pool_pre_ping"] = True
-    engine_kwargs["pool_size"] = 10
-    engine_kwargs["max_overflow"] = 20
+    engine_kwargs["pool_size"] = 5
+    engine_kwargs["max_overflow"] = 10
     engine_kwargs["pool_recycle"] = 300
+    if "supabase.co" in DATABASE_URL and "sslmode" not in DATABASE_URL:
+        connect_args["sslmode"] = "require"
 
 engine = create_engine(DATABASE_URL, **engine_kwargs)
 
