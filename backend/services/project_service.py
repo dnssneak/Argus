@@ -2,7 +2,7 @@
 
 import re
 from typing import Optional, List, Tuple, Dict, Any
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 from models.models import Project, Target, Activity, Asset, Finding, Scan
 
 
@@ -68,7 +68,11 @@ class ProjectService:
         status: Optional[str] = None
     ) -> List[Project]:
         """Query projects list with optional search and status filtering."""
-        query = db.query(Project)
+        query = db.query(Project).options(
+            selectinload(Project.targets),
+            selectinload(Project.assets).selectinload(Asset.findings),
+            selectinload(Project.scans)
+        )
 
         if owner_id:
             query = query.filter(Project.owner_id == owner_id)

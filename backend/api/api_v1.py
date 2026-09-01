@@ -362,7 +362,13 @@ def list_assets():
         sort_by = request.args.get("sort_by", "risk_score")  # risk_score, name, last_seen, first_seen
         sort_order = request.args.get("sort_order", "desc")  # desc, asc
 
-        query = db.query(Asset).join(Project, Asset.project_id == Project.id).filter(Project.owner_id == owner_id)
+        from sqlalchemy.orm import selectinload
+        query = db.query(Asset).options(
+            selectinload(Asset.services),
+            selectinload(Asset.technologies),
+            selectinload(Asset.findings),
+            selectinload(Asset.endpoints)
+        ).join(Project, Asset.project_id == Project.id).filter(Project.owner_id == owner_id)
 
         if project_id:
             query = query.filter(Asset.project_id == project_id)
@@ -393,13 +399,7 @@ def list_assets():
         assets = query.order_by(order_col).all()
 
         formatted_assets = []
-        need_commit = False
         for a in assets:
-            calc_score = RiskEngine.calculate_asset_risk(db, a)["score"]
-            if a.risk_score != calc_score:
-                a.risk_score = calc_score
-                need_commit = True
-
             a_dict = a.to_dict()
             sev = RiskEngine.get_severity_level(a.risk_score or 0)
             a_dict["severity"] = sev
@@ -409,9 +409,6 @@ def list_assets():
                 continue
 
             formatted_assets.append(a_dict)
-
-        if need_commit:
-            db.commit()
 
         return jsonify({"success": True, "count": len(formatted_assets), "assets": formatted_assets})
     finally:

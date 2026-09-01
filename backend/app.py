@@ -14,7 +14,10 @@ from report import ReportGenerator
 from fingerprint import WebsiteFingerprinter
 from subdomain import SubdomainFinder
 
-app = Flask(__name__, template_folder='../frontend/templates', static_folder='../frontend/static')
+template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../frontend/templates'))
+static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../frontend/static'))
+
+app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
 app.config['SECRET_KEY'] = os.environ.get("SECRET_KEY", "argus-cyber-security-secret-key-2026-v2")
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 

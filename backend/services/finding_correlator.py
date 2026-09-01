@@ -439,7 +439,10 @@ class FindingCorrelator:
         Queries findings across existing assets, ordered by contextual priority tier and priority score.
         Returns serialized findings dictionaries.
         """
-        query = db.query(Finding).join(Asset, Finding.asset_id == Asset.id)
+        from sqlalchemy.orm import selectinload
+        query = db.query(Finding).options(
+            selectinload(Finding.asset).selectinload(Asset.project)
+        ).join(Asset, Finding.asset_id == Asset.id)
 
         if owner_id:
             query = query.join(Project, Asset.project_id == Project.id).filter(Project.owner_id == str(owner_id))
