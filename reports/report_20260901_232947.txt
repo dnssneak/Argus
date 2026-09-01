@@ -1,0 +1,201 @@
++-------------------------------------------------------------------------+
+|                  ARGUS CYBER SECURITY ASSESSMENT REPORT                 |
+|                      Generated: 2026-09-01 23:29:47                     |
++-------------------------------------------------------------------------+
+
+[ REPORT TARGET ]
+  Target Host : cheezious.com
+  Report Time : 2026-09-01 23:29:47
+
+[ 1. SYSTEM INFORMATION ]
+===========================================================================
+  Operating System   : Windows 11
+  Hostname           : DESKTOP-B6860O9
+  Current User       : Yahya Tamimy
+  Local IP Address   : 192.168.100.169
+  Public IP Address  : 154.192.48.104
+
+  Network Interfaces:
+    - Ethernet       : 169.254.124.10
+    - Ethernet 2     : 192.168.56.1
+    - Local Area Connection* 1 : 169.254.46.206
+    - Local Area Connection* 2 : 169.254.37.106
+    - VMware Network Adapter VMnet1 : 192.168.22.1
+    - VMware Network Adapter VMnet8 : 192.168.79.1
+    - Wi-Fi          : 192.168.100.169
+    - Bluetooth Network Connection : 169.254.9.185
+    - Loopback Pseudo-Interface 1 : 127.0.0.1
+
+[ 2. INFORMATION GATHERING (RECON) ]
+===========================================================================
+  WHOIS Information:
+    Registrar        : NAMECHEAP INC
+    Creation Date    : 2015-10-26
+    Expiration Date  : 2027-10-26
+    Updated Date     : 2026-07-16
+    Status           : clientTransferProhibited https://icann.org/epp#clientTransferProhibited
+
+  DNS Records:
+    A      : 216.150.1.129, 216.150.16.129
+    MX     : cheezious-com.mail.protection.outlook.com.
+    NS     : norm.ns.cloudflare.com., addilyn.ns.cloudflare.com.
+    TXT    : v=spf1 include:spf.protection.outlook.com -all, MS=ms49416785
+
+  Reverse DNS:
+    Reverse DNS only applicable for IP addresses
+
+  IP Geolocation:
+    Target IP    : 216.150.16.129
+    Country      : United States
+    Region       : California
+    City         : Walnut
+    ISP          : Amazon.com, Inc.
+    Organization : Vercel, Inc
+    Time Zone    : America/Los_Angeles
+
+  HTTP Headers:
+    Status Code  : 200 OK
+    Server       : Vercel
+    Content-Type : text/html; charset=utf-8
+    Length       : Not Present
+
+    Security Headers:
+      X-Frame-Options              : Not Present
+      Content-Security-Policy      : Not Present
+      Strict-Transport-Security    : max-age=63072000
+      X-Content-Type-Options       : Not Present
+      X-XSS-Protection             : Not Present
+
+[ 3. NETWORK SCAN (NMAP) ]
+===========================================================================
+  Host Status : Up
+  Scan Status : Completed
+
+  Open Ports & Services:
+    -----------------------------------------------------------------
+    PORT       STATE      SERVICE         VERSION
+    -----------------------------------------------------------------
+    80/TCP     Open       http            Vercel
+    443/TCP    Open       ssl/http        Golang net/http server
+    -----------------------------------------------------------------
+
+  Total Open Ports: 2
+
+[ 4. WEBSITE FINGERPRINTING & SCRAPING ]
+===========================================================================
+  Technology Stack:
+    Web Server               : Vercel
+    Backend Tech             : Next.js
+    CMS                      : None Detected
+    Frontend Frameworks      : Next.js (React)
+    CSS Frameworks           : None Detected
+    CDN / Security           : None Detected
+    HTTP Protocol            : HTTP/2
+
+  Scraped Web Metadata:
+    Page Title               : Cheezious
+    Meta Description         : Not Found
+    Language                 : en
+
+  Links & Contacts Scraped:
+    Internal Links Count     : 0
+    External Links Count     : 0
+
+  Assets & Structure:
+    Total HTML Forms         : 0
+    Scraped Script Sources   : 20
+    Scraped Stylesheets      : 3
+
+[ 5. SUBDOMAIN FINDER ]
+===========================================================================
+  Total Subdomains Found : 18
+
+    SUBDOMAIN                                STATUS     IP ADDRESS
+    -----------------------------------------------------------------
+    admin.cheezious.com                      Inactive   Not Resolved
+    api.cheezious.com                        Active     13.215.133.146
+    billing.cheezious.com                    Inactive   Not Resolved
+    blog.cheezious.com                       Inactive   Not Resolved
+    cheezious.com                            Active     216.150.16.129
+    dev.cheezious.com                        Inactive   Not Resolved
+    git.cheezious.com                        Inactive   Not Resolved
+    mail.cheezious.com                       Active     104.21.65.133
+    portal.cheezious.com                     Inactive   Not Resolved
+    secure.cheezious.com                     Inactive   Not Resolved
+    shop.cheezious.com                       Inactive   Not Resolved
+    stage.cheezious.com                      Inactive   Not Resolved
+    status.cheezious.com                     Inactive   Not Resolved
+    support.cheezious.com                    Inactive   Not Resolved
+    test.cheezious.com                       Inactive   Not Resolved
+    vpn.cheezious.com                        Inactive   Not Resolved
+    webmail.cheezious.com                    Active     172.67.163.123
+    www.cheezious.com                        Active     216.150.16.129
+
+[ 6. WEB SECURITY ENGINE AUDIT ]
+===========================================================================
+  Security Headers Audit:
+    Content-Security-Policy        : Missing
+    Strict-Transport-Security      : Present
+    X-Content-Type-Options         : Missing
+    X-Frame-Options                : Missing
+    Referrer-Policy                : Missing
+    Permissions-Policy             : Missing
+
+  SSL / TLS Inspection:
+    Certificate Status       : Valid CA Certificate
+    Issuer                   : Let's Encrypt
+    Supported Protocols      : TLSv1.3
+
+  CORS & HTTP Methods Analysis:
+    CORS Status              : Configured / Safe
+    Allowed Origin           : Not Set
+    Risky HTTP Methods       : None Detected
+
+  Discovered Paths & Endpoints (12):
+    GET /admin                                        [Status: 308]
+    GET /login                                        [Status: 308]
+    GET /api                                          [Status: 308]
+    GET /docs                                         [Status: 308]
+    GET /uploads                                      [Status: 308]
+    GET /backup                                       [Status: 308]
+    GET /.env                                         [Status: 308]
+    GET /.git                                         [Status: 308]
+    GET /config                                       [Status: 308]
+    GET /swagger                                      [Status: 308]
+    GET /dashboard                                    [Status: 308]
+    GET /actuator                                     [Status: 308]
+
+  Security Findings Audit (5 Findings):
+    -----------------------------------------------------------------
+    [MEDIUM] Missing Content-Security-Policy Security Header (CVSS/Score: 5.3)
+        Details: The HTTP response does not include the `Content-Security-Policy` security header. Mitigates Cross-Site Scripting (XSS) and data injection attacks by restricting resources.
+    [LOW] Missing X-Content-Type-Options Security Header (CVSS/Score: 2.0)
+        Details: The HTTP response does not include the `X-Content-Type-Options` security header. Prevents MIME-type sniffing attacks.
+    [LOW] Missing X-Frame-Options Security Header (CVSS/Score: 3.1)
+        Details: The HTTP response does not include the `X-Frame-Options` security header. Protects against clickjacking attacks.
+    [LOW] Missing Referrer-Policy Security Header (CVSS/Score: 2.0)
+        Details: The HTTP response does not include the `Referrer-Policy` security header. Controls information sent in the Referer header.
+    [LOW] Missing Permissions-Policy Security Header (CVSS/Score: 2.0)
+        Details: The HTTP response does not include the `Permissions-Policy` security header. Restricts browser features like camera, microphone, and geolocation.
+    -----------------------------------------------------------------
+
+
+[ 7. WEB INTELLIGENCE & OSINT ]
+===========================================================================
+  Public Email Discovery (0 Discovered):
+    No public email addresses harvested.
+
+
+[ 8. EXECUTIVE SUMMARY & OVERVIEW ]
+===========================================================================
+  Target Scope Host         : cheezious.com
+  Scan Completion Status    : Completed
+  Total Open Network Ports  : 2
+  Total Discovered Subdomains: 18
+  Web Security Findings     : 5 (0 Critical, 0 High, 1 Medium)
+  Harvested OSINT Emails    : 0
+  Overall Security Outcome  : MODERATE EXPOSURE - Standard Hardening Required
+
++-------------------------------------------------------------------------+
+|                       END OF ARGUS SECURITY REPORT                      |
++-------------------------------------------------------------------------+

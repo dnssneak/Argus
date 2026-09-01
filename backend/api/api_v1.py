@@ -1,6 +1,7 @@
 # pyrefly: ignore [missing-import]
+import os
 from functools import wraps
-from flask import Blueprint, jsonify, request, g, make_response
+from flask import Blueprint, jsonify, request, g, make_response, send_from_directory
 import db.database as db_module
 from models.models import User, Project, Target, Asset, Service, Technology, Finding, Scan, Relationship, Endpoint, AssetHistory, AssetNote, format_utc_iso
 from models.schemas import ProjectCreate, AssetCreate, FindingCreate, UserSignup, UserLogin
@@ -1285,13 +1286,18 @@ def generate_project_scan_report(project_id, scan_id):
         scan_data = results.get("ports")
         fingerprint_data = results.get("web")
         subdomain_data = results.get("subdomain")
+        web_security_data = results.get("web_security")
+        web_intelligence_data = results.get("web_intelligence")
 
         generator = ReportGenerator(
             system_info=sys_info,
             recon_data=recon_data,
             scan_data=scan_data,
             fingerprint_data=fingerprint_data,
-            subdomain_data=subdomain_data
+            subdomain_data=subdomain_data,
+            web_security_data=web_security_data,
+            web_intelligence_data=web_intelligence_data,
+            target=scan.target
         )
 
         if report_type == "txt":
@@ -1328,7 +1334,7 @@ def download_project_scan_report(project_id, scan_id):
         return jsonify({"success": False, "error": "Filename required"}), 400
 
     from report import ReportGenerator
-    report_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "reports"))
+    report_dir = ReportGenerator().report_dir
     return send_from_directory(report_dir, filename, as_attachment=True)
 
 

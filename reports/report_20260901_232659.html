@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Argus Security Assessment Report - cheezious.com</title>
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: #0b0b12;
+            color: #f1f0f5;
+            line-height: 1.6;
+            padding: 30px;
+            max-width: 960px;
+            margin: 0 auto;
+        }
+        .report-header {
+            text-align: center;
+            border-bottom: 2px solid #2d2d44;
+            padding-bottom: 20px;
+            margin-bottom: 25px;
+        }
+        h1 {
+            color: #a855f7;
+            font-size: 2.2rem;
+            margin: 0 0 10px 0;
+            letter-spacing: -0.02em;
+        }
+        .report-subtitle {
+            color: #94a3b8;
+            font-size: 1rem;
+        }
+        h2 {
+            color: #c084fc;
+            margin-top: 35px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #2d2d44;
+            font-size: 1.35rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        h3 {
+            color: #e879f9;
+            margin-top: 22px;
+            font-size: 1.05rem;
+        }
+        .meta {
+            background: rgba(26, 26, 46, 0.7);
+            padding: 18px 22px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            border: 1px solid #2d2d44;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        .meta-item {
+            display: flex;
+            flex-direction: column;
+        }
+        .meta-label {
+            color: #94a3b8;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .meta-value {
+            color: #f1f0f5;
+            font-weight: 600;
+            font-size: 1.05rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .section {
+            background: #12121a;
+            padding: 22px;
+            border-radius: 12px;
+            margin-bottom: 22px;
+            border-left: 4px solid #a855f7;
+            border-top: 1px solid #2d2d44;
+            border-right: 1px solid #2d2d44;
+            border-bottom: 1px solid #2d2d44;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        .label {
+            color: #94a3b8;
+            font-weight: 500;
+        }
+        .value {
+            color: #f1f0f5;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+        }
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            text-transform: uppercase;
+        }
+        .badge-critical { background: rgba(248, 113, 113, 0.2); color: #f87171; border: 1px solid rgba(248, 113, 113, 0.4); }
+        .badge-high { background: rgba(251, 146, 60, 0.2); color: #fb923c; border: 1px solid rgba(251, 146, 60, 0.4); }
+        .badge-medium { background: rgba(250, 204, 21, 0.2); color: #facc15; border: 1px solid rgba(250, 204, 21, 0.4); }
+        .badge-low { background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); }
+        .badge-active { background: rgba(74, 222, 128, 0.2); color: #4ade80; border: 1px solid rgba(74, 222, 128, 0.4); }
+        .badge-inactive { background: rgba(148, 163, 184, 0.2); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.4); }
+        .status-open { color: #4ade80; font-weight: 600; }
+        .status-down { color: #f87171; }
+        .no-data { color: #64748b; font-style: italic; }
+        .error { color: #f87171; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+            font-size: 0.88rem;
+        }
+        th, td {
+            text-align: left;
+            padding: 10px 12px;
+            border-bottom: 1px solid #2d2d44;
+        }
+        th {
+            color: #94a3b8;
+            text-transform: uppercase;
+            font-size: 0.78rem;
+            background-color: #0b0b12;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        td {
+            color: #f1f0f5;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+        .stat-card {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid #2d2d44;
+            padding: 14px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .stat-val {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #c084fc;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .stat-lbl {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+        }
+        .summary-box {
+            background: #0b0b12;
+            padding: 18px;
+            border-radius: 8px;
+            border-left: 4px solid #4ade80;
+            border-top: 1px solid #2d2d44;
+            border-right: 1px solid #2d2d44;
+            border-bottom: 1px solid #2d2d44;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid #2d2d44;
+            color: #64748b;
+            font-size: 0.85rem;
+        }
+        code {
+            background: rgba(168, 85, 247, 0.15);
+            color: #c084fc;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="report-header">
+        <h1>Argus Security Assessment Report</h1>
+        <div class="report-subtitle">Comprehensive Security Reconnaissance, Vulnerability Audit & Threat Intelligence</div>
+    </div>
+
+    <div class="meta">
+        <div class="meta-item">
+            <span class="meta-label">Target Scope</span>
+            <span class="meta-value">cheezious.com</span>
+        </div>
+        <div class="meta-item">
+            <span class="meta-label">Assessment Date</span>
+            <span class="meta-value">2026-09-01 23:26:59</span>
+        </div>
+        <div class="meta-item">
+            <span class="meta-label">Report ID</span>
+            <span class="meta-value">ARGUS-20260901232659</span>
+        </div>
+    </div>
+
+    <div class="section">
+            <h2>System Information</h2>
+            <div class="info-row">
+                <span class="label">Operating System</span>
+                <span class="value">Windows 11</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Hostname</span>
+                <span class="value">DESKTOP-B6860O9</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Current User</span>
+                <span class="value">Yahya Tamimy</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Local IP Address</span>
+                <span class="value">192.168.100.169</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Public IP Address</span>
+                <span class="value">154.192.48.104</span>
+            </div>
+            <h3>Network Interfaces</h3><div class="info-row"><span class="label">Ethernet</span><span class="value">169.254.124.10</span></div><div class="info-row"><span class="label">Ethernet 2</span><span class="value">192.168.56.1</span></div><div class="info-row"><span class="label">Local Area Connection* 1</span><span class="value">169.254.46.206</span></div><div class="info-row"><span class="label">Local Area Connection* 2</span><span class="value">169.254.37.106</span></div><div class="info-row"><span class="label">VMware Network Adapter VMnet1</span><span class="value">192.168.22.1</span></div><div class="info-row"><span class="label">VMware Network Adapter VMnet8</span><span class="value">192.168.79.1</span></div><div class="info-row"><span class="label">Wi-Fi</span><span class="value">192.168.100.169</span></div><div class="info-row"><span class="label">Bluetooth Network Connection</span><span class="value">169.254.9.185</span></div><div class="info-row"><span class="label">Loopback Pseudo-Interface 1</span><span class="value">127.0.0.1</span></div>
+        </div>
+    <div class="section">
+            <h2>Information Gathering</h2>
+            <h3>WHOIS</h3><div class="info-row"><span class="label">Registrar</span><span class="value">NAMECHEAP INC</span></div>
+            <div class="info-row"><span class="label">Creation Date</span><span class="value">2015-10-26</span></div>
+            <div class="info-row"><span class="label">Expiration Date</span><span class="value">2027-10-26</span></div>
+            <div class="info-row"><span class="label">Updated Date</span><span class="value">2026-07-16</span></div>
+            <div class="info-row"><span class="label">Status</span><span class="value">clientTransferProhibited https://icann.org/epp#clientTransferProhibited</span></div>
+            <h3>DNS Records</h3><div class="info-row"><span class="label">A Records</span><span class="value">216.150.1.129, 216.150.16.129</span></div><div class="info-row"><span class="label">MX Records</span><span class="value">cheezious-com.mail.protection.outlook.com.</span></div><div class="info-row"><span class="label">NS Records</span><span class="value">norm.ns.cloudflare.com., addilyn.ns.cloudflare.com.</span></div><div class="info-row"><span class="label">TXT Records</span><span class="value">v=spf1 include:spf.protection.outlook.com -all, MS=ms49416785</span></div>
+            <h3>Reverse DNS</h3><p class="no-data">Reverse DNS only applicable for IP addresses</p>
+            <h3>IP Geolocation</h3><div class="info-row"><span class="label">Target IP</span><span class="value">216.150.16.129</span></div>
+            <div class="info-row"><span class="label">Country</span><span class="value">United States</span></div>
+            <div class="info-row"><span class="label">Region/State</span><span class="value">California</span></div>
+            <div class="info-row"><span class="label">City</span><span class="value">Walnut</span></div>
+            <div class="info-row"><span class="label">ISP</span><span class="value">Amazon.com, Inc.</span></div>
+            <div class="info-row"><span class="label">Organization</span><span class="value">Vercel, Inc</span></div>
+            <div class="info-row"><span class="label">Time Zone</span><span class="value">America/Los_Angeles</span></div>
+            <h3>HTTP Headers</h3><div class="info-row"><span class="label">Status Code</span><span class="value">200 OK</span></div>
+            <div class="info-row"><span class="label">Server</span><span class="value">Vercel</span></div>
+            <div class="info-row"><span class="label">Content-Type</span><span class="value">text/html; charset=utf-8</span></div>
+            <div class="info-row"><span class="label">Content-Length</span><span class="value">Not Present</span></div>
+            <h3>Security Headers</h3><div class="info-row"><span class="label">X-Frame-Options</span><span class="value">Not Present</span></div><div class="info-row"><span class="label">Content-Security-Policy</span><span class="value">Not Present</span></div><div class="info-row"><span class="label">Strict-Transport-Security</span><span class="value">max-age=63072000</span></div><div class="info-row"><span class="label">X-Content-Type-Options</span><span class="value">Not Present</span></div><div class="info-row"><span class="label">X-XSS-Protection</span><span class="value">Not Present</span></div>
+        </div>
+    <div class="section">
+            <h2>Network Scan</h2>
+            <div class="info-row">
+                <span class="label">Host Status</span>
+                <span class="value status-open">Up</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Scan Status</span>
+                <span class="value">Completed</span>
+            </div>
+            <h3>Open Ports</h3><table>
+                <tr><th>Port</th><th>State</th></tr>
+                <tr><td>80/TCP</td><td class="status-open">Open</td></tr><tr><td>443/TCP</td><td class="status-open">Open</td></tr>
+            </table>
+            <h3>Services</h3><table>
+                <tr><th>Port</th><th>Service</th><th>Version</th></tr>
+                <tr><td>80/TCP</td><td>http</td><td>Vercel</td></tr><tr><td>443/TCP</td><td>ssl/http</td><td>Golang net/http server</td></tr>
+            </table>
+            <p style="margin-top:10px;"><strong>Total Open Ports:</strong> 2</p>
+        </div>
+    <div class="section">
+            <h2>Website Fingerprinting & Scraping</h2>
+            <h3>Technology Stack</h3>
+            <div class="info-row"><span class="label">Web Server</span><span class="value">Vercel</span></div>
+            <div class="info-row"><span class="label">Backend Technology</span><span class="value">Next.js</span></div>
+            <div class="info-row"><span class="label">Content Management System</span><span class="value">None Detected</span></div>
+            <div class="info-row"><span class="label">Frontend Frameworks</span><span class="value">Next.js (React)</span></div>
+            <div class="info-row"><span class="label">CSS Frameworks</span><span class="value">None Detected</span></div>
+            <div class="info-row"><span class="label">CDN / Security</span><span class="value">None Detected</span></div>
+            <div class="info-row"><span class="label">HTTP Protocol</span><span class="value">HTTP/2</span></div>
+            <h3>Scraped Metadata</h3>
+            <div class="info-row"><span class="label">Title</span><span class="value">Cheezious</span></div>
+            <div class="info-row"><span class="label">Description</span><span class="value">Not Found</span></div>
+            <h3>Links & Scraped Contacts</h3>
+            <div class="info-row"><span class="label">Discovered Links</span><span class="value">0 Internal | 0 External</span></div>
+            <div class="info-row"><span class="label">Scraped Emails</span><span class="value">None Detected</span></div>
+        </div>
+    <div class="section">
+            <h2>Subdomain Finder</h2>
+            <table>
+                <tr><th>Subdomain</th><th>Status</th><th>IP Address</th></tr>
+                <tr><td>admin.cheezious.com</td><td class="status-down">Inactive</td><td>Not Resolved</td></tr><tr><td>api.cheezious.com</td><td class="status-open">Active</td><td>13.215.133.146</td></tr><tr><td>billing.cheezious.com</td><td class="status-down">Inactive</td><td>Not Resolved</td></tr><tr><td>blog.cheezious.com</td><td class="status-down">Inactive</td><td>Not Resolved</td></tr><tr><td>cheezious.com</td><td class="status-open">Active</td><td>216.150.16.129</td></tr><tr><td>dev.cheezious.com</td><td class="status-down">Inactive</td><td>Not Resolved</td></tr><tr><td>git.cheezious.com</td><td class="status-down">Inactive</td><td>Not Resolved</td></tr><tr><td>mail.cheezious.com</td><td class="status-open">Active</td><td>104.21.65.133</td></tr><tr><td>portal.cheezious.com</td><td class="status-down">Inactive</td><td>Not Resolved</td></tr><tr><td>secure.cheezious.com</td><td class="status-down">Inactive</td><td>Not Resolved</td></tr><tr><td>shop.cheezious.com</td><td class="status-down">Inactive</td><td>Not Resolved</td></tr><tr><td>stage.cheezious.com</td><td class="status-down">Inactive</td><td>Not Resolved</td></tr><tr><td>status.cheezious.com</td><td class="status-down">Inactive</td><td>Not Resolved</td></tr><tr><td>support.cheezious.com</td><td class="status-down">Inactive</td><td>Not Resolved</td></tr><tr><td>test.cheezious.com</td><td class="status-down">Inactive</td><td>Not Resolved</td></tr><tr><td>vpn.cheezious.com</td><td class="status-down">Inactive</td><td>Not Resolved</td></tr><tr><td>webmail.cheezious.com</td><td class="status-open">Active</td><td>172.67.163.123</td></tr><tr><td>www.cheezious.com</td><td class="status-open">Active</td><td>216.150.16.129</td></tr>
+            </table>
+            <p style="margin-top: 10px;"><strong>Total Subdomains Found:</strong> 18</p>
+        </div>
+    <div class="section">
+            <h2>Web Security Engine Analysis</h2>
+            <h3>Security Headers Audit</h3>
+            <div style="margin-bottom: 15px;"><span class="badge badge-critical" style="margin: 3px;">Content-Security-Policy: Missing</span><span class="badge badge-active" style="margin: 3px;">Strict-Transport-Security: Present</span><span class="badge badge-critical" style="margin: 3px;">X-Content-Type-Options: Missing</span><span class="badge badge-critical" style="margin: 3px;">X-Frame-Options: Missing</span><span class="badge badge-critical" style="margin: 3px;">Referrer-Policy: Missing</span><span class="badge badge-critical" style="margin: 3px;">Permissions-Policy: Missing</span></div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                <div><h3>SSL / TLS Inspection</h3><div class="info-row"><span class="label">Certificate Status</span><span class="value">Valid CA Certificate</span></div>
+        <div class="info-row"><span class="label">Issuer</span><span class="value">Let&#x27;s Encrypt</span></div>
+        <div class="info-row"><span class="label">TLS Versions</span><span class="value">TLSv1.3</span></div></div>
+                <div><h3>CORS & HTTP Methods</h3><div class="info-row"><span class="label">CORS Status</span><span class="value">Configured / Safe</span></div>
+        <div class="info-row"><span class="label">Allow-Origin</span><span class="value"><code>Not Set</code></span></div>
+        <div class="info-row"><span class="label">Risky Methods</span><span class="value">None Detected</span></div></div>
+            </div>
+            <h3>Discovered Paths & Endpoints (12)</h3>
+            <table><tr><th>Path</th><th>Status Code</th></tr><tr><td>GET <code>/admin</code></td><td>308</td></tr><tr><td>GET <code>/login</code></td><td>308</td></tr><tr><td>GET <code>/api</code></td><td>308</td></tr><tr><td>GET <code>/docs</code></td><td>308</td></tr><tr><td>GET <code>/uploads</code></td><td>308</td></tr><tr><td>GET <code>/backup</code></td><td>308</td></tr><tr><td>GET <code>/.env</code></td><td>308</td></tr><tr><td>GET <code>/.git</code></td><td>308</td></tr><tr><td>GET <code>/config</code></td><td>308</td></tr><tr><td>GET <code>/swagger</code></td><td>308</td></tr><tr><td>GET <code>/dashboard</code></td><td>308</td></tr><tr><td>GET <code>/actuator</code></td><td>308</td></tr></table>
+            <h3>Web Security Findings (5)</h3>
+            <table><tr><th>Finding Detail</th><th>Severity Score</th></tr><tr><td><strong style="color:#ffffff;">Missing Content-Security-Policy Security Header</strong><div style="font-size:0.8rem; color:#94a3b8; margin-top:2px;">The HTTP response does not include the `Content-Security-Policy` security header. Mitigates Cross-Site Scripting (XSS) and data injection attacks by restricting resources.</div></td><td><span class="badge badge-medium">Medium (5.3)</span></td></tr><tr><td><strong style="color:#ffffff;">Missing X-Content-Type-Options Security Header</strong><div style="font-size:0.8rem; color:#94a3b8; margin-top:2px;">The HTTP response does not include the `X-Content-Type-Options` security header. Prevents MIME-type sniffing attacks.</div></td><td><span class="badge badge-medium">Low (2.0)</span></td></tr><tr><td><strong style="color:#ffffff;">Missing X-Frame-Options Security Header</strong><div style="font-size:0.8rem; color:#94a3b8; margin-top:2px;">The HTTP response does not include the `X-Frame-Options` security header. Protects against clickjacking attacks.</div></td><td><span class="badge badge-medium">Low (3.1)</span></td></tr><tr><td><strong style="color:#ffffff;">Missing Referrer-Policy Security Header</strong><div style="font-size:0.8rem; color:#94a3b8; margin-top:2px;">The HTTP response does not include the `Referrer-Policy` security header. Controls information sent in the Referer header.</div></td><td><span class="badge badge-medium">Low (2.0)</span></td></tr><tr><td><strong style="color:#ffffff;">Missing Permissions-Policy Security Header</strong><div style="font-size:0.8rem; color:#94a3b8; margin-top:2px;">The HTTP response does not include the `Permissions-Policy` security header. Restricts browser features like camera, microphone, and geolocation.</div></td><td><span class="badge badge-medium">Low (2.0)</span></td></tr></table>
+            
+        </div>
+    <div class="section">
+            <h2>Web Intelligence Engine (OSINT)</h2>
+            <div class="stats-grid">
+            <div class="stat-card"><div class="stat-val">0</div><div class="stat-lbl">Harvested Emails</div></div>
+            <div class="stat-card"><div class="stat-val">0</div><div class="stat-lbl">Public Documents</div></div>
+            <div class="stat-card"><div class="stat-val">0</div><div class="stat-lbl">Social Profiles</div></div>
+            <div class="stat-card"><div class="stat-val">0</div><div class="stat-lbl">Wayback URLs</div></div>
+        </div>
+            
+            
+            
+        </div>
+    <div class="section">
+            <h2>Executive Summary</h2>
+            <div class="summary-box" style="border-left-color: #fb923c;">
+                <div class="info-row">
+                    <span class="label">Target Scope Host</span>
+                    <span class="value">cheezious.com</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Scan Completion Status</span>
+                    <span class="value">Completed</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Total Open Network Ports</span>
+                    <span class="value">2</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Discovered Subdomains</span>
+                    <span class="value">18</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Web Security Vulnerabilities</span>
+                    <span class="value">5 (0 Critical, 0 High, 1 Medium)</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Harvested OSINT Emails</span>
+                    <span class="value">0</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Overall Security Assessment Outcome</span>
+                    <span class="value" style="color: #fb923c; font-weight: 700;">MODERATE EXPOSURE - Standard Security Hardening Required</span>
+                </div>
+            </div>
+        </div>
+
+    <div class="footer">
+        <p>Generated by Argus Cyber Security Intelligence Platform &bull; 2026-09-01 23:26:59</p>
+    </div>
+</body>
+</html>
