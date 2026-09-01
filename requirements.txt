@@ -1,0 +1,12 @@
+flask
+sqlalchemy
+pydantic
+pytest
+python-whois
+dnspython
+requests
+psutil
+python-nmap
+psycopg2-binary
+python-dotenv
+beautifulsoup4
