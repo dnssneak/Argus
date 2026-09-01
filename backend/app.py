@@ -24,8 +24,12 @@ SECRET_KEY = os.environ.get("SECRET_KEY") or "argus-master-production-secret-key
 app.config["SECRET_KEY"] = SECRET_KEY
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 
-# Initialize DB tables on startup
-init_db()
+# Initialize DB tables on startup (catch exceptions so startup never crashes WSGI runner)
+try:
+    init_db()
+except Exception as err:
+    import logging
+    logging.error(f"DB initialization error on startup: {err}")
 
 # Register REST API blueprint
 app.register_blueprint(api_bp)
