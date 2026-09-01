@@ -38,8 +38,23 @@ class TestAssetCorrelator(unittest.TestCase):
 
     def tearDown(self):
         if hasattr(self, "project") and self.project:
-            self.db.delete(self.project)
-            self.db.commit()
+            try:
+                p_id = self.project.id
+                self.db.query(Relationship).filter_by(project_id=p_id).delete()
+                asset_ids = [a.id for a in self.db.query(Asset.id).filter_by(project_id=p_id).all()]
+                if asset_ids:
+                    self.db.query(AssetHistory).filter(AssetHistory.asset_id.in_(asset_ids)).delete(synchronize_session=False)
+                    self.db.query(Finding).filter(Finding.asset_id.in_(asset_ids)).delete(synchronize_session=False)
+                    self.db.query(Service).filter(Service.asset_id.in_(asset_ids)).delete(synchronize_session=False)
+                    self.db.query(Technology).filter(Technology.asset_id.in_(asset_ids)).delete(synchronize_session=False)
+                    self.db.query(Endpoint).filter(Endpoint.asset_id.in_(asset_ids)).delete(synchronize_session=False)
+                    self.db.query(Asset).filter_by(project_id=p_id).delete()
+                self.db.query(Scan).filter_by(project_id=p_id).delete()
+                self.db.query(Target).filter_by(project_id=p_id).delete()
+                self.db.query(Project).filter_by(id=p_id).delete()
+                self.db.commit()
+            except Exception:
+                self.db.rollback()
         self.db.close()
 
     def test_correlation_pipeline(self):

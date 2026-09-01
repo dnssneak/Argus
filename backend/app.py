@@ -17,8 +17,13 @@ from subdomain import SubdomainFinder
 template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../frontend/templates'))
 static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../frontend/static'))
 
+import secrets
+
 app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
-app.config['SECRET_KEY'] = os.environ.get("SECRET_KEY", "argus-cyber-security-secret-key-2026-v2")
+secret_key = os.environ.get("SECRET_KEY")
+if not secret_key:
+    secret_key = secrets.token_hex(32)
+app.config['SECRET_KEY'] = secret_key
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 
 # Initialize DB tables on startup
@@ -122,4 +127,5 @@ def legacy_standalone_scanners_redirect():
 if __name__ == "__main__":
     import os
     port = int(os.environ.get("PORT", 5001))
-    app.run(host="0.0.0.0", port=port, debug=True)
+    debug_mode = os.environ.get("FLASK_DEBUG", "False").lower() in ("true", "1")
+    app.run(host="0.0.0.0", port=port, debug=debug_mode)

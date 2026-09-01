@@ -139,8 +139,18 @@ def test_finding_lifecycle_across_scans(client):
 
 def test_findings_api_ordering_and_filtering(client):
     """Test GET /api/v1/findings API endpoint orders findings by contextual priority."""
+    # Signup user
+    auth_res = client.post("/api/v1/auth/signup", json={
+        "name": "Correlator Analyst",
+        "email": "correlator@example.com",
+        "password": "Password123!",
+        "confirm_password": "Password123!"
+    })
+    token = auth_res.get_json()["token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
     # Create project via client API
-    p_res = client.post("/api/v1/projects", json={"name": "API Test Scope"})
+    p_res = client.post("/api/v1/projects", json={"name": "API Test Scope"}, headers=headers)
     assert p_res.status_code == 201
     project_id = p_res.get_json()["project"]["id"]
 
@@ -150,7 +160,7 @@ def test_findings_api_ordering_and_filtering(client):
         "name": "critical.example.com",
         "asset_type": "Domain",
         "risk_score": 90
-    })
+    }, headers=headers)
     asset1_id = a1_res.get_json()["asset"]["id"]
 
     a2_res = client.post("/api/v1/assets", json={
@@ -158,7 +168,7 @@ def test_findings_api_ordering_and_filtering(client):
         "name": "internal.example.com",
         "asset_type": "Domain",
         "risk_score": 20
-    })
+    }, headers=headers)
     asset2_id = a2_res.get_json()["asset"]["id"]
 
     # Add findings via client API
@@ -166,15 +176,15 @@ def test_findings_api_ordering_and_filtering(client):
         "title": "Crit Issue",
         "severity": "High",
         "risk_score": 9.0
-    })
+    }, headers=headers)
 
     client.post(f"/api/v1/assets/{asset2_id}/findings", json={
         "title": "Low Observation",
         "severity": "Low",
         "risk_score": 2.0
-    })
+    }, headers=headers)
 
-    res = client.get(f"/api/v1/findings?project_id={project_id}")
+    res = client.get(f"/api/v1/findings?project_id={project_id}", headers=headers)
     assert res.status_code == 200
     data = res.get_json()
 

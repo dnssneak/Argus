@@ -146,8 +146,18 @@ def test_recalculate_and_update_asset_risk_timeline_event(client):
 
 def test_api_sorting_and_filtering_by_severity(client):
     """Test GET /api/v1/assets severity filtering and risk sorting."""
+    # Signup user
+    auth_res = client.post("/api/v1/auth/signup", json={
+        "name": "Risk Tester",
+        "email": "risk-tester@example.com",
+        "password": "Password123!",
+        "confirm_password": "Password123!"
+    })
+    token = auth_res.get_json()["token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
     # Create project
-    p_res = client.post("/api/v1/projects", json={"name": "Sort Scope"})
+    p_res = client.post("/api/v1/projects", json={"name": "Sort Scope"}, headers=headers)
     project_id = p_res.get_json()["project"]["id"]
 
     # Create low risk asset
@@ -155,10 +165,10 @@ def test_api_sorting_and_filtering_by_severity(client):
         "project_id": project_id,
         "name": "low-risk.com",
         "asset_type": "Domain"
-    })
+    }, headers=headers)
 
     # Create asset detail API call
-    res_list = client.get(f"/api/v1/assets?project_id={project_id}&sort_by=risk_score&sort_order=desc")
+    res_list = client.get(f"/api/v1/assets?project_id={project_id}&sort_by=risk_score&sort_order=desc", headers=headers)
     assert res_list.status_code == 200
     data = res_list.get_json()
     assert data["success"] is True

@@ -33,12 +33,15 @@ def get_current_user_from_req(db):
     return AuthService.verify_token(db, token)
 
 
-def get_user_owner_id(db):
-    """Helper to extract current authenticated user ID string or default to 'local-user'."""
-    user = get_current_user_from_req(db)
-    if user:
-        return str(user.id)
-    return "local-user"
+def get_user_owner_id(db=None):
+    """Helper to extract current authenticated user ID string or return None if unauthenticated."""
+    if hasattr(g, "current_user") and g.current_user:
+        return str(g.current_user.id)
+    if db is not None:
+        user = get_current_user_from_req(db)
+        if user:
+            return str(user.id)
+    return None
 
 
 def require_auth(f):
@@ -153,6 +156,7 @@ def auth_logout():
 
 
 @api_bp.route("/auth/me", methods=["GET"])
+@require_auth
 def auth_me():
     """Return currently authenticated user profile."""
     db = get_db()
@@ -171,6 +175,7 @@ def auth_me():
 # --- PROJECTS API ---
 
 @api_bp.route("/projects", methods=["GET"])
+@require_auth
 def list_projects():
     db = get_db()
     try:
@@ -185,6 +190,7 @@ def list_projects():
 
 
 @api_bp.route("/projects", methods=["POST"])
+@require_auth
 def create_project():
     db = get_db()
     try:
@@ -213,6 +219,7 @@ def create_project():
 
 
 @api_bp.route("/projects/<int:project_id>", methods=["GET"])
+@require_auth
 def get_project(project_id):
     db = get_db()
     try:
@@ -231,6 +238,7 @@ def get_project(project_id):
 
 
 @api_bp.route("/projects/<int:project_id>", methods=["PUT"])
+@require_auth
 def update_project(project_id):
     db = get_db()
     try:
@@ -259,6 +267,7 @@ def update_project(project_id):
 
 
 @api_bp.route("/projects/<int:project_id>/archive", methods=["POST"])
+@require_auth
 def archive_project(project_id):
     db = get_db()
     try:
@@ -278,6 +287,7 @@ def archive_project(project_id):
 
 
 @api_bp.route("/projects/<int:project_id>", methods=["DELETE"])
+@require_auth
 def delete_project(project_id):
     db = get_db()
     try:
@@ -306,6 +316,7 @@ def delete_project(project_id):
 
 
 @api_bp.route("/projects/<int:project_id>/targets", methods=["POST"])
+@require_auth
 def add_project_target(project_id):
     db = get_db()
     try:
@@ -328,6 +339,7 @@ def add_project_target(project_id):
 
 
 @api_bp.route("/projects/<int:project_id>/dashboard", methods=["GET"])
+@require_auth
 def get_project_dashboard_api(project_id):
     db = get_db()
     try:
@@ -347,6 +359,7 @@ def get_project_dashboard_api(project_id):
 # --- ASSETS API ---
 
 @api_bp.route("/assets", methods=["GET"])
+@require_auth
 def list_assets():
     db = get_db()
     try:
@@ -416,6 +429,7 @@ def list_assets():
 
 
 @api_bp.route("/assets", methods=["POST"])
+@require_auth
 def create_asset():
     db = get_db()
     try:
@@ -490,6 +504,7 @@ def create_asset():
 
 
 @api_bp.route("/assets/<int:asset_id>", methods=["GET"])
+@require_auth
 def get_asset_detail(asset_id):
     db = get_db()
     try:
@@ -527,6 +542,7 @@ def get_asset_detail(asset_id):
 
 
 @api_bp.route("/assets/<int:asset_id>/graph", methods=["GET"])
+@require_auth
 def get_asset_relationship_graph(asset_id):
     db = get_db()
     try:
@@ -546,6 +562,7 @@ def get_asset_relationship_graph(asset_id):
 
 
 @api_bp.route("/projects/<int:project_id>/graph", methods=["GET"])
+@require_auth
 def get_project_relationship_graph(project_id):
     db = get_db()
     try:
@@ -564,6 +581,7 @@ def get_project_relationship_graph(project_id):
 
 
 @api_bp.route("/projects/<int:project_id>/correlate", methods=["POST"])
+@require_auth
 def trigger_project_correlation(project_id):
     db = get_db()
     try:
@@ -583,6 +601,7 @@ def trigger_project_correlation(project_id):
 
 
 @api_bp.route("/assets/<int:asset_id>", methods=["DELETE"])
+@require_auth
 def delete_asset(asset_id):
     db = get_db()
     try:
@@ -602,6 +621,7 @@ def delete_asset(asset_id):
 
 
 @api_bp.route("/assets/<int:asset_id>/notes", methods=["POST"])
+@require_auth
 def add_asset_note(asset_id):
     db = get_db()
     try:
@@ -640,6 +660,7 @@ def add_asset_note(asset_id):
 
 
 @api_bp.route("/assets/<int:asset_id>/tags", methods=["POST"])
+@require_auth
 def update_asset_tags(asset_id):
     db = get_db()
     try:
@@ -673,6 +694,7 @@ def update_asset_tags(asset_id):
 
 
 @api_bp.route("/findings", methods=["GET"])
+@require_auth
 def list_findings():
     db = get_db()
     try:
@@ -703,6 +725,7 @@ def list_findings():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 @api_bp.route("/projects/<int:project_id>/findings/correlate", methods=["POST"])
+@require_auth
 def correlate_project_findings_api(project_id):
     db = get_db()
     try:
@@ -726,6 +749,7 @@ def correlate_project_findings_api(project_id):
 
 
 @api_bp.route("/findings/<int:finding_id>", methods=["GET"])
+@require_auth
 def get_finding_detail(finding_id):
     db = get_db()
     try:
@@ -746,6 +770,7 @@ def get_finding_detail(finding_id):
 
 
 @api_bp.route("/assets/<int:asset_id>/findings", methods=["POST"])
+@require_auth
 def add_asset_finding(asset_id):
     db = get_db()
     try:
@@ -812,6 +837,7 @@ def add_asset_finding(asset_id):
 
 
 @api_bp.route("/findings/<int:finding_id>/status", methods=["PUT"])
+@require_auth
 def update_finding_status(finding_id):
     db = get_db()
     try:
@@ -845,6 +871,7 @@ def update_finding_status(finding_id):
 
 
 @api_bp.route("/assets/<int:asset_id>/scan", methods=["POST"])
+@require_auth
 def scan_single_asset(asset_id):
     db = get_db()
     try:
@@ -962,6 +989,7 @@ def scan_single_asset(asset_id):
 # --- DASHBOARD STATS API ---
 
 @api_bp.route("/stats", methods=["GET"])
+@require_auth
 def get_stats():
     db = get_db()
     try:
@@ -1017,6 +1045,7 @@ import json
 from datetime import datetime, timezone
 
 @api_bp.route("/projects/<int:project_id>/scans", methods=["GET"])
+@require_auth
 def list_project_scans(project_id):
     db = get_db()
     try:
@@ -1045,6 +1074,7 @@ def list_project_scans(project_id):
 
 @api_bp.route("/projects/<int:project_id>/scans/<int:scan_id>", methods=["GET"])
 @api_bp.route("/scans/<int:scan_id>", methods=["GET"])
+@require_auth
 def get_project_scan_detail(scan_id, project_id=None):
     db = get_db()
     try:
@@ -1070,6 +1100,7 @@ def get_project_scan_detail(scan_id, project_id=None):
 
 
 @api_bp.route("/projects/<int:project_id>/scans", methods=["POST"])
+@require_auth
 def execute_project_scan(project_id):
     db = get_db()
     try:
@@ -1253,6 +1284,7 @@ def execute_project_scan(project_id):
 
 
 @api_bp.route("/projects/<int:project_id>/scans/<int:scan_id>/report", methods=["POST"])
+@require_auth
 def generate_project_scan_report(project_id, scan_id):
     db = get_db()
     try:
@@ -1313,6 +1345,7 @@ def generate_project_scan_report(project_id, scan_id):
 
 
 @api_bp.route("/projects/<int:project_id>/scans/<int:scan_id>/download-report", methods=["GET"])
+@require_auth
 def download_project_scan_report(project_id, scan_id):
     db = get_db()
     try:
@@ -1336,6 +1369,7 @@ def download_project_scan_report(project_id, scan_id):
 
 
 @api_bp.route("/projects/<int:project_id>/scans", methods=["DELETE"])
+@require_auth
 def clear_project_scans_history(project_id):
     db = get_db()
     try:
@@ -1369,6 +1403,7 @@ def clear_project_scans_history(project_id):
 # --- CHANGE DETECTION & ASSET MONITORING API ---
 
 @api_bp.route("/assets/<int:asset_id>/changes", methods=["GET"])
+@require_auth
 def get_asset_changes(asset_id):
     """
     Get detected change history, monitoring status, and recent change summary for an asset.
@@ -1437,6 +1472,7 @@ def get_asset_changes(asset_id):
 
 
 @api_bp.route("/assets/<int:asset_id>/scans/compare", methods=["GET"])
+@require_auth
 def compare_asset_scans(asset_id):
     """
     Compare two scans (scan_a vs scan_b) for an asset.
@@ -1477,6 +1513,7 @@ def compare_asset_scans(asset_id):
 
 
 @api_bp.route("/scans/<int:scan_id>/changes", methods=["GET"])
+@require_auth
 def get_scan_changes(scan_id):
     """
     Get change summary details detected during a specific scan.

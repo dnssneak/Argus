@@ -116,12 +116,22 @@ def test_delete_protection(db):
 
 
 def test_project_api_endpoints(client):
+    # Signup user
+    auth_res = client.post("/api/v1/auth/signup", json={
+        "name": "Project Tester",
+        "email": "project-tester@example.com",
+        "password": "Password123!",
+        "confirm_password": "Password123!"
+    })
+    token = auth_res.get_json()["token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
     # Test POST /api/v1/projects
     res = client.post("/api/v1/projects", json={
         "name": "API Scope Test",
         "description": "API test details",
         "status": "ACTIVE"
-    })
+    }, headers=headers)
     assert res.status_code == 201
     data = res.get_json()
     assert data["success"] is True
@@ -131,17 +141,17 @@ def test_project_api_endpoints(client):
     res_t = client.post(f"/api/v1/projects/{project_id}/targets", json={
         "target": "api.test.org",
         "target_type": "Subdomain"
-    })
+    }, headers=headers)
     assert res_t.status_code == 201
     assert res_t.get_json()["target"]["target"] == "api.test.org"
 
     # Test GET project dashboard
-    res_dash = client.get(f"/api/v1/projects/{project_id}/dashboard")
+    res_dash = client.get(f"/api/v1/projects/{project_id}/dashboard", headers=headers)
     assert res_dash.status_code == 200
     dash_data = res_dash.get_json()["data"]
     assert dash_data["stats"]["targets"] == 1
 
     # Test POST archive
-    res_arc = client.post(f"/api/v1/projects/{project_id}/archive")
+    res_arc = client.post(f"/api/v1/projects/{project_id}/archive", headers=headers)
     assert res_arc.status_code == 200
     assert res_arc.get_json()["project"]["status"] == "ARCHIVED"

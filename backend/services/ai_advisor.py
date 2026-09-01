@@ -127,7 +127,7 @@ class AIRemediationAdvisor:
                 "temperature": 0.2
             }
             
-            resp = requests.post(url, headers=headers, json=payload, timeout=4)
+            resp = requests.post(url, headers=headers, json=payload, timeout=12)
             if resp.status_code == 200:
                 data = resp.json()
                 if "choices" in data and len(data["choices"]) > 0:

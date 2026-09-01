@@ -179,14 +179,20 @@ def test_download_report_endpoint_with_client():
     """Test the Flask API download endpoint to ensure file is served with status 200."""
     from app import app
     from db.database import SessionLocal
-    from models.models import Project, Scan
+    from models.models import Project, Scan, User
+    from services.auth_service import AuthService
 
     client = app.test_client()
     db = SessionLocal()
 
     try:
+        # Create test user
+        user = AuthService.register_user(db, name="Report User", email="report@example.com", password="Password123!")
+        token = AuthService.generate_token(user)
+        headers = {"Authorization": f"Bearer {token}"}
+
         # Create test project and scan
-        proj = Project(name="Test Report Project", owner_id="local-user")
+        proj = Project(name="Test Report Project", owner_id=str(user.id))
         db.add(proj)
         db.commit()
         db.refresh(proj)
@@ -201,7 +207,7 @@ def test_download_report_endpoint_with_client():
         filepath, filename = gen.generate_html(filename="test_download_file.html")
 
         # Request download via API endpoint
-        response = client.get(f"/api/v1/projects/{proj.id}/scans/{scan.id}/download-report?filename={filename}")
+        response = client.get(f"/api/v1/projects/{proj.id}/scans/{scan.id}/download-report?filename={filename}", headers=headers)
         assert response.status_code == 200
         assert b"Argus Security Assessment Report" in response.data
 
@@ -209,6 +215,7 @@ def test_download_report_endpoint_with_client():
         response.close()
         db.delete(scan)
         db.delete(proj)
+        db.delete(user)
         db.commit()
     finally:
         db.close()
