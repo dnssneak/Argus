@@ -10,7 +10,7 @@ Argus 2.0 is a modern, unified cybersecurity platform designed for security anal
 
 ### 1. **User Authentication & Multi-Tenant Isolation**
 * **Secure Registration & Login**: Full-screen authentication UI with password strength evaluation, scrypt/PBKDF2 password hashing, and cryptographically signed session tokens.
-* **Strict Object-Level Authorization (BOLA/IDOR Protection)**: Every REST API endpoint (`/api/v1/*`) enforces `@require_auth` and scopes projects, targets, assets, scans, and findings strictly to the authenticated user.
+* **Strict Object-Level Authorization (BOLA/IDOR Protection)**: Every REST API endpoint (`/api/v1/*`) enforces `@require_auth` and scopes projects, targets, assets, scans, and findings strictly to the authenticated user..
 
 ### 2. **Project-Centric Workspace Hub**
 * **Project Inventory**: Group targets, assets, and scans by project scope. Supports project status filtering (`ACTIVE`, `ARCHIVED`), keyword search, target management, and project deletion protection.
