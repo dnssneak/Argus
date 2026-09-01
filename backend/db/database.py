@@ -4,16 +4,39 @@ from sqlalchemy import create_engine
 # pyrefly: ignore [missing-import]
 from sqlalchemy.orm import declarative_base, sessionmaker
 
+def _load_env_file():
+    """Auto-load .env file if present."""
+    for p in ['.env', '../.env', 'backend/.env']:
+        if os.path.exists(p):
+            try:
+                with open(p, 'r', encoding='utf-8') as f:
+                    for line in f:
+                        line = line.strip()
+                        if line and not line.startswith('#') and '=' in line:
+                            k, v = line.split('=', 1)
+                            if k.strip() not in os.environ:
+                                os.environ[k.strip()] = v.strip().strip('"').strip("'")
+            except Exception:
+                pass
+
+_load_env_file()
+
 try:
     from dotenv import load_dotenv
     load_dotenv()
 except ImportError:
     pass
 
-# Database URL configuration (SQLite default, customizable via environment variable)
+# Database URL configuration (PostgreSQL / Supabase / SQLite)
 BASE_DIR = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 backend_db = os.path.join(BASE_DIR, "backend", "argus.db")
 DEFAULT_DB_PATH = backend_db if os.path.exists(backend_db) else os.path.join(BASE_DIR, "argus.db")
+
+# Fallback to /tmp for serverless read-only filesystems (Vercel / AWS Lambda)
+is_serverless = os.environ.get("VERCEL") or os.environ.get("AWS_LAMBDA_FUNCTION_NAME")
+if is_serverless and not os.environ.get("DATABASE_URL"):
+    DEFAULT_DB_PATH = "/tmp/argus.db"
+
 DATABASE_URL = os.environ.get("DATABASE_URL", f"sqlite:///{DEFAULT_DB_PATH}")
 
 # Convert postgres:// URI scheme to postgresql:// for SQLAlchemy compatibility
