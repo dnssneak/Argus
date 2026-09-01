@@ -43,6 +43,10 @@ DATABASE_URL = os.environ.get("DATABASE_URL", f"sqlite:///{DEFAULT_DB_PATH}")
 if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
+# Convert Supabase IPv6 legacy pooler port 6543 to IPv4 port 5432 for Vercel compatibility
+if DATABASE_URL and "supabase.co:6543" in DATABASE_URL:
+    DATABASE_URL = DATABASE_URL.replace("supabase.co:6543", "supabase.co:5432")
+
 # For SQLite, enable check_same_thread=False for multi-threaded Flask requests
 is_sqlite = DATABASE_URL.startswith("sqlite")
 connect_args = {"check_same_thread": False} if is_sqlite else {}
