@@ -43,9 +43,14 @@ DATABASE_URL = os.environ.get("DATABASE_URL", f"sqlite:///{DEFAULT_DB_PATH}")
 if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
-# Convert Supabase IPv6 legacy pooler port 6543 to IPv4 port 5432 for Vercel compatibility
-if DATABASE_URL and "supabase.co:6543" in DATABASE_URL:
-    DATABASE_URL = DATABASE_URL.replace("supabase.co:6543", "supabase.co:5432")
+# Auto-convert Supabase IPv6 direct hostname to IPv4 Pooler DSN for Vercel compatibility
+if DATABASE_URL and "supabase.co" in DATABASE_URL:
+    if "db.daqcmmldxzukkqxcpdnn.supabase.co" in DATABASE_URL:
+        DATABASE_URL = DATABASE_URL.replace("db.daqcmmldxzukkqxcpdnn.supabase.co:5432", "aws-0-ap-northeast-2.pooler.supabase.com:6543")
+        DATABASE_URL = DATABASE_URL.replace("db.daqcmmldxzukkqxcpdnn.supabase.co:6543", "aws-0-ap-northeast-2.pooler.supabase.com:6543")
+        DATABASE_URL = DATABASE_URL.replace("db.daqcmmldxzukkqxcpdnn.supabase.co", "aws-0-ap-northeast-2.pooler.supabase.com:6543")
+        if "postgresql://postgres:" in DATABASE_URL:
+            DATABASE_URL = DATABASE_URL.replace("postgresql://postgres:", "postgresql://postgres.daqcmmldxzukkqxcpdnn:", 1)
 
 # For SQLite, enable check_same_thread=False for multi-threaded Flask requests
 is_sqlite = DATABASE_URL.startswith("sqlite")
