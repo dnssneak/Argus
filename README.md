@@ -1,4 +1,4 @@
-# 🛡️ Argus 2.0
+# Argus 2.0
 
 > **A Comprehensive Web-Based Network Intelligence, Attack Surface Management, and AI-Powered Security Auditing Platform.**
 
@@ -6,38 +6,38 @@ Argus 2.0 is a modern, unified cybersecurity platform designed for security anal
 
 ---
 
-## ✨ Key Features & Capability Modules
+## Key Features & Capability Modules
 
-### 1. 🔐 **User Authentication & Multi-Tenant Isolation**
+### 1. **User Authentication & Multi-Tenant Isolation**
 * **Secure Registration & Login**: Full-screen authentication UI with password strength evaluation, scrypt/PBKDF2 password hashing, and cryptographically signed session tokens.
 * **Strict Object-Level Authorization (BOLA/IDOR Protection)**: Every REST API endpoint (`/api/v1/*`) enforces `@require_auth` and scopes projects, targets, assets, scans, and findings strictly to the authenticated user.
 
-### 2. 📁 **Project-Centric Workspace Hub**
+### 2. **Project-Centric Workspace Hub**
 * **Project Inventory**: Group targets, assets, and scans by project scope. Supports project status filtering (`ACTIVE`, `ARCHIVED`), keyword search, target management, and project deletion protection.
 * **Interactive Dashboard**: Dedicated project dashboards providing real-time vulnerability statistics, high-risk asset summaries, discovery sources, and timeline events.
 
-### 3. 🎯 **Asset Inventory & Dynamic Risk Engine**
+### 3. **Asset Inventory & Dynamic Risk Engine**
 * **Contextual Risk Scoring**: Dynamically calculates asset risk scores (0–100) and maps them into severity tiers (`CRITICAL`, `HIGH`, `MEDIUM`, `LOW`, `INFORMATIONAL`).
 * **Contributing Risk Factors**: Categorizes risk weights by internet exposure, open sensitive ports (e.g. 3389, 445, 22, 3306), administrative endpoints, and technology vulnerabilities.
 * **Asset Timeline History & Change Detector**: Tracks asset changes across sequential scans (port changes, web footprint updates, and status transitions).
 
-### 4. 🧠 **Finding Correlation & Contextual Prioritization Engine**
+### 4. **Finding Correlation & Contextual Prioritization Engine**
 * **Automated Correlation**: Correlates security observations across affected assets, targets, and scans while preserving original finding severity.
 * **Contextual Urgency Priority**: Derives priority levels (`CRITICAL`, `HIGH`, `MEDIUM`, `LOW`, `INFORMATIONAL`) and urgency scores (0-100) with detailed contributing factor explanations.
 * **Lifecycle Tracking**: Identifies finding lifecycles (`NEW`, `EXISTING`, `RECURRING`, `RESOLVED`) across repeated scan passes.
 
-### 5. 🤖 **AI Remediation Advisor Engine (`AIRemediationAdvisor`)**
+### 5. **AI Remediation Advisor Engine (`AIRemediationAdvisor`)**
 * **Live LLM Integration**: Connects to LiteRouter, OpenRouter (`gemma-3-27b-it:free` or custom models), Google Gemini, or OpenAI API to generate tailored, 2-bullet actionable security fix guides for novel/uncertain vulnerabilities.
 * **Local Heuristic AI Fallback**: Zero-dependency built-in AI synthesizer that guarantees actionable remediation output even when offline or without an API key.
 
-### 6. 🌐 **Web Security Engine & OSINT Intelligence**
+### 6. **Web Security Engine & OSINT Intelligence**
 * **Web Security Engine**: Audits security headers (`CSP`, `HSTS`, `X-Frame-Options`), SSL/TLS certificates, CORS policies, HTTP methods, sensitive directory discovery (`.git`, `.env`, `/admin`), and Nikto vulnerability scans.
 * **Web Intelligence Engine**: Extracts emails, email pattern formulas, role categories, social media footprints, downloadable document metadata (PDFs, DOCX), and historical Wayback Machine URL archives.
 
-### 7. 🕸️ **Graph Topology Visualizer**
+### 7. **Graph Topology Visualizer**
 * **Interactive Relationship Graph**: Maps multi-node topology links (`SUBDOMAIN_OF`, `RESOLVES_TO`, `HAS_PORT`, `RUNS_SERVICE`, `USES_TECH`, `HAS_ENDPOINT`) for individual assets or full project scopes.
 
-### 8. 📄 **Professional Report Generator**
+### 8. **Professional Report Generator**
 * Compiles all gathered reconnaissance, port scans, web fingerprints, OSINT data, and prioritized findings.
 * Export formats:
   * **Plain Text (.txt)**: Structured ASCII report for log archives.
@@ -45,7 +45,7 @@ Argus 2.0 is a modern, unified cybersecurity platform designed for security anal
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 * **Backend Core**: Python 3.8+ (Flask, SQLAlchemy ORM, Pydantic)
 * **Database Layer**: PostgreSQL (Supabase pooler support) with fallback to SQLite (`argus.db`)
@@ -56,7 +56,7 @@ Argus 2.0 is a modern, unified cybersecurity platform designed for security anal
 
 ---
 
-## 📂 Repository Structure
+## Repository Structure
 
 ```text
 Argus/
@@ -99,7 +99,7 @@ Argus/
 
 ---
 
-## ⚙️ Installation & Setup
+## Installation & Setup
 
 ### Prerequisites
 
@@ -153,7 +153,7 @@ Argus/
 
 ---
 
-## 🚀 Running the Application
+## Running the Application
 
 1. **Start the server**:
    ```bash
@@ -170,7 +170,7 @@ Argus/
 
 ---
 
-## ☁️ Deployment (Vercel / Cloud)
+## Deployment (Vercel / Cloud)
 
 1. **Deploy via Vercel CLI**:
    ```bash
@@ -181,6 +181,6 @@ Argus/
 
 ---
 
-## 🔒 Security & Compliance Disclaimer
+## Security & Compliance Disclaimer
 
 *Argus 2.0 is designed strictly for authorized security auditing, threat hunting, and educational research. Scanning targets without explicit prior written authorization from the system owner is illegal. The developers assume no liability for unauthorized usage or damages.*
