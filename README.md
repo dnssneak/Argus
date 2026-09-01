@@ -167,18 +167,6 @@ Argus/
    ```bash
    python -m pytest backend/tests
    ```
-
----
-
-## Deployment (Vercel / Cloud)
-
-1. **Deploy via Vercel CLI**:
-   ```bash
-   vercel --prod
-   ```
-2. **Set Environment Variables in Dashboard**:
-   Add `DATABASE_URL`, `SECRET_KEY`, `SECURITY_SALT`, and `FLASK_DEBUG=False` in your deployment platform settings.
-
 ---
 
 ## Security & Compliance Disclaimer
