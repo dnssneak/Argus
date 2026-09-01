@@ -119,7 +119,7 @@ def test_project_api_endpoints(client):
     # Signup user
     auth_res = client.post("/api/v1/auth/signup", json={
         "name": "Project Tester",
-        "email": "project-tester@example.com",
+        "email": "project-tester-unique-api@example.com",
         "password": "Password123!",
         "confirm_password": "Password123!"
     })
