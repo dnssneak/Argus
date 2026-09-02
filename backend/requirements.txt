@@ -1,6 +1,5 @@
-# Requirements
-
 flask
+gunicorn
 sqlalchemy
 pydantic
 pytest
@@ -10,5 +9,6 @@ requests
 psutil
 python-nmap
 psycopg2-binary
+pg8000
 python-dotenv
 beautifulsoup4

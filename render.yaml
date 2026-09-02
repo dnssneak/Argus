@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: argus-security-platform
+    env: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    region: singapore
+    autoDeploy: true
+    envVars:
+      - key: PORT
+        value: "5001"
+      - key: FLASK_DEBUG
+        value: "False"
+      - key: DATABASE_URL
+        sync: false
+      - key: SECRET_KEY
+        sync: false
+      - key: SECURITY_SALT
+        sync: false
+      - key: OPENROUTER_API_KEY
+        sync: false
