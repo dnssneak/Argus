@@ -17,8 +17,8 @@ class NetworkScanner:
 
     # Predefined scan commands. Target is inserted at %s.
     SCAN_COMMANDS = {
-        "ping": ["nmap", "-sn", "%s"],
-        "full": ["nmap", "-sV", "-p", "1-1024,1433,3306,3389,5432,8080,8443", "--open", "%s"],
+        "ping": ["nmap", "-sn", "-Pn", "%s"],
+        "full": ["nmap", "-Pn", "-sV", "--unprivileged", "-p", "1-1024,1433,1521,3306,3389,5432,5900,6379,8080,8443,9200,11211,27017", "--open", "%s"],
     }
 
     def __init__(self, target, scan_type):
@@ -80,7 +80,7 @@ class NetworkScanner:
         return self._run_scan()
 
     def _run_scan(self):
-        """Execute Nmap using subprocess with strict command list."""
+        """Execute Nmap using subprocess with strict command list, with socket fallback."""
         cmd = [arg if arg != "%s" else self.target for arg in self.SCAN_COMMANDS[self.scan_type]]
 
         try:
@@ -90,43 +90,27 @@ class NetworkScanner:
                 text=True,
                 timeout=120,
             )
-            return self._parse_output(result.stdout, result.returncode)
+            parsed = self._parse_output(result.stdout, result.returncode)
+            
+            # If full scan produced 0 open ports (e.g. raw socket/ICMP restricted in container), fallback to TCP socket probe
+            if self.scan_type == "full" and not parsed["open_ports"]:
+                fallback_result = self._run_socket_fallback()
+                if fallback_result["open_ports"]:
+                    return fallback_result
+
+            return parsed
         except subprocess.TimeoutExpired:
-            return {
-                "target": self.raw_target,
-                "error": "Scan timed out after 120 seconds.",
-                "host_status": "Unknown",
-                "open_ports": [],
-                "services": [],
-                "scan_status": "Timed Out",
-                "ping_output": "",
-            }
+            return self._run_socket_fallback()
         except FileNotFoundError:
-            return {
-                "target": self.raw_target,
-                "error": "Nmap not found. Please install Nmap.",
-                "host_status": "Unknown",
-                "open_ports": [],
-                "services": [],
-                "scan_status": "Failed",
-                "ping_output": "",
-            }
+            return self._run_socket_fallback()
         except Exception as e:
-            return {
-                "target": self.raw_target,
-                "error": f"Scan failed: {str(e)}",
-                "host_status": "Unknown",
-                "open_ports": [],
-                "services": [],
-                "scan_status": "Failed",
-                "ping_output": "",
-            }
+            return self._run_socket_fallback()
 
     def _parse_output(self, output, returncode):
         """Parse Nmap output into structured data."""
         result = {
             "target": self.raw_target,
-            "host_status": "Unknown",
+            "host_status": "Up",
             "open_ports": [],
             "services": [],
             "scan_status": "Completed",
@@ -205,6 +189,7 @@ class NetworkScanner:
             result["host_status"] = "Up (No open ports found)"
 
         return result
+
 
     def _run_socket_fallback(self):
         """Fallback TCP port scanner using native Python sockets if Nmap is not installed."""
