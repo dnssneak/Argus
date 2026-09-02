@@ -19,3 +19,7 @@ services:
         sync: false
       - key: OPENROUTER_API_KEY
         sync: false
+      - key: LITE_ROUTER_URL
+        value: "https://api.literouter.com/v1"
+      - key: LLM_MODEL
+        value: "gemma-3-27b-it:free"
